@@ -677,68 +677,170 @@ export default function App() {
 
       {/* GitHub 同期設定モーダル */}
       {showGitHubModal && (
-        <div className="fixed inset-0 bg-[#0a0e17]/80 backdrop-blur flex items-end sm:items-center justify-center z-50 p-4">
-          <div className="bg-[#111827] border border-[#1f2d40] rounded-2xl w-full max-w-md">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#1f2d40]">
+        <div className="fixed inset-0 bg-[#0a0e17]/80 backdrop-blur flex items-end sm:items-center justify-center z-50 p-3 sm:p-4">
+          <div className="bg-[#111827] border border-[#1f2d40] rounded-2xl w-full max-w-lg flex flex-col max-h-[92vh]">
+
+            {/* ヘッダ */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#1f2d40] flex-shrink-0">
               <div>
                 <div className="text-sm font-semibold text-slate-100">GitHub 同期設定</div>
-                <div className="text-xs text-slate-500 mt-0.5">PC の MTExport フォルダをスマホで閲覧</div>
+                <div className="text-xs text-slate-500 mt-0.5">PC の MTExport フォルダをスマホで自動更新</div>
               </div>
-              <button onClick={() => setShowGitHubModal(false)} className="text-slate-600 hover:text-slate-300 text-lg px-1">✕</button>
+              <button onClick={() => setShowGitHubModal(false)} className="text-slate-600 hover:text-slate-300 text-lg px-1 flex-shrink-0">✕</button>
             </div>
-            <div className="px-5 py-4 space-y-4">
-              <div className="space-y-1.5 text-xs text-slate-400">
-                <div className="font-semibold text-slate-300 mb-2">セットアップ手順</div>
-                <div>1. GitHub でプライベートリポジトリを作成（例: <span className="text-purple-300 font-mono">mt4-report-data</span>）</div>
-                <div>2. Settings → Developer settings → Personal access tokens → <span className="text-purple-300">repo</span> スコープで発行</div>
-                <div>3. 下の PS1 スクリプトを PC にダウンロードしてタスクスケジューラに登録</div>
-              </div>
-              <button onClick={() => downloadText(SYNC_PS1, 'sync-to-github.ps1')}
-                className="text-xs text-purple-400 hover:text-purple-300 bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 rounded-lg transition-colors">
-                ↓ sync-to-github.ps1
-              </button>
-              <div className="space-y-2">
-                <div className="text-xs font-semibold text-slate-300">接続設定</div>
-                <input type="text" placeholder="GitHub ユーザー名 (owner)"
-                  value={ghOwner} onChange={e => setGhOwner(e.target.value)}
-                  className="w-full bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-3 py-2 text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-purple-500" />
-                <input type="text" placeholder="リポジトリ名 (例: mt4-report-data)"
-                  value={ghRepo} onChange={e => setGhRepo(e.target.value)}
-                  className="w-full bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-3 py-2 text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-purple-500" />
-                <input type="password" placeholder="Personal Access Token (ghp_xxxx)"
-                  value={ghToken} onChange={e => setGhToken(e.target.value)}
-                  className="w-full bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-3 py-2 text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-purple-500" />
-              </div>
-              <div className="flex gap-2">
-                <button
-                  disabled={!ghOwner || !ghRepo || !ghToken}
-                  onClick={async () => {
-                    const s = { owner: ghOwner.trim(), repo: ghRepo.trim(), token: ghToken.trim() }
-                    try {
-                      await syncFromGitHub(s)
-                      saveGitHubSettings(s)
-                      setGitHubSettings(s)
-                      setShowGitHubModal(false)
-                    } catch (e) {
-                      alert(`接続エラー: ${e.message}`)
-                    }
-                  }}
-                  className="flex-1 text-xs bg-purple-600 hover:bg-purple-500 disabled:opacity-30 disabled:cursor-not-allowed text-white px-3 py-2 rounded-lg transition-colors font-medium">
-                  接続して同期
-                </button>
-                {githubSettings && (
-                  <button
-                    onClick={() => { clearGitHubSettings(); setGitHubSettings(null); setShowGitHubModal(false) }}
-                    className="text-xs text-slate-500 hover:text-red-400 px-3 py-2 rounded-lg border border-[#1f2d40] transition-colors">
-                    設定削除
-                  </button>
-                )}
-              </div>
+
+            {/* スクロール可能な本文 */}
+            <div className="overflow-y-auto px-5 py-4 space-y-5 text-xs">
+
+              {/* 接続済みバナー */}
               {githubSettings && (
-                <div className="text-xs text-purple-400">
-                  ✓ {githubSettings.owner}/{githubSettings.repo} に接続済み
+                <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg px-3 py-2 flex items-center gap-2 text-purple-300">
+                  <span>✓</span>
+                  <span className="font-mono">{githubSettings.owner}/{githubSettings.repo}</span>
+                  <span className="text-purple-400">接続済み・5分ごと自動更新</span>
                 </div>
               )}
+
+              {/* STEP 1 */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-purple-600/30 text-purple-400 text-xs flex items-center justify-center font-bold flex-shrink-0">1</span>
+                  <span className="font-semibold text-slate-200">GitHub プライベートリポジトリを作成</span>
+                </div>
+                <div className="ml-7 space-y-2 text-slate-400">
+                  <p>取引データを保存する専用リポジトリを作成します。</p>
+                  <a href="https://github.com/new" target="_blank" rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-purple-400 hover:text-purple-300 underline">
+                    github.com/new を開く ↗
+                  </a>
+                  <div className="bg-[#0a0e17] rounded-lg p-3 space-y-1.5 border border-[#1f2d40]">
+                    <div><span className="text-slate-500">Repository name: </span><span className="text-purple-300 font-mono">mt4-report-data</span><span className="text-slate-600">（任意）</span></div>
+                    <div><span className="text-slate-500">Visibility: </span><span className="text-slate-300 font-semibold">Private</span><span className="text-slate-600"> ← 必ずプライベートを選択</span></div>
+                    <div className="text-slate-600">README の追加は不要。そのまま「Create repository」をクリック</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* STEP 2 */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-purple-600/30 text-purple-400 text-xs flex items-center justify-center font-bold flex-shrink-0">2</span>
+                  <span className="font-semibold text-slate-200">Personal Access Token を発行</span>
+                </div>
+                <div className="ml-7 space-y-2 text-slate-400">
+                  <p>アプリが GitHub にアクセスするための鍵（トークン）を発行します。</p>
+                  <a href="https://github.com/settings/tokens/new" target="_blank" rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-purple-400 hover:text-purple-300 underline">
+                    トークン発行ページを開く ↗
+                  </a>
+                  <div className="bg-[#0a0e17] rounded-lg p-3 space-y-1.5 border border-[#1f2d40]">
+                    <div><span className="text-slate-500">Note: </span><span className="text-slate-300">MT4 Report Viewer</span><span className="text-slate-600">（任意の名前）</span></div>
+                    <div><span className="text-slate-500">Expiration: </span><span className="text-slate-300">No expiration</span><span className="text-slate-600">（推奨）</span></div>
+                    <div><span className="text-slate-500">Scopes: </span><span className="text-purple-300 font-mono font-bold">repo</span><span className="text-slate-600"> にチェック ✅（1箇所のみ）</span></div>
+                  </div>
+                  <p>ページ下部「Generate token」→ 表示された <span className="text-purple-300 font-mono">ghp_xxxx...</span> をコピー</p>
+                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 text-amber-400">
+                    ⚠ ページを閉じると二度と表示されません。必ずこの場でコピーしてください。
+                  </div>
+                </div>
+              </div>
+
+              {/* STEP 3 */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-purple-600/30 text-purple-400 text-xs flex items-center justify-center font-bold flex-shrink-0">3</span>
+                  <span className="font-semibold text-slate-200">PC に同期スクリプトを設定</span>
+                </div>
+                <div className="ml-7 space-y-3 text-slate-400">
+                  <p>MTExport フォルダの JSON を GitHub へ自動アップロードするスクリプトです。</p>
+
+                  <button onClick={() => downloadText(SYNC_PS1, 'sync-to-github.ps1')}
+                    className="text-purple-400 hover:text-purple-300 bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 rounded-lg transition-colors">
+                    ↓ sync-to-github.ps1 をダウンロード
+                  </button>
+
+                  <p className="text-slate-500">ダウンロード後、PowerShell を開いて以下を順番に実行してください。</p>
+
+                  {/* コマンド① */}
+                  <div>
+                    <div className="text-slate-400 mb-1 font-medium">① ブロック解除（初回のみ）</div>
+                    <div className="flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded-lg px-3 py-2 overflow-x-auto">
+                      <code className="text-green-400 font-mono flex-1 whitespace-nowrap text-[11px]">{'Unblock-File "$env:USERPROFILE\\Downloads\\sync-to-github.ps1"'}</code>
+                      <button onClick={() => navigator.clipboard.writeText('Unblock-File "$env:USERPROFILE\\Downloads\\sync-to-github.ps1"')}
+                        className="text-slate-600 hover:text-slate-300 flex-shrink-0 ml-1" title="コピー">⎘</button>
+                    </div>
+                  </div>
+
+                  {/* コマンド② */}
+                  <div>
+                    <div className="text-slate-400 mb-1 font-medium">② 動作確認（Token・Owner・Repo を書き換えて実行）</div>
+                    <div className="flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded-lg px-3 py-2 overflow-x-auto">
+                      <code className="text-green-400 font-mono flex-1 whitespace-nowrap text-[11px]">{'& "$env:USERPROFILE\\Downloads\\sync-to-github.ps1" -Token "ghp_xxxx" -Owner "ユーザー名" -Repo "mt4-report-data"'}</code>
+                      <button onClick={() => navigator.clipboard.writeText('& "$env:USERPROFILE\\Downloads\\sync-to-github.ps1" -Token "ghp_xxxx" -Owner "ユーザー名" -Repo "mt4-report-data"')}
+                        className="text-slate-600 hover:text-slate-300 flex-shrink-0 ml-1" title="コピー">⎘</button>
+                    </div>
+                    <div className="text-slate-600 mt-1"><span className="text-emerald-500">[OK] mt4_report_xxxx.json</span> と表示されれば成功</div>
+                  </div>
+
+                  {/* コマンド③ */}
+                  <div>
+                    <div className="text-slate-400 mb-1 font-medium">③ タスクスケジューラに登録（5分ごと自動実行）</div>
+                    <div className="text-slate-500 mb-1">Token・Owner・Repo の部分を書き換えてから実行</div>
+                    <div className="flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded-lg px-3 py-2 overflow-x-auto">
+                      <code className="text-green-400 font-mono flex-1 whitespace-nowrap text-[11px]">{'schtasks /create /tn "MTExportSync" /sc minute /mo 5 /f /tr "powershell -NonInteractive -WindowStyle Hidden -File \\"%USERPROFILE%\\Downloads\\sync-to-github.ps1\\" -Token ghp_xxxx -Owner ユーザー名 -Repo mt4-report-data"'}</code>
+                      <button onClick={() => navigator.clipboard.writeText('schtasks /create /tn "MTExportSync" /sc minute /mo 5 /f /tr "powershell -NonInteractive -WindowStyle Hidden -File \\"%USERPROFILE%\\Downloads\\sync-to-github.ps1\\" -Token ghp_xxxx -Owner ユーザー名 -Repo mt4-report-data"')}
+                        className="text-slate-600 hover:text-slate-300 flex-shrink-0 ml-1" title="コピー">⎘</button>
+                    </div>
+                    <div className="text-slate-600 mt-1">「スケジュール タスク "MTExportSync" を作成しました。」と表示されれば完了</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* STEP 4 */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-purple-600/30 text-purple-400 text-xs flex items-center justify-center font-bold flex-shrink-0">4</span>
+                  <span className="font-semibold text-slate-200">このアプリに接続</span>
+                </div>
+                <div className="ml-7 space-y-2">
+                  <p className="text-slate-400">STEP 1〜3 が完了したら、以下に入力して接続してください。</p>
+                  <input type="text" placeholder="GitHub ユーザー名 (例: tomoki)"
+                    value={ghOwner} onChange={e => setGhOwner(e.target.value)}
+                    className="w-full bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-3 py-2 text-slate-300 placeholder-slate-600 focus:outline-none focus:border-purple-500" />
+                  <input type="text" placeholder="リポジトリ名 (例: mt4-report-data)"
+                    value={ghRepo} onChange={e => setGhRepo(e.target.value)}
+                    className="w-full bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-3 py-2 text-slate-300 placeholder-slate-600 focus:outline-none focus:border-purple-500" />
+                  <input type="password" placeholder="Personal Access Token (ghp_xxxx...)"
+                    value={ghToken} onChange={e => setGhToken(e.target.value)}
+                    className="w-full bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-3 py-2 text-slate-300 placeholder-slate-600 focus:outline-none focus:border-purple-500" />
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      disabled={!ghOwner || !ghRepo || !ghToken}
+                      onClick={async () => {
+                        const s = { owner: ghOwner.trim(), repo: ghRepo.trim(), token: ghToken.trim() }
+                        try {
+                          await syncFromGitHub(s)
+                          saveGitHubSettings(s)
+                          setGitHubSettings(s)
+                          setShowGitHubModal(false)
+                        } catch (e) {
+                          alert(`接続エラー: ${e.message}`)
+                        }
+                      }}
+                      className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-30 disabled:cursor-not-allowed text-white px-3 py-2 rounded-lg transition-colors font-semibold">
+                      接続して同期
+                    </button>
+                    {githubSettings && (
+                      <button
+                        onClick={() => { clearGitHubSettings(); setGitHubSettings(null); setShowGitHubModal(false) }}
+                        className="text-slate-500 hover:text-red-400 px-3 py-2 rounded-lg border border-[#1f2d40] transition-colors">
+                        設定削除
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>

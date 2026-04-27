@@ -33,7 +33,7 @@
 #define FILE_ATTRIBUTE_NORMAL 0x80
 #define FILE_SHARE_READ       1
 
-input int    RefreshMinutes  = 5;           // 定期エクスポート間隔（分）
+input int    RefreshMinutes  = 1;           // 定期エクスポート間隔（分）
 input int    RealtimeSec     = 30;          // Tick 発生時の最小エクスポート間隔（秒）
 input string ExportSubFolder = "MTExport"; // USERPROFILE 直下のサブフォルダ名
 

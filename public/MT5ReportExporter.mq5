@@ -14,7 +14,7 @@
 //+------------------------------------------------------------------+
 #property copyright ""
 #property link      ""
-#property version   "1.00"
+#property version   "1.10"
 #property description "取引履歴を JSON へ自動エクスポートします。自動売買 OFF でも動作します。"
 
 #import "kernel32.dll"
@@ -34,12 +34,14 @@
 #define FILE_SHARE_READ       1
 
 input int    RefreshMinutes  = 5;           // 定期エクスポート間隔（分）
+input int    RealtimeSec     = 30;          // Tick 発生時の最小エクスポート間隔（秒）
 input string ExportSubFolder = "MTExport"; // USERPROFILE 直下のサブフォルダ名
 
 #define TIMER_SEC 5
 
-int      g_ExportTick        = 0;
-datetime g_LastTriggerExport = 0;
+int      g_ExportTick         = 0;
+datetime g_LastTriggerExport  = 0;
+datetime g_LastRealtimeExport = 0;
 
 //+------------------------------------------------------------------+
 int OnInit()
@@ -50,6 +52,17 @@ int OnInit()
 }
 
 void OnDeinit(const int reason) { EventKillTimer(); }
+
+void OnTick()
+{
+   datetime now = TimeCurrent();
+   if (now - g_LastRealtimeExport >= RealtimeSec)
+   {
+      g_LastRealtimeExport = now;
+      g_ExportTick = 0;
+      ExportTrades();
+   }
+}
 
 void OnTimer()
 {

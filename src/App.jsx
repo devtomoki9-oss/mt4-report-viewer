@@ -26,8 +26,8 @@ const TABS = [
   { id: 'trades',   label: '全取引'   },
 ]
 
-const EXPORT_INTERVAL_MS = 5 * 60 * 1000 // EA の RefreshMinutes に合わせる
-const GITHUB_INTERVAL_MS = 5 * 60 * 1000
+const EXPORT_INTERVAL_MS = 1 * 60 * 1000
+const GITHUB_INTERVAL_MS = 1 * 60 * 1000
 
 const SYNC_PS1 = `# Sync JSON files from MTExport folder to a private GitHub repository
 #
@@ -35,8 +35,8 @@ const SYNC_PS1 = `# Sync JSON files from MTExport folder to a private GitHub rep
 #   Unblock-File ".\\sync-to-github.ps1"
 #   .\\sync-to-github.ps1 -Token "ghp_xxxx" -Owner "yourname" -Repo "mt4-report-data"
 #
-# Register with Task Scheduler (run every 5 minutes):
-#   schtasks /create /tn "MTExportSync" /sc minute /mo 5 /f /tr "powershell -NonInteractive -File \\"%USERPROFILE%\\Downloads\\sync-to-github.ps1\\" -Token ghp_xxxx -Owner yourname -Repo mt4-report-data"
+# Register with Task Scheduler (run every 1 minute):
+#   schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "powershell -NonInteractive -File \\"%USERPROFILE%\\Downloads\\sync-to-github.ps1\\" -Token ghp_xxxx -Owner yourname -Repo mt4-report-data"
 
 param(
     [Parameter(Mandatory)][string]$Token,
@@ -758,7 +758,7 @@ export default function App() {
                 <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg px-3 py-2 flex items-center gap-2 text-purple-300">
                   <span>✓</span>
                   <span className="font-mono">{githubSettings.owner}/{githubSettings.repo}</span>
-                  <span className="text-purple-400">接続済み・5分ごと自動更新</span>
+                  <span className="text-purple-400">接続済み・1分ごと自動更新</span>
                 </div>
               )}
 
@@ -861,8 +861,8 @@ export default function App() {
                   <div>
                     <div className="text-slate-400 mb-1 font-medium">② タスクスケジューラに登録（5 分ごと・完全サイレント）</div>
                     <div className="flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded-lg px-3 py-2 overflow-x-auto">
-                      <code className="text-green-400 font-mono flex-1 whitespace-nowrap text-[11px]">{'schtasks /create /tn "MTExportSync" /sc minute /mo 5 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"'}</code>
-                      <button onClick={() => navigator.clipboard.writeText('schtasks /create /tn "MTExportSync" /sc minute /mo 5 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"')}
+                      <code className="text-green-400 font-mono flex-1 whitespace-nowrap text-[11px]">{'schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"'}</code>
+                      <button onClick={() => navigator.clipboard.writeText('schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"')}
                         className="text-slate-600 hover:text-slate-300 flex-shrink-0 ml-1" title="コピー">⎘</button>
                     </div>
                     <div className="text-slate-600 mt-1">「スケジュール タスク "MTExportSync" を作成しました。」と表示されれば完了。ウィンドウは一切表示されません。</div>

@@ -19,7 +19,7 @@
 //+------------------------------------------------------------------+
 #property copyright ""
 #property link      ""
-#property version   "1.40"
+#property version   "1.50"
 #property strict
 #property description "取引履歴を JSON へ自動エクスポートします。自動売買 OFF でも動作します。"
 
@@ -41,6 +41,7 @@
 #define FILE_SHARE_READ       1
 
 input int    RefreshMinutes  = 5;            // 定期エクスポート間隔（分）
+input int    RealtimeSec     = 30;           // Tick 発生時の最小エクスポート間隔（秒）
 input string ExportSubFolder = "MTExport";  // USERPROFILE 直下のサブフォルダ名
 
 // タイマー間隔（秒）: トリガーファイルをこの間隔でチェックする
@@ -48,6 +49,7 @@ input string ExportSubFolder = "MTExport";  // USERPROFILE 直下のサブフォ
 
 int      g_ExportTick        = 0; // TIMER_SEC 単位のカウンター
 datetime g_LastTriggerExport = 0; // 直近のトリガー発火時刻（二重発火防止）
+datetime g_LastRealtimeExport = 0; // 直近の Tick エクスポート時刻
 
 //+------------------------------------------------------------------+
 int OnInit()
@@ -58,6 +60,17 @@ int OnInit()
 }
 
 void OnDeinit(const int reason) { EventKillTimer(); }
+
+void OnTick()
+{
+   datetime now = TimeCurrent();
+   if (now - g_LastRealtimeExport >= RealtimeSec)
+   {
+      g_LastRealtimeExport = now;
+      g_ExportTick = 0; // 定期タイマーもリセット（二重エクスポート防止）
+      ExportTrades();
+   }
+}
 
 void OnTimer()
 {

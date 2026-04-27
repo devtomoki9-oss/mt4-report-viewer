@@ -119,7 +119,7 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
             {[
               { label: '残高',      value: (info.balance || 0).toLocaleString('en', { maximumFractionDigits: 2 }) + ' ' + (info.currency || ''), color: 'text-slate-200' },
               { label: '有効証拠金', value: (info.equity  || 0).toLocaleString('en', { maximumFractionDigits: 2 }) + ' ' + (info.currency || ''), color: (info.equity || 0) >= (info.balance || 0) ? 'text-emerald-400' : 'text-amber-400' },
-              { label: '含み損益',  value: ((info.equity || 0) - (info.balance || 0) >= 0 ? '+' : '') + ((info.equity || 0) - (info.balance || 0)).toFixed(2), color: (info.equity || 0) - (info.balance || 0) >= 0 ? 'text-emerald-400' : 'text-red-400' },
+              { label: '含み損益',  value: ((info.equity || 0) - (info.balance || 0) - (info.credit || 0) >= 0 ? '+' : '') + ((info.equity || 0) - (info.balance || 0) - (info.credit || 0)).toFixed(2), color: (info.equity || 0) - (info.balance || 0) - (info.credit || 0) >= 0 ? 'text-emerald-400' : 'text-red-400' },
               { label: 'クレジット', value: (info.credit || 0).toLocaleString('en', { maximumFractionDigits: 2 }) + ' ' + (info.currency || ''), color: 'text-blue-400' },
               { label: 'レバレッジ', value: info.leverage ? '1:' + info.leverage : '—', color: 'text-slate-400' },
             ].map(item => (

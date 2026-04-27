@@ -773,52 +773,17 @@ export default function App() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-purple-600/30 text-purple-400 text-xs flex items-center justify-center font-bold flex-shrink-0">3</span>
-                  <span className="font-semibold text-slate-200">PC に同期スクリプトを設定</span>
+                  <span className="font-semibold text-slate-200">PC（Chrome / Edge）で接続</span>
                 </div>
-                <div className="ml-7 space-y-3 text-slate-400">
-                  <p>MTExport フォルダの JSON を GitHub へ自動アップロードするスクリプトです。</p>
-
-                  <button onClick={() => downloadText(SYNC_PS1, 'sync-to-github.ps1')}
-                    className="text-purple-400 hover:text-purple-300 bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 rounded-lg transition-colors">
-                    ↓ sync-to-github.ps1 をダウンロード
-                  </button>
-
-                  <p className="text-slate-500">ダウンロード後、PowerShell を開いて以下を順番に実行してください。</p>
-
-                  {/* コマンド① */}
-                  <div>
-                    <div className="text-slate-400 mb-1 font-medium">① ブロック解除（初回のみ）</div>
-                    <div className="flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded-lg px-3 py-2 overflow-x-auto">
-                      <code className="text-green-400 font-mono flex-1 whitespace-nowrap text-[11px]">{'Unblock-File "$env:USERPROFILE\\Downloads\\sync-to-github.ps1"'}</code>
-                      <button onClick={() => navigator.clipboard.writeText('Unblock-File "$env:USERPROFILE\\Downloads\\sync-to-github.ps1"')}
-                        className="text-slate-600 hover:text-slate-300 flex-shrink-0 ml-1" title="コピー">⎘</button>
-                    </div>
+                <div className="ml-7 space-y-2 text-slate-400">
+                  <p>MT4/MT5 が動いている PC の Chrome または Edge でこのアプリを開いてください。</p>
+                  <div className="bg-[#0a0e17] rounded-lg p-3 space-y-1.5 border border-[#1f2d40]">
+                    <div className="flex items-start gap-2"><span className="text-purple-400 flex-shrink-0">①</span><span>下の入力欄に GitHub ユーザー名・リポジトリ名・Token を入力して「接続して同期」をタップ</span></div>
+                    <div className="flex items-start gap-2"><span className="text-purple-400 flex-shrink-0">②</span><span>ページ上部の「📁 MTExport フォルダを選択」をクリックして <span className="font-mono text-slate-300">%USERPROFILE%\MTExport</span> を選択</span></div>
+                    <div className="flex items-start gap-2"><span className="text-purple-400 flex-shrink-0">③</span><span>以後は MT4/MT5 がデータを書き出すたびに、ブラウザが自動で GitHub へアップロードします（5分ごと）</span></div>
                   </div>
-
-                  {/* コマンド② */}
-                  <div>
-                    <div className="text-slate-400 mb-1 font-medium">② 動作確認（Token・Owner・Repo を書き換えて実行）</div>
-                    <div className="flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded-lg px-3 py-2 overflow-x-auto">
-                      <code className="text-green-400 font-mono flex-1 whitespace-nowrap text-[11px]">{'& "$env:USERPROFILE\\Downloads\\sync-to-github.ps1" -Token "ghp_xxxx" -Owner "yourname" -Repo "mt4-report-data"'}</code>
-                      <button onClick={() => navigator.clipboard.writeText('& "$env:USERPROFILE\\Downloads\\sync-to-github.ps1" -Token "ghp_xxxx" -Owner "yourname" -Repo "mt4-report-data"')}
-                        className="text-slate-600 hover:text-slate-300 flex-shrink-0 ml-1" title="コピー">⎘</button>
-                    </div>
-                    <div className="text-slate-600 mt-1"><span className="text-emerald-500">[OK] mt4_report_xxxx.json</span> と表示されれば成功</div>
-                  </div>
-
-                  {/* コマンド③ */}
-                  <div>
-                    <div className="text-slate-400 mb-1 font-medium">③ タスクスケジューラに登録（5分ごと自動実行）</div>
-                    <div className="text-slate-500 mb-1">Token・Owner・Repo の部分を書き換えてから実行</div>
-                    <div className="flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded-lg px-3 py-2 overflow-x-auto">
-                      <code className="text-green-400 font-mono flex-1 whitespace-nowrap text-[11px]">{'schtasks /create /tn "MTExportSync" /sc minute /mo 5 /f /tr "powershell -NonInteractive -WindowStyle Hidden -File %USERPROFILE%\\Downloads\\sync-to-github.ps1 -Token ghp_xxxx -Owner yourname -Repo mt4-report-data"'}</code>
-                      <button onClick={() => navigator.clipboard.writeText('schtasks /create /tn "MTExportSync" /sc minute /mo 5 /f /tr "powershell -NonInteractive -WindowStyle Hidden -File %USERPROFILE%\\Downloads\\sync-to-github.ps1 -Token ghp_xxxx -Owner yourname -Repo mt4-report-data"')}
-                        className="text-slate-600 hover:text-slate-300 flex-shrink-0 ml-1" title="コピー">⎘</button>
-                    </div>
-                    <div className="text-slate-600 mt-1">「スケジュール タスク "MTExportSync" を作成しました。」と表示されれば完了</div>
-                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 text-amber-400 mt-2">
-                      ⚠ <span className="font-semibold">PowerShell から実行する場合の注意:</span> パスを <code className="font-mono bg-black/30 px-1 rounded">\"...\"</code> で囲むと PowerShell が <code className="font-mono bg-black/30 px-1 rounded">\"</code> を文字列の終端として誤解釈し「無効な引数」エラーになります。上のコマンドはパスを引用符なしで指定しているため問題ありません。ユーザー名にスペースが含まれる場合は代わりにコマンドプロンプト（Win+R → <code className="font-mono bg-black/30 px-1 rounded">cmd</code>）から実行してください。
-                    </div>
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2 text-emerald-400">
+                    ✓ タスクスケジューラや PS1 スクリプトは不要です
                   </div>
                 </div>
               </div>
@@ -827,10 +792,25 @@ export default function App() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-purple-600/30 text-purple-400 text-xs flex items-center justify-center font-bold flex-shrink-0">4</span>
-                  <span className="font-semibold text-slate-200">このアプリに接続</span>
+                  <span className="font-semibold text-slate-200">スマホで接続</span>
+                </div>
+                <div className="ml-7 space-y-2 text-slate-400">
+                  <div className="bg-[#0a0e17] rounded-lg p-3 space-y-1.5 border border-[#1f2d40]">
+                    <div className="flex items-start gap-2"><span className="text-purple-400 flex-shrink-0">①</span><span>スマホのブラウザでこのアプリ（Vercel の URL）を開く</span></div>
+                    <div className="flex items-start gap-2"><span className="text-purple-400 flex-shrink-0">②</span><span>右上の「GH 設定」をタップ → 同じ GitHub 情報を入力して「接続して同期」</span></div>
+                    <div className="flex items-start gap-2"><span className="text-purple-400 flex-shrink-0">③</span><span>以後は 5 分ごとに GitHub から最新データを自動取得します</span></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 入力フォーム */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-purple-600/30 text-purple-400 text-xs flex items-center justify-center font-bold flex-shrink-0">↓</span>
+                  <span className="font-semibold text-slate-200">GitHub 接続情報を入力</span>
                 </div>
                 <div className="ml-7 space-y-2">
-                  <p className="text-slate-400">STEP 1〜3 が完了したら、以下に入力して接続してください。</p>
+                  <p className="text-slate-400">STEP 1〜2 が完了したら入力してください。PC・スマホそれぞれで設定します。</p>
                   <input type="text" placeholder="GitHub ユーザー名 (例: tomoki)"
                     value={ghOwner} onChange={e => setGhOwner(e.target.value)}
                     className="w-full bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-3 py-2 text-slate-300 placeholder-slate-600 focus:outline-none focus:border-purple-500" />

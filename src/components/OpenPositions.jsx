@@ -1,27 +1,61 @@
+import { useState, useMemo } from 'react'
+
 export default function OpenPositions({ positions, aliases = {} }) {
-  if (!positions || positions.length === 0) return null
+  const [selectedAccount, setSelectedAccount] = useState(null)
+
+  const accounts = useMemo(() => {
+    const seen = new Set()
+    return positions.filter(p => { const ok = !seen.has(p.account); seen.add(p.account); return ok })
+                    .map(p => p.account)
+  }, [positions])
+
+  const filtered = selectedAccount ? positions.filter(p => p.account === selectedAccount) : positions
+
+  const totalProfit = filtered.reduce((s, p) => s + p.profit + p.swap, 0)
+  const isProfit = totalProfit >= 0
 
   const displayName = (name) => aliases[name] || name
 
-  const totalProfit = positions.reduce((s, p) => s + p.profit + p.swap, 0)
-  const isProfit = totalProfit >= 0
+  if (!positions || positions.length === 0) return null
 
   return (
     <div className="bg-[#111827] border border-[#1f2d40] rounded-xl overflow-hidden">
-      <div className="px-4 py-3 border-b border-[#1f2d40] flex items-center justify-between">
+      <div className="px-4 py-3 border-b border-[#1f2d40] flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-sm font-semibold text-slate-300">保有ポジション</span>
-          <span className="text-xs text-slate-500">{positions.length} 件</span>
+          <span className="text-xs text-slate-500">{filtered.length} 件</span>
         </div>
-        <div className={`font-mono text-sm font-bold ${isProfit ? 'text-emerald-400' : 'text-red-400'}`}>
-          {isProfit ? '+' : ''}{totalProfit.toFixed(2)}
+        <div className="flex items-center gap-2 flex-wrap">
+          {accounts.length > 1 && (
+            <div className="flex items-center gap-1 flex-wrap">
+              <button
+                onClick={() => setSelectedAccount(null)}
+                className={`text-xs px-2 py-0.5 rounded-lg transition-colors ${!selectedAccount ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                全口座
+              </button>
+              {accounts.map(acc => (
+                <button
+                  key={acc}
+                  onClick={() => setSelectedAccount(selectedAccount === acc ? null : acc)}
+                  className={`text-xs px-2 py-0.5 rounded-lg transition-colors truncate max-w-[120px] ${selectedAccount === acc ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                  title={displayName(acc)}
+                >
+                  {displayName(acc)}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className={`font-mono text-sm font-bold ${isProfit ? 'text-emerald-400' : 'text-red-400'}`}>
+            {isProfit ? '+' : ''}{totalProfit.toFixed(2)}
+          </div>
         </div>
       </div>
 
       {/* モバイルカードビュー */}
       <div className="sm:hidden divide-y divide-[#1f2d40]">
-        {positions.map((p, i) => {
+        {filtered.map((p, i) => {
           const net = p.profit + p.swap
           const isLong = p.type === 'buy'
           return (
@@ -41,8 +75,8 @@ export default function OpenPositions({ positions, aliases = {} }) {
               <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
                 <span>建値 <span className="text-slate-400 font-mono">{p.openPrice}</span></span>
                 <span>現在値 <span className="text-slate-400 font-mono">{p.currentPrice}</span></span>
-                {p.comment && p.comment !== 'Manual' && (
-                  <span className="text-blue-400 truncate">{displayName(p.comment)}</span>
+                {accounts.length > 1 && (
+                  <span className="text-slate-600 truncate">{displayName(p.account)}</span>
                 )}
               </div>
             </div>
@@ -55,6 +89,7 @@ export default function OpenPositions({ positions, aliases = {} }) {
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-[#1f2d40] text-slate-500">
+              {accounts.length > 1 && <th className="px-4 py-2.5 text-left font-medium">口座</th>}
               <th className="px-4 py-2.5 text-left font-medium">通貨ペア</th>
               <th className="px-3 py-2.5 text-left font-medium">種別</th>
               <th className="px-3 py-2.5 text-right font-medium">ロット</th>
@@ -64,15 +99,18 @@ export default function OpenPositions({ positions, aliases = {} }) {
               <th className="px-3 py-2.5 text-right font-medium">スワップ</th>
               <th className="px-3 py-2.5 text-right font-medium">SL</th>
               <th className="px-3 py-2.5 text-right font-medium">TP</th>
-              <th className="px-3 py-2.5 text-left font-medium">EA / コメント</th>
             </tr>
           </thead>
           <tbody>
-            {positions.map((p, i) => {
-              const net = p.profit + p.swap
+            {filtered.map((p, i) => {
               const isLong = p.type === 'buy'
               return (
                 <tr key={i} className="border-b border-[#1f2d40]/50 hover:bg-[#1a2235]/40 transition-colors">
+                  {accounts.length > 1 && (
+                    <td className="px-4 py-2.5 text-slate-400 max-w-[150px] truncate" title={displayName(p.account)}>
+                      {displayName(p.account)}
+                    </td>
+                  )}
                   <td className="px-4 py-2.5 font-semibold text-slate-200">{p.symbol}</td>
                   <td className="px-3 py-2.5">
                     <span className={`font-bold px-1.5 py-0.5 rounded ${isLong ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
@@ -90,7 +128,6 @@ export default function OpenPositions({ positions, aliases = {} }) {
                   </td>
                   <td className="px-3 py-2.5 text-right font-mono text-slate-500">{p.sl || '—'}</td>
                   <td className="px-3 py-2.5 text-right font-mono text-slate-500">{p.tp || '—'}</td>
-                  <td className="px-3 py-2.5 text-slate-400 max-w-[120px] truncate">{p.comment}</td>
                 </tr>
               )
             })}

@@ -470,11 +470,6 @@ export default function App() {
               {hasData && <span className="text-xs text-slate-600 ml-1 hidden sm:inline">{accounts.length} 口座</span>}
             </div>
             <div className="flex items-center gap-2">
-              {lastUpdated && (
-                <span className="text-xs text-slate-600 hidden md:inline">
-                  最終更新 {fmtTime(lastUpdated)}
-                </span>
-              )}
               {secondsLeft != null && (
                 <span className="text-xs text-slate-600 tabular-nums hidden md:inline">
                   次回 {fmtCountdown(secondsLeft)}

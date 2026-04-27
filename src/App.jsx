@@ -146,6 +146,8 @@ export default function App() {
   const [ghRepo,           setGhRepo]           = useState('')
   const [ghToken,          setGhToken]          = useState('')
   const [ghRequesting,     setGhRequesting]     = useState(false)
+  const [ghToast,          setGhToast]          = useState(null)
+  const ghToastTimerRef = useRef(null)
 
   const [accSort, setAccSort] = useState({ key: 'profit', dir: 'desc' })
   const onAccSort = useCallback((col) => {
@@ -351,6 +353,13 @@ export default function App() {
   useEffect(() => { githubSettingsRef.current = githubSettings }, [githubSettings])
   useEffect(() => { dirHandleRef.current = dirHandle }, [dirHandle])
 
+  // ── トースト表示 ─────────────────────────────────────
+  const showToast = useCallback((msg) => {
+    setGhToast(msg)
+    clearTimeout(ghToastTimerRef.current)
+    ghToastTimerRef.current = setTimeout(() => setGhToast(null), 5000)
+  }, [])
+
   // ── スマホ → PC への更新リクエスト ────────────────────
   const requestGitHubRefresh = useCallback(async () => {
     if (!githubSettings || ghRequesting) return
@@ -359,12 +368,16 @@ export default function App() {
     setLoading(true)
     try {
       await writeTrigger(githubSettings)
-      // PC がトリガーを処理するまで最大40秒ポーリング
+      let timedOut = true
       const deadline = Date.now() + 40000
       while (Date.now() < deadline) {
         await new Promise(r => setTimeout(r, 3000))
         const t = await checkTrigger(githubSettings)
-        if (!t) break  // PC がトリガーを削除した = 処理完了
+        if (!t) { timedOut = false; break }
+      }
+      if (timedOut) {
+        try { const t = await checkTrigger(githubSettings); if (t) await deleteTrigger(githubSettings, t.sha) } catch {}
+        showToast('PC が応答しませんでした。PC の起動とブラウザを確認してください。')
       }
       await syncFromGitHub(githubSettings)
     } catch (e) {
@@ -374,7 +387,7 @@ export default function App() {
       setGhRequesting(false)
       setLoading(false)
     }
-  }, [githubSettings, ghRequesting, syncFromGitHub])
+  }, [githubSettings, ghRequesting, syncFromGitHub, showToast])
 
   // ── PC: GitHub トリガー監視（30秒ごと） ──────────────
   useEffect(() => {
@@ -744,6 +757,13 @@ export default function App() {
             <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
             <span className="text-sm">{loadingMsg}</span>
           </div>
+        </div>
+      )}
+
+      {/* トースト通知 */}
+      {ghToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#1f2d40] border border-amber-500/40 text-amber-400 text-xs px-4 py-2.5 rounded-full shadow-lg z-50 max-w-[90vw] text-center">
+          {ghToast}
         </div>
       )}
 

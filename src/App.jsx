@@ -468,11 +468,6 @@ export default function App() {
               {hasData && <span className="text-xs text-slate-600 ml-1 hidden sm:inline">{accounts.length} 口座</span>}
             </div>
             <div className="flex items-center gap-2">
-              {secondsLeft != null && (
-                <span className="text-xs text-slate-600 tabular-nums">
-                  次回 {fmtCountdown(secondsLeft)}
-                </span>
-              )}
               {dirHandle && (
                 <button onClick={() => reloadFolder(true)}
                   className="text-xs text-blue-400 hover:text-blue-300 transition-colors bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg">

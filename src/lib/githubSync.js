@@ -40,3 +40,40 @@ export async function fetchReportFilesFromGitHub({ owner, repo, token }) {
   }
   return files
 }
+
+export async function pushFilesToGitHub({ owner, repo, token }, files) {
+  const headers = {
+    Authorization: `token ${token}`,
+    Accept: 'application/vnd.github.v3+json',
+    'Content-Type': 'application/json',
+  }
+
+  for (const file of files) {
+    const text = await file.text()
+    const bytes = new TextEncoder().encode(text)
+    let binary = ''
+    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+    const b64 = btoa(binary)
+
+    let sha = null
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/contents/${file.name}`,
+        { headers }
+      )
+      if (res.ok) sha = (await res.json()).sha
+    } catch {}
+
+    const body = { message: `sync: ${file.name}`, content: b64 }
+    if (sha) body.sha = sha
+
+    const res = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/contents/${file.name}`,
+      { method: 'PUT', headers, body: JSON.stringify(body) }
+    )
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(`${file.name}: ${err.message || res.status}`)
+    }
+  }
+}

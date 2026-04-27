@@ -9,7 +9,7 @@ import {
 import { INSTALL_BAT, MQ4_CONTENT, MQ5_CONTENT } from './lib/downloadFiles'
 import {
   loadGitHubSettings, saveGitHubSettings, clearGitHubSettings,
-  fetchReportFilesFromGitHub,
+  fetchReportFilesFromGitHub, pushFilesToGitHub,
 } from './lib/githubSync'
 import UploadZone from './components/UploadZone'
 import StatCard from './components/StatCard'
@@ -149,9 +149,10 @@ export default function App() {
   const [lastUpdated,  setLastUpdated] = useState(null)
   const [secondsLeft,  setSecondsLeft] = useState(null)
   const [nextExportAt, setNextExportAt] = useState(null)
-  const autoLoadDoneRef   = useRef(false)
-  const lastModifiedRef   = useRef(new Map())
-  const reloadFolderRef   = useRef(null)
+  const autoLoadDoneRef     = useRef(false)
+  const lastModifiedRef     = useRef(new Map())
+  const reloadFolderRef     = useRef(null)
+  const githubSettingsRef   = useRef(githubSettings)
 
   // ── ファイル解析 ──────────────────────────────────────
   const parseFiles = useCallback(async (files) => {
@@ -210,10 +211,21 @@ export default function App() {
         if (f.lastModified > maxModified) maxModified = f.lastModified
       }
       if (maxModified > 0) setNextExportAt(maxModified + EXPORT_INTERVAL_MS)
+
+      // GitHub 設定済みなら JSON ファイルを自動プッシュ
+      const gs = githubSettingsRef.current
+      if (gs) {
+        const jsonFiles = files.filter(f => /\.json$/i.test(f.name))
+        if (jsonFiles.length > 0) {
+          setLoadingMsg('GitHub へ同期中…')
+          try { await pushFilesToGitHub(gs, jsonFiles) }
+          catch (e) { console.error('GitHub push error:', e) }
+        }
+      }
     } catch (e) {
       console.error('Folder read error:', e)
     }
-    setLastUpdated(new Date()) // エラー時も時刻は更新
+    setLastUpdated(new Date())
     setLoading(false)
   }, [parseFiles])
 
@@ -316,8 +328,9 @@ export default function App() {
     })()
   }, [loadFromDir])
 
-  // ── reloadFolderRef を常に最新に保つ ─────────────
+  // ── reloadFolderRef / githubSettingsRef を常に最新に保つ ──
   useEffect(() => { reloadFolderRef.current = reloadFolder }, [reloadFolder])
+  useEffect(() => { githubSettingsRef.current = githubSettings }, [githubSettings])
 
   // ── GitHub 自動更新（5分ごと） ───────────────────────
   useEffect(() => {

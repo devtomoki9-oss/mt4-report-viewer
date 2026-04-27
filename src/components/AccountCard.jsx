@@ -1,12 +1,22 @@
 import { useState } from 'react'
 
-export default function AccountCard({ account, onRemove, aliases = {}, setAlias }) {
+const SORT_VALUE = {
+  profit:      (s) => ({ label: '純益',   value: (s.totalProfit >= 0 ? '+' : '') + s.totalProfit.toFixed(2), color: s.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400' }),
+  trades:      (s) => ({ label: '取引数', value: String(s.totalTrades),                                       color: 'text-slate-300' }),
+  pf:          (s) => ({ label: 'PF',     value: isFinite(s.profitFactor) ? s.profitFactor.toFixed(2) : '∞', color: 'text-blue-400'  }),
+  winRate:     (s) => ({ label: '勝率',   value: s.winRate.toFixed(1) + '%',                                  color: 'text-slate-300' }),
+  maxDrawdown: (s) => ({ label: '最大DD', value: s.maxDrawdown.toFixed(2),                                    color: 'text-amber-400' }),
+  name:        (s) => ({ label: '純益',   value: (s.totalProfit >= 0 ? '+' : '') + s.totalProfit.toFixed(2), color: s.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400' }),
+}
+
+export default function AccountCard({ account, onRemove, aliases = {}, setAlias, sortKey = 'profit' }) {
   const [expanded, setExpanded] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editValue, setEditValue] = useState('')
   const { account: info, stats } = account
   const isProfit = stats.totalProfit >= 0
   const displayName = aliases[info.name] || info.name
+  const sortVal = (SORT_VALUE[sortKey] || SORT_VALUE.profit)(stats)
 
   const fmt = (n) => {
     const abs = Math.abs(n).toFixed(2)
@@ -74,15 +84,22 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias 
           </div>
         </div>
         <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-          <div className={`font-mono text-sm font-bold ${isProfit ? 'text-emerald-400' : 'text-red-400'}`}>
-            {fmt(stats.totalProfit)}
+          <div className="hidden sm:flex items-center gap-1 text-xs text-slate-600 font-mono">
+            <span>{sortVal.label}</span>
           </div>
-          <div className="text-xs text-slate-500 font-mono hidden sm:block">
-            WR {stats.winRate.toFixed(1)}%
+          <div className={`font-mono text-sm font-bold ${sortVal.color}`}>
+            {sortVal.value}
           </div>
-          <div className="text-xs text-slate-500 font-mono hidden sm:block">
-            PF {isFinite(stats.profitFactor) ? stats.profitFactor.toFixed(2) : '∞'}
-          </div>
+          {sortKey !== 'winRate' && (
+            <div className="text-xs text-slate-500 font-mono hidden sm:block">
+              WR {stats.winRate.toFixed(1)}%
+            </div>
+          )}
+          {sortKey !== 'pf' && (
+            <div className="text-xs text-slate-500 font-mono hidden sm:block">
+              PF {isFinite(stats.profitFactor) ? stats.profitFactor.toFixed(2) : '∞'}
+            </div>
+          )}
           <button
             onClick={e => { e.stopPropagation(); onRemove() }}
             className="text-slate-600 hover:text-red-400 transition-colors text-sm px-1"

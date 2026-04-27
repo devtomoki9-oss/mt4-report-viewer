@@ -703,7 +703,7 @@ export default function App() {
                       </div>
                       <div className="space-y-2">
                         {sortedFilteredAccStats.map((acc) => (
-                          <AccountCard key={acc.account.name} account={acc} onRemove={() => removeAccount(acc.account.name)} aliases={aliases} setAlias={setAlias} />
+                          <AccountCard key={acc.account.name} account={acc} onRemove={() => removeAccount(acc.account.name)} aliases={aliases} setAlias={setAlias} sortKey={accSort.key} />
                         ))}
                       </div>
                     </div>

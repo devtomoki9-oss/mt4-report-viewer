@@ -488,12 +488,14 @@ export default function App() {
               )}
               {githubSettings ? (
                 <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => dirHandle ? syncFromGitHub() : requestGitHubRefresh()}
-                    disabled={ghRequesting}
-                    className="text-xs text-purple-400 hover:text-purple-300 disabled:opacity-50 transition-colors bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 rounded-lg">
-                    {ghRequesting ? '…' : dirHandle ? '↻ GitHub' : '↻ 更新'}
-                  </button>
+                  {!dirHandle && (
+                    <button
+                      onClick={requestGitHubRefresh}
+                      disabled={ghRequesting}
+                      className="text-xs text-purple-400 hover:text-purple-300 disabled:opacity-50 transition-colors bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 rounded-lg">
+                      {ghRequesting ? '…' : '↻ 更新'}
+                    </button>
+                  )}
                   <button onClick={() => { setGhOwner(githubSettings.owner); setGhRepo(githubSettings.repo); setGhToken(githubSettings.token); setShowGitHubModal(true) }}
                     className="text-slate-600 hover:text-purple-400 transition-colors px-1 py-1.5 text-sm" title="GitHub 設定">
                     ⚙

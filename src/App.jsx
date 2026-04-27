@@ -7,6 +7,10 @@ import {
   FOLDER_KEY, supportsFileSystemAccess
 } from './lib/folderStore'
 import { INSTALL_BAT, MQ4_CONTENT, MQ5_CONTENT } from './lib/downloadFiles'
+import {
+  loadGitHubSettings, saveGitHubSettings, clearGitHubSettings,
+  fetchReportFilesFromGitHub,
+} from './lib/githubSync'
 import UploadZone from './components/UploadZone'
 import StatCard from './components/StatCard'
 import AccountCard from './components/AccountCard'
@@ -22,6 +26,49 @@ const TABS = [
 ]
 
 const EXPORT_INTERVAL_MS = 5 * 60 * 1000 // EA の RefreshMinutes に合わせる
+const GITHUB_INTERVAL_MS = 5 * 60 * 1000
+
+const SYNC_PS1 = `# MTExport フォルダの JSON を GitHub プライベートリポジトリへ同期
+#
+# 使い方:
+#   Unblock-File ".\\sync-to-github.ps1"
+#   .\\sync-to-github.ps1 -Token "ghp_xxxx" -Owner "ユーザー名" -Repo "mt4-report-data"
+#
+# タスクスケジューラ登録（5分ごと）:
+#   schtasks /create /tn "MTExportSync" /sc minute /mo 5 /f /tr "powershell -NonInteractive -File \\"%USERPROFILE%\\Downloads\\sync-to-github.ps1\\" -Token ghp_xxxx -Owner yourname -Repo mt4-report-data"
+
+param(
+    [Parameter(Mandatory)][string]$Token,
+    [Parameter(Mandatory)][string]$Owner,
+    [Parameter(Mandatory)][string]$Repo,
+    [string]$Folder = "$env:USERPROFILE\\MTExport"
+)
+
+$headers = @{
+    Authorization = "token $Token"
+    "User-Agent"  = "MTExporter-Sync/1.0"
+    Accept        = "application/vnd.github.v3+json"
+}
+
+$files = Get-ChildItem -Path $Folder -Filter "*.json" -ErrorAction SilentlyContinue
+if (-not $files) { Write-Host "JSON ファイルなし: $Folder"; exit 0 }
+
+foreach ($file in $files) {
+    $b64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes($file.FullName))
+    $sha = $null
+    try {
+        $existing = Invoke-RestMethod "https://api.github.com/repos/$Owner/$Repo/contents/$($file.Name)" -Headers $headers -ErrorAction Stop
+        $sha = $existing.sha
+    } catch {}
+    $body = @{ message = "sync: $($file.Name)"; content = $b64 }
+    if ($sha) { $body.sha = $sha }
+    try {
+        Invoke-RestMethod "https://api.github.com/repos/$Owner/$Repo/contents/$($file.Name)" -Method Put -Headers $headers -Body ($body | ConvertTo-Json -Depth 3) -ContentType "application/json" | Out-Null
+        Write-Host "[OK] $($file.Name)"
+    } catch { Write-Warning "[NG] $($file.Name): $($_.Exception.Message)" }
+}
+Write-Host "同期完了"
+`
 
 const ACC_SORT_FNS = {
   name:        (a) => a.account.name ?? '',
@@ -84,6 +131,12 @@ export default function App() {
     })
   }, [])
 
+  const [githubSettings,   setGitHubSettings]   = useState(() => loadGitHubSettings())
+  const [showGitHubModal,  setShowGitHubModal]  = useState(false)
+  const [ghOwner,          setGhOwner]          = useState('')
+  const [ghRepo,           setGhRepo]           = useState('')
+  const [ghToken,          setGhToken]          = useState('')
+
   const [accSort, setAccSort] = useState({ key: 'profit', dir: 'desc' })
   const onAccSort = useCallback((col) => {
     setAccSort(s => s.key === col
@@ -117,6 +170,29 @@ export default function App() {
     }
     return results
   }, [])
+
+  // ── GitHub から同期 ───────────────────────────────────
+  const syncFromGitHub = useCallback(async (settings) => {
+    const s = settings ?? githubSettings
+    if (!s) return
+    setLoading(true)
+    setLoadingMsg('GitHub から取得中…')
+    try {
+      const files   = await fetchReportFilesFromGitHub(s)
+      const results = await parseFiles(files)
+      setAccounts(prev => {
+        const byName = new Map(prev.map(a => [a.account.name, a]))
+        results.forEach(r => byName.set(r.account.name, r))
+        return [...byName.values()]
+      })
+      setLastUpdated(new Date())
+    } catch (e) {
+      console.error('GitHub sync error:', e)
+      throw e
+    } finally {
+      setLoading(false)
+    }
+  }, [githubSettings, parseFiles])
 
   // ── フォルダから読み込み ──────────────────────────────
   const loadFromDir = useCallback(async (handle) => {
@@ -243,6 +319,13 @@ export default function App() {
   // ── reloadFolderRef を常に最新に保つ ─────────────
   useEffect(() => { reloadFolderRef.current = reloadFolder }, [reloadFolder])
 
+  // ── GitHub 自動更新（5分ごと） ───────────────────────
+  useEffect(() => {
+    if (!githubSettings) return
+    const id = setInterval(() => syncFromGitHub(), GITHUB_INTERVAL_MS)
+    return () => clearInterval(id)
+  }, [githubSettings, syncFromGitHub])
+
   // ── 30秒ポーリング（変化検知） ────────────────────
   useEffect(() => {
     if (!dirHandle) return
@@ -332,23 +415,38 @@ export default function App() {
               {hasData && <span className="text-xs text-slate-600 ml-1 hidden sm:inline">{accounts.length} 口座</span>}
             </div>
             <div className="flex items-center gap-2">
+              {lastUpdated && (
+                <span className="text-xs text-slate-600 hidden md:inline">
+                  最終更新 {fmtTime(lastUpdated)}
+                </span>
+              )}
+              {secondsLeft != null && (
+                <span className="text-xs text-slate-600 tabular-nums hidden md:inline">
+                  次回 {fmtCountdown(secondsLeft)}
+                </span>
+              )}
               {dirHandle && (
-                <div className="flex items-center gap-2">
-                  {lastUpdated && (
-                    <span className="text-xs text-slate-600 hidden md:inline">
-                      最終更新 {fmtTime(lastUpdated)}
-                    </span>
-                  )}
-                  {secondsLeft != null && (
-                    <span className="text-xs text-slate-600 tabular-nums hidden md:inline">
-                      次回 {fmtCountdown(secondsLeft)}
-                    </span>
-                  )}
-                  <button onClick={() => reloadFolder(true)}
-                    className="text-xs text-blue-400 hover:text-blue-300 transition-colors bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg">
-                    ↻ 更新
+                <button onClick={() => reloadFolder(true)}
+                  className="text-xs text-blue-400 hover:text-blue-300 transition-colors bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg">
+                  ↻ 更新
+                </button>
+              )}
+              {githubSettings ? (
+                <div className="flex items-center gap-1">
+                  <button onClick={() => syncFromGitHub()}
+                    className="text-xs text-purple-400 hover:text-purple-300 transition-colors bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 rounded-lg">
+                    ↻ GitHub
+                  </button>
+                  <button onClick={() => { setGhOwner(githubSettings.owner); setGhRepo(githubSettings.repo); setGhToken(githubSettings.token); setShowGitHubModal(true) }}
+                    className="text-slate-600 hover:text-purple-400 transition-colors px-1 py-1.5 text-sm" title="GitHub 設定">
+                    ⚙
                   </button>
                 </div>
+              ) : (
+                <button onClick={() => setShowGitHubModal(true)}
+                  className="text-xs text-slate-500 hover:text-purple-400 transition-colors border border-[#1f2d40] hover:border-purple-500/30 px-3 py-1.5 rounded-lg hidden sm:block">
+                  GitHub 同期
+                </button>
               )}
               {hasData && (
                 <>
@@ -573,6 +671,75 @@ export default function App() {
           <div className="bg-[#111827] border border-[#1f2d40] rounded-2xl px-8 py-6 text-slate-300 flex items-center gap-4">
             <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
             <span className="text-sm">{loadingMsg}</span>
+          </div>
+        </div>
+      )}
+
+      {/* GitHub 同期設定モーダル */}
+      {showGitHubModal && (
+        <div className="fixed inset-0 bg-[#0a0e17]/80 backdrop-blur flex items-end sm:items-center justify-center z-50 p-4">
+          <div className="bg-[#111827] border border-[#1f2d40] rounded-2xl w-full max-w-md">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#1f2d40]">
+              <div>
+                <div className="text-sm font-semibold text-slate-100">GitHub 同期設定</div>
+                <div className="text-xs text-slate-500 mt-0.5">PC の MTExport フォルダをスマホで閲覧</div>
+              </div>
+              <button onClick={() => setShowGitHubModal(false)} className="text-slate-600 hover:text-slate-300 text-lg px-1">✕</button>
+            </div>
+            <div className="px-5 py-4 space-y-4">
+              <div className="space-y-1.5 text-xs text-slate-400">
+                <div className="font-semibold text-slate-300 mb-2">セットアップ手順</div>
+                <div>1. GitHub でプライベートリポジトリを作成（例: <span className="text-purple-300 font-mono">mt4-report-data</span>）</div>
+                <div>2. Settings → Developer settings → Personal access tokens → <span className="text-purple-300">repo</span> スコープで発行</div>
+                <div>3. 下の PS1 スクリプトを PC にダウンロードしてタスクスケジューラに登録</div>
+              </div>
+              <button onClick={() => downloadText(SYNC_PS1, 'sync-to-github.ps1')}
+                className="text-xs text-purple-400 hover:text-purple-300 bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 rounded-lg transition-colors">
+                ↓ sync-to-github.ps1
+              </button>
+              <div className="space-y-2">
+                <div className="text-xs font-semibold text-slate-300">接続設定</div>
+                <input type="text" placeholder="GitHub ユーザー名 (owner)"
+                  value={ghOwner} onChange={e => setGhOwner(e.target.value)}
+                  className="w-full bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-3 py-2 text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-purple-500" />
+                <input type="text" placeholder="リポジトリ名 (例: mt4-report-data)"
+                  value={ghRepo} onChange={e => setGhRepo(e.target.value)}
+                  className="w-full bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-3 py-2 text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-purple-500" />
+                <input type="password" placeholder="Personal Access Token (ghp_xxxx)"
+                  value={ghToken} onChange={e => setGhToken(e.target.value)}
+                  className="w-full bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-3 py-2 text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-purple-500" />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  disabled={!ghOwner || !ghRepo || !ghToken}
+                  onClick={async () => {
+                    const s = { owner: ghOwner.trim(), repo: ghRepo.trim(), token: ghToken.trim() }
+                    try {
+                      await syncFromGitHub(s)
+                      saveGitHubSettings(s)
+                      setGitHubSettings(s)
+                      setShowGitHubModal(false)
+                    } catch (e) {
+                      alert(`接続エラー: ${e.message}`)
+                    }
+                  }}
+                  className="flex-1 text-xs bg-purple-600 hover:bg-purple-500 disabled:opacity-30 disabled:cursor-not-allowed text-white px-3 py-2 rounded-lg transition-colors font-medium">
+                  接続して同期
+                </button>
+                {githubSettings && (
+                  <button
+                    onClick={() => { clearGitHubSettings(); setGitHubSettings(null); setShowGitHubModal(false) }}
+                    className="text-xs text-slate-500 hover:text-red-400 px-3 py-2 rounded-lg border border-[#1f2d40] transition-colors">
+                    設定削除
+                  </button>
+                )}
+              </div>
+              {githubSettings && (
+                <div className="text-xs text-purple-400">
+                  ✓ {githubSettings.owner}/{githubSettings.repo} に接続済み
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -10,7 +10,6 @@ import { INSTALL_BAT, MQ4_CONTENT, MQ5_CONTENT } from './lib/downloadFiles'
 import {
   loadGitHubSettings, saveGitHubSettings, clearGitHubSettings,
   fetchReportFilesFromGitHub, pushFilesToGitHub,
-  writeTrigger, checkTrigger, deleteTrigger,
 } from './lib/githubSync'
 import UploadZone from './components/UploadZone'
 import StatCard from './components/StatCard'
@@ -351,48 +350,19 @@ export default function App() {
   useEffect(() => { githubSettingsRef.current = githubSettings }, [githubSettings])
   useEffect(() => { dirHandleRef.current = dirHandle }, [dirHandle])
 
-  // ── スマホ → PC への更新リクエスト ────────────────────
+  // ── スマホ: GitHub から直接同期 ────────────────────────
   const requestGitHubRefresh = useCallback(async () => {
     if (!githubSettings || ghRequesting) return
     setGhRequesting(true)
-    setLoadingMsg('PC に更新をリクエスト中…')
-    setLoading(true)
     try {
-      await writeTrigger(githubSettings)
-      let timedOut = true
-      const deadline = Date.now() + 40000
-      while (Date.now() < deadline) {
-        await new Promise(r => setTimeout(r, 3000))
-        const t = await checkTrigger(githubSettings)
-        if (!t) { timedOut = false; break }
-      }
-      if (timedOut) {
-        try { const t = await checkTrigger(githubSettings); if (t) await deleteTrigger(githubSettings, t.sha) } catch {}
-      }
       await syncFromGitHub(githubSettings)
     } catch (e) {
-      console.error('Request refresh error:', e)
-      try { await syncFromGitHub(githubSettings) } catch {}
+      console.error('GitHub sync error:', e)
     } finally {
       setGhRequesting(false)
-      setLoading(false)
     }
   }, [githubSettings, ghRequesting, syncFromGitHub])
 
-  // ── PC: GitHub トリガー監視（30秒ごと） ──────────────
-  useEffect(() => {
-    if (!dirHandle || !githubSettings) return
-    const poll = async () => {
-      try {
-        const t = await checkTrigger(githubSettings)
-        if (!t) return
-        await deleteTrigger(githubSettings, t.sha)
-        reloadFolderRef.current?.(true)
-      } catch {}
-    }
-    const id = setInterval(poll, 30 * 1000)
-    return () => clearInterval(id)
-  }, [dirHandle, githubSettings])
 
   // ── GitHub 自動更新（5分ごと） ───────────────────────
   useEffect(() => {

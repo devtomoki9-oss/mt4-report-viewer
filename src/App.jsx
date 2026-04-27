@@ -347,9 +347,11 @@ export default function App() {
   }, [loadFromDir, syncFromGitHub])
 
   // ── 各 ref を常に最新に保つ ──────────────────────────
-  useEffect(() => { reloadFolderRef.current = reloadFolder }, [reloadFolder])
-  useEffect(() => { githubSettingsRef.current = githubSettings }, [githubSettings])
-  useEffect(() => { dirHandleRef.current = dirHandle }, [dirHandle])
+  const syncFromGitHubRef = useRef(null)
+  useEffect(() => { reloadFolderRef.current    = reloadFolder    }, [reloadFolder])
+  useEffect(() => { syncFromGitHubRef.current  = syncFromGitHub  }, [syncFromGitHub])
+  useEffect(() => { githubSettingsRef.current  = githubSettings  }, [githubSettings])
+  useEffect(() => { dirHandleRef.current       = dirHandle       }, [dirHandle])
 
   // ── スマホ: GitHub から直接同期 ────────────────────────
   const requestGitHubRefresh = useCallback(async () => {
@@ -388,7 +390,8 @@ export default function App() {
       setSecondsLeft(s)
       if (s === 0 && !fired) {
         fired = true
-        reloadFolderRef.current?.(false)
+        if (dirHandleRef.current) reloadFolderRef.current?.(false)
+        else syncFromGitHubRef.current?.()
       }
     }
     update()

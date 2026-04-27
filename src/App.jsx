@@ -314,21 +314,27 @@ export default function App() {
     } catch (e) { console.error(e) }
   }, [dirHandle, loadFromDir])
 
-// ── 起動時: 登録済みフォルダを自動読み込み ───────────
+// ── 起動時: 登録済みフォルダ or GitHub から自動読み込み ──
   useEffect(() => {
     if (autoLoadDoneRef.current) return
     autoLoadDoneRef.current = true
     ;(async () => {
       try {
         const handle = await loadHandle(FOLDER_KEY)
-        if (!handle) return
-        const perm = await handle.queryPermission({ mode: 'read' })
-        setDirHandle(handle)
-  
-        if (perm === 'granted') await loadFromDir(handle)
+        if (handle) {
+          const perm = await handle.queryPermission({ mode: 'read' })
+          setDirHandle(handle)
+          if (perm === 'granted') {
+            await loadFromDir(handle)
+            return
+          }
+        }
+        // ローカルフォルダなし or 権限なし → GitHub から取得
+        const gs = loadGitHubSettings()
+        if (gs) await syncFromGitHub(gs)
       } catch (e) { console.error('Auto-load error:', e) }
     })()
-  }, [loadFromDir])
+  }, [loadFromDir, syncFromGitHub])
 
   // ── reloadFolderRef / githubSettingsRef を常に最新に保つ ──
   useEffect(() => { reloadFolderRef.current = reloadFolder }, [reloadFolder])

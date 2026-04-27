@@ -471,7 +471,7 @@ export default function App() {
             </div>
             <div className="flex items-center gap-2">
               {secondsLeft != null && (
-                <span className="text-xs text-slate-600 tabular-nums hidden md:inline">
+                <span className="text-xs text-slate-600 tabular-nums">
                   次回 {fmtCountdown(secondsLeft)}
                 </span>
               )}

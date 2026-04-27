@@ -1,10 +1,10 @@
-# MTExport フォルダの JSON ファイルを GitHub プライベートリポジトリへ同期
+# Sync JSON files from MTExport folder to a private GitHub repository
 #
-# 使い方:
+# Usage:
 #   Unblock-File ".\sync-to-github.ps1"
-#   .\sync-to-github.ps1 -Token "ghp_xxxx" -Owner "ユーザー名" -Repo "mt4-report-data"
+#   .\sync-to-github.ps1 -Token "ghp_xxxx" -Owner "yourname" -Repo "mt4-report-data"
 #
-# タスクスケジューラ登録（5分ごと自動実行）:
+# Register with Task Scheduler (run every 5 minutes):
 #   schtasks /create /tn "MTExportSync" /sc minute /mo 5 /f ^
 #     /tr "powershell -NonInteractive -File \"%USERPROFILE%\Downloads\sync-to-github.ps1\" -Token ghp_xxxx -Owner yourname -Repo mt4-report-data"
 
@@ -23,7 +23,7 @@ $headers = @{
 
 $files = Get-ChildItem -Path $Folder -Filter "*.json" -ErrorAction SilentlyContinue
 if (-not $files) {
-    Write-Host "JSON ファイルが見つかりません: $Folder"
+    Write-Host "No JSON files found: $Folder"
     exit 0
 }
 
@@ -50,4 +50,4 @@ foreach ($file in $files) {
     }
 }
 
-Write-Host "同期完了"
+Write-Host "Sync complete"

@@ -28,13 +28,13 @@ const TABS = [
 const EXPORT_INTERVAL_MS = 5 * 60 * 1000 // EA の RefreshMinutes に合わせる
 const GITHUB_INTERVAL_MS = 5 * 60 * 1000
 
-const SYNC_PS1 = `# MTExport フォルダの JSON を GitHub プライベートリポジトリへ同期
+const SYNC_PS1 = `# Sync JSON files from MTExport folder to a private GitHub repository
 #
-# 使い方:
+# Usage:
 #   Unblock-File ".\\sync-to-github.ps1"
-#   .\\sync-to-github.ps1 -Token "ghp_xxxx" -Owner "ユーザー名" -Repo "mt4-report-data"
+#   .\\sync-to-github.ps1 -Token "ghp_xxxx" -Owner "yourname" -Repo "mt4-report-data"
 #
-# タスクスケジューラ登録（5分ごと）:
+# Register with Task Scheduler (run every 5 minutes):
 #   schtasks /create /tn "MTExportSync" /sc minute /mo 5 /f /tr "powershell -NonInteractive -File \\"%USERPROFILE%\\Downloads\\sync-to-github.ps1\\" -Token ghp_xxxx -Owner yourname -Repo mt4-report-data"
 
 param(
@@ -51,7 +51,7 @@ $headers = @{
 }
 
 $files = Get-ChildItem -Path $Folder -Filter "*.json" -ErrorAction SilentlyContinue
-if (-not $files) { Write-Host "JSON ファイルなし: $Folder"; exit 0 }
+if (-not $files) { Write-Host "No JSON files found: $Folder"; exit 0 }
 
 foreach ($file in $files) {
     $b64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes($file.FullName))
@@ -67,7 +67,7 @@ foreach ($file in $files) {
         Write-Host "[OK] $($file.Name)"
     } catch { Write-Warning "[NG] $($file.Name): $($_.Exception.Message)" }
 }
-Write-Host "同期完了"
+Write-Host "Sync complete"
 `
 
 const ACC_SORT_FNS = {

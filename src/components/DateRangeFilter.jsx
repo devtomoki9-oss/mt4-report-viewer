@@ -72,7 +72,7 @@ export default function DateRangeFilter({ from, to, onChange, dataMin, dataMax, 
         ))}
       </div>
 
-      <div className="w-px h-4 bg-[#1f2d40]" />
+      <div className="hidden sm:block w-px h-4 bg-[#1f2d40]" />
 
       {/* カスタム日付入力 */}
       <div className="flex items-center gap-2 text-xs">

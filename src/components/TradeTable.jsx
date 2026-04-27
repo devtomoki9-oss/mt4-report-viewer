@@ -76,7 +76,45 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-xl border border-[#1f2d40]">
+      {/* モバイルカードビュー */}
+      <div className="sm:hidden space-y-2">
+        {paged.length === 0 ? (
+          <div className="text-center py-8 text-slate-600 text-xs">データがありません</div>
+        ) : paged.map((t, i) => {
+          const isProfit = t.netProfit >= 0
+          const isBuy = t.type?.toLowerCase().startsWith('buy')
+          return (
+            <div key={t.ticket + i} className="bg-[#111827] border border-[#1f2d40] rounded-xl p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className={`px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0 ${isBuy ? 'bg-emerald-900/40 text-emerald-400' : 'bg-red-900/40 text-red-400'}`}>
+                      {t.type}
+                    </span>
+                    <span className="text-sm font-semibold text-slate-200">{t.symbol || '—'}</span>
+                    <span className="text-xs text-slate-500 font-mono">{t.size?.toFixed(2)} lot</span>
+                  </div>
+                  <div className="text-xs text-slate-500 mt-1">{t.closeTime?.slice(0, 10) || '—'}</div>
+                  <div className="text-xs text-slate-600 font-mono mt-0.5">{fmtPrice(t.openPrice)} → {fmtPrice(t.closePrice)}</div>
+                </div>
+                <div className={`font-mono text-sm font-bold flex-shrink-0 ${isProfit ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {isProfit ? '+' : ''}{t.netProfit.toFixed(2)}
+                </div>
+              </div>
+              {(t.account || t.swap || t.commission) && (
+                <div className="flex items-center gap-3 mt-1.5 text-xs">
+                  {t.account && <span className="text-slate-600 truncate">{aliases[t.account] || t.account}</span>}
+                  {!!t.swap && <span className={t.swap < 0 ? 'text-red-400/70' : 'text-emerald-400/70'}>SW {t.swap.toFixed(2)}</span>}
+                  {!!t.commission && <span className="text-slate-600">手数料 {t.commission.toFixed(2)}</span>}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* デスクトップテーブルビュー */}
+      <div className="hidden sm:block overflow-x-auto rounded-xl border border-[#1f2d40]">
         <table className="w-full text-xs whitespace-nowrap">
           <thead>
             <tr className="bg-[#0a0e17] border-b border-[#1f2d40]">

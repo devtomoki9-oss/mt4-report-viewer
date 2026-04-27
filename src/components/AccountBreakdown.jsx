@@ -103,7 +103,46 @@ export default function AccountBreakdown({ accounts, filteredTrades, aliases = {
         <div className="px-4 py-3 border-b border-[#1f2d40]">
           <div className="text-sm font-semibold text-slate-300">口座別成績</div>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* モバイルカードビュー */}
+        <div className="sm:hidden divide-y divide-[#1f2d40]">
+          {accounts.map((a) => {
+            const s = a.stats
+            const isProfit = (s.totalProfit ?? 0) >= 0
+            const isSelected = selected === a.account.name
+            return (
+              <div
+                key={a.account.name}
+                onClick={() => setSelected(isSelected ? null : a.account.name)}
+                className={`px-4 py-3 cursor-pointer transition-colors ${isSelected ? 'bg-[#1a2235]' : 'active:bg-[#1a2235]/60'}`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isProfit ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                    <span className="text-sm font-medium text-slate-200 truncate">{displayName(a.account.name)}</span>
+                    {isSelected && <span className="text-blue-400 text-xs flex-shrink-0">▶</span>}
+                  </div>
+                  <span className={`font-mono text-sm font-bold flex-shrink-0 ${isProfit ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {isProfit ? '+' : ''}{(s.totalProfit ?? 0).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 mt-2">
+                  <span className="text-xs text-slate-500">
+                    <span className="text-emerald-500">{s.wins ?? 0}</span>
+                    <span className="text-slate-600">/</span>
+                    <span className="text-red-500">{s.losses ?? 0}</span>
+                  </span>
+                  <div className="flex-1"><PFBar pf={s.profitFactor ?? 0} /></div>
+                  <WinRatePie winRate={s.winRate ?? 0} />
+                  <span className="text-xs font-mono text-amber-400">DD {(s.maxDrawdown ?? 0).toFixed(2)}</span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* デスクトップテーブルビュー */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-[#1f2d40] text-slate-500">

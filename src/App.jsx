@@ -322,54 +322,67 @@ export default function App() {
 
       {/* ヘッダ */}
       <header className="border-b border-[#1f2d40] bg-[#0a0e17]/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center text-sm">
-              📈
-            </div>
-            <span className="font-semibold text-slate-100 text-sm tracking-tight">MT4/MT5 Report Viewer</span>
-            {hasData && <span className="text-xs text-slate-600 ml-1">{accounts.length} 口座</span>}
-          </div>
-          <div className="flex items-center gap-3">
-            {dirHandle && (
-              <div className="flex items-center gap-2">
-                {lastUpdated && (
-                  <span className="text-xs text-slate-600 hidden sm:inline">
-                    最終更新 {fmtTime(lastUpdated)}
-                  </span>
-                )}
-                {secondsLeft != null && (
-                  <span className="text-xs text-slate-600 tabular-nums hidden sm:inline">
-                    次回 {fmtCountdown(secondsLeft)}
-                  </span>
-                )}
-                <button onClick={() => reloadFolder(true)}
-                  className="text-xs text-blue-400 hover:text-blue-300 transition-colors bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg">
-                  ↻ 更新
-                </button>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="h-14 flex items-center justify-between">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center text-sm">
+                📈
               </div>
-            )}
-            {hasData && (
-              <>
-                <nav className="flex gap-1 bg-[#111827] border border-[#1f2d40] rounded-lg p-1">
-                  {TABS.map(t => (
-                    <button key={t.id} onClick={() => setTab(t.id)}
-                      className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all
-                        ${tab === t.id ? 'bg-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>
-                      {t.label}
-                    </button>
-                  ))}
-                </nav>
-                <button onClick={clearAll} className="text-xs text-slate-600 hover:text-red-400 transition-colors px-2 py-1">
-                  クリア
-                </button>
-              </>
-            )}
+              <span className="font-semibold text-slate-100 text-sm tracking-tight">MT4/MT5 Report Viewer</span>
+              {hasData && <span className="text-xs text-slate-600 ml-1 hidden sm:inline">{accounts.length} 口座</span>}
+            </div>
+            <div className="flex items-center gap-2">
+              {dirHandle && (
+                <div className="flex items-center gap-2">
+                  {lastUpdated && (
+                    <span className="text-xs text-slate-600 hidden md:inline">
+                      最終更新 {fmtTime(lastUpdated)}
+                    </span>
+                  )}
+                  {secondsLeft != null && (
+                    <span className="text-xs text-slate-600 tabular-nums hidden md:inline">
+                      次回 {fmtCountdown(secondsLeft)}
+                    </span>
+                  )}
+                  <button onClick={() => reloadFolder(true)}
+                    className="text-xs text-blue-400 hover:text-blue-300 transition-colors bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg">
+                    ↻ 更新
+                  </button>
+                </div>
+              )}
+              {hasData && (
+                <>
+                  <nav className="hidden sm:flex gap-1 bg-[#111827] border border-[#1f2d40] rounded-lg p-1">
+                    {TABS.map(t => (
+                      <button key={t.id} onClick={() => setTab(t.id)}
+                        className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all
+                          ${tab === t.id ? 'bg-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>
+                        {t.label}
+                      </button>
+                    ))}
+                  </nav>
+                  <button onClick={clearAll} className="text-xs text-slate-600 hover:text-red-400 transition-colors px-2 py-1">
+                    クリア
+                  </button>
+                </>
+              )}
+            </div>
           </div>
+          {hasData && (
+            <div className="sm:hidden flex gap-1 pb-2">
+              {TABS.map(t => (
+                <button key={t.id} onClick={() => setTab(t.id)}
+                  className={`flex-1 py-1.5 text-xs rounded-md font-medium transition-all
+                    ${tab === t.id ? 'bg-blue-600 text-white shadow' : 'bg-[#111827] border border-[#1f2d40] text-slate-500'}`}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-6 space-y-4">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4">
 
 {!hasData ? (
           /* ── ウェルカム画面 ── */
@@ -423,8 +436,8 @@ export default function App() {
                     <div className="text-slate-300">{s.text}</div>
                     {s.sub && <div className="text-slate-500 mt-0.5">{s.sub}</div>}
                     {s.code && (
-                      <div className="mt-1.5 flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded px-2.5 py-1.5">
-                        <code className="text-green-400 font-mono flex-1 select-all">{s.code}</code>
+                      <div className="mt-1.5 flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded px-2.5 py-1.5 overflow-x-auto">
+                        <code className="text-green-400 font-mono flex-1 select-all whitespace-nowrap text-[11px] sm:text-xs">{s.code}</code>
                         <button
                           onClick={() => navigator.clipboard.writeText(s.code)}
                           className="text-slate-600 hover:text-slate-300 transition-colors flex-shrink-0"
@@ -450,7 +463,7 @@ export default function App() {
                 </button>
                 {supportsFileSystemAccess() && (
                   <button onClick={registerFolder}
-                    className="ml-auto text-xs text-blue-400 hover:text-blue-300 bg-blue-500/10 border border-blue-500/20 px-4 py-1.5 rounded-lg transition-colors">
+                    className="sm:ml-auto text-xs text-blue-400 hover:text-blue-300 bg-blue-500/10 border border-blue-500/20 px-4 py-1.5 rounded-lg transition-colors">
                     📁 {dirHandle ? 'MTExport フォルダを変更' : 'MTExport フォルダを選択'}
                   </button>
                 )}
@@ -500,7 +513,7 @@ export default function App() {
                         <span>の集計</span>
                       </div>
                     )}
-                    <div className="grid grid-cols-4 gap-3 lg:grid-cols-7">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:grid-cols-7">
                       <StatCard label="純益合計"
                         value={(agg.totalProfit >= 0 ? '+' : '-') + fmt(agg.totalProfit)}
                         color={agg.totalProfit >= 0 ? 'profit' : 'loss'} size="lg" />

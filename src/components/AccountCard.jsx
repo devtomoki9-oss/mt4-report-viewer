@@ -73,14 +73,14 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias 
             <div className="text-xs text-slate-500">{stats.totalTrades} trades</div>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
           <div className={`font-mono text-sm font-bold ${isProfit ? 'text-emerald-400' : 'text-red-400'}`}>
             {fmt(stats.totalProfit)}
           </div>
-          <div className="text-xs text-slate-500 font-mono">
+          <div className="text-xs text-slate-500 font-mono hidden sm:block">
             WR {stats.winRate.toFixed(1)}%
           </div>
-          <div className="text-xs text-slate-500 font-mono">
+          <div className="text-xs text-slate-500 font-mono hidden sm:block">
             PF {isFinite(stats.profitFactor) ? stats.profitFactor.toFixed(2) : '∞'}
           </div>
           <button
@@ -96,7 +96,7 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias 
 
       {/* 展開詳細 */}
       {expanded && (
-        <div className="border-t border-[#1f2d40] px-4 py-3 grid grid-cols-4 gap-3">
+        <div className="border-t border-[#1f2d40] px-4 py-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
             { label: '純益', value: fmt(stats.totalProfit), color: isProfit ? 'text-emerald-400' : 'text-red-400' },
             { label: '総利益', value: '+' + stats.grossProfit.toFixed(2), color: 'text-emerald-400' },

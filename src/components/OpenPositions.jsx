@@ -11,8 +11,10 @@ export default function OpenPositions({ positions, aliases = {} }) {
 
   const filtered = selectedAccount ? positions.filter(p => p.account === selectedAccount) : positions
 
-  const totalProfit = filtered.reduce((s, p) => s + p.profit + p.swap, 0)
-  const isProfit = totalProfit >= 0
+  const totalProfit = filtered.reduce((s, p) => s + p.profit, 0)
+  const totalSwap   = filtered.reduce((s, p) => s + p.swap,   0)
+  const totalNet    = totalProfit + totalSwap
+  const isProfit = totalNet >= 0
 
   const displayName = (name) => aliases[name] || name
 
@@ -48,7 +50,7 @@ export default function OpenPositions({ positions, aliases = {} }) {
             </div>
           )}
           <div className={`font-mono text-sm font-bold ${isProfit ? 'text-emerald-400' : 'text-red-400'}`}>
-            {isProfit ? '+' : ''}{totalProfit.toFixed(2)}
+            {isProfit ? '+' : ''}{totalNet.toFixed(2)}
           </div>
         </div>
       </div>
@@ -132,6 +134,23 @@ export default function OpenPositions({ positions, aliases = {} }) {
               )
             })}
           </tbody>
+          <tfoot>
+            <tr className="border-t border-[#2a3f5a] bg-[#0d1520]">
+              {accounts.length > 1 && <td />}
+              <td colSpan={5} className="px-4 py-2 text-xs text-slate-500 font-medium">合計</td>
+              <td className={`px-3 py-2 text-right font-mono font-bold text-xs ${totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                {totalProfit >= 0 ? '+' : ''}{totalProfit.toFixed(2)}
+              </td>
+              <td className={`px-3 py-2 text-right font-mono text-xs ${totalSwap >= 0 ? 'text-emerald-400/70' : 'text-red-400/70'}`}>
+                {totalSwap.toFixed(2)}
+              </td>
+              <td colSpan={2} className="px-3 py-2 text-right font-mono font-bold text-xs">
+                <span className={totalNet >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                  {totalNet >= 0 ? '+' : ''}{totalNet.toFixed(2)}
+                </span>
+              </td>
+            </tr>
+          </tfoot>
         </table>
       </div>
     </div>

@@ -155,6 +155,7 @@ export default function App() {
   const lastModifiedRef     = useRef(new Map())
   const reloadFolderRef     = useRef(null)
   const githubSettingsRef   = useRef(githubSettings)
+  const dirHandleRef        = useRef(null)
 
   // ── ファイル解析 ──────────────────────────────────────
   const parseFiles = useCallback(async (files) => {
@@ -189,6 +190,7 @@ export default function App() {
         return [...byName.values()]
       })
       setLastUpdated(new Date())
+      if (!dirHandleRef.current) setNextExportAt(Date.now() + GITHUB_INTERVAL_MS)
     } catch (e) {
       console.error('GitHub sync error:', e)
       throw e
@@ -336,9 +338,10 @@ export default function App() {
     })()
   }, [loadFromDir, syncFromGitHub])
 
-  // ── reloadFolderRef / githubSettingsRef を常に最新に保つ ──
+  // ── 各 ref を常に最新に保つ ──────────────────────────
   useEffect(() => { reloadFolderRef.current = reloadFolder }, [reloadFolder])
   useEffect(() => { githubSettingsRef.current = githubSettings }, [githubSettings])
+  useEffect(() => { dirHandleRef.current = dirHandle }, [dirHandle])
 
   // ── スマホ → PC への更新リクエスト ────────────────────
   const requestGitHubRefresh = useCallback(async () => {

@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, ReferenceLine,
+  ResponsiveContainer, ReferenceLine, Brush
 } from 'recharts'
 
 function calcNiceTicks(min, max, targetCount = 5) {
@@ -39,108 +39,15 @@ const CustomTooltip = ({ active, payload, label }) => {
   )
 }
 
-function CustomBrush({ total, startIndex, endIndex, onChange }) {
-  const trackRef = useRef(null)
-  const MIN_WINDOW = 5
-
-  const toClientPct = (idx) => (idx / Math.max(1, total - 1)) * 100
-
-  const startDrag = useCallback((e, mode) => {
-    e.preventDefault()
-    e.stopPropagation()
-    const clientX0 = e.touches ? e.touches[0].clientX : e.clientX
-    const s0 = startIndex
-    const e0 = endIndex
-
-    const onMove = (ev) => {
-      const clientX = ev.touches ? ev.touches[0].clientX : ev.clientX
-      const rect = trackRef.current?.getBoundingClientRect()
-      if (!rect) return
-      const dx = ((clientX - clientX0) / rect.width) * (total - 1)
-      const delta = Math.round(dx)
-
-      if (mode === 'left') {
-        const s = Math.max(0, Math.min(s0 + delta, e0 - MIN_WINDOW))
-        onChange({ startIndex: s, endIndex: e0 })
-      } else if (mode === 'right') {
-        const en = Math.max(s0 + MIN_WINDOW, Math.min(e0 + delta, total - 1))
-        onChange({ startIndex: s0, endIndex: en })
-      } else {
-        const size = e0 - s0
-        const s = Math.max(0, Math.min(s0 + delta, total - 1 - size))
-        onChange({ startIndex: s, endIndex: s + size })
-      }
-    }
-    const onUp = () => {
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseup',   onUp)
-      window.removeEventListener('touchmove', onMove)
-      window.removeEventListener('touchend',  onUp)
-    }
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup',   onUp)
-    window.addEventListener('touchmove', onMove, { passive: false })
-    window.addEventListener('touchend',  onUp)
-  }, [startIndex, endIndex, total, onChange])
-
-  const leftPct  = toClientPct(startIndex)
-  const rightPct = toClientPct(endIndex)
-
-  return (
-    <div
-      ref={trackRef}
-      className="relative h-7 mt-2 rounded select-none"
-      style={{ background: '#0a0e17', border: '1px solid #1f2d40' }}
-    >
-      {/* 左グレーアウト */}
-      <div className="absolute top-0 bottom-0 left-0 bg-[#0a0e17]/60"
-        style={{ width: `${leftPct}%` }} />
-      {/* 右グレーアウト */}
-      <div className="absolute top-0 bottom-0 right-0 bg-[#0a0e17]/60"
-        style={{ width: `${100 - rightPct}%` }} />
-      {/* ビューポート（中央ドラッグでパン） */}
-      <div
-        className="absolute top-0 bottom-0 cursor-grab active:cursor-grabbing"
-        style={{
-          left: `${leftPct}%`,
-          width: `${rightPct - leftPct}%`,
-          background: 'rgba(59,130,246,0.12)',
-          borderLeft:  '2px solid #3b82f6',
-          borderRight: '2px solid #3b82f6',
-        }}
-        onMouseDown={e => startDrag(e, 'pan')}
-        onTouchStart={e => startDrag(e, 'pan')}
-      />
-      {/* 左ハンドル */}
-      <div
-        className="absolute top-0 bottom-0 w-3 cursor-ew-resize flex items-center justify-center z-10"
-        style={{ left: `${leftPct}%`, transform: 'translateX(-50%)' }}
-        onMouseDown={e => startDrag(e, 'left')}
-        onTouchStart={e => startDrag(e, 'left')}
-      >
-        <div className="w-1 h-4 rounded-full bg-blue-400" />
-      </div>
-      {/* 右ハンドル */}
-      <div
-        className="absolute top-0 bottom-0 w-3 cursor-ew-resize flex items-center justify-center z-10"
-        style={{ left: `${rightPct}%`, transform: 'translateX(-50%)' }}
-        onMouseDown={e => startDrag(e, 'right')}
-        onTouchStart={e => startDrag(e, 'right')}
-      >
-        <div className="w-1 h-4 rounded-full bg-blue-400" />
-      </div>
-    </div>
-  )
-}
-
 export default function EquityChart({ data, title = 'エクイティカーブ' }) {
   const [range, setRange] = useState({ startIndex: 0, endIndex: 0 })
-  const rangeRef     = useRef(range)
-  const dataRef      = useRef(data)
+  const rangeRef = useRef(range)
+  const dataRef  = useRef(data)
   const containerRef = useRef(null)
 
   dataRef.current = data
 
+  // データが変わったらズームをリセット
   useEffect(() => {
     if (!data.length) return
     const r = { startIndex: 0, endIndex: data.length - 1 }
@@ -148,6 +55,7 @@ export default function EquityChart({ data, title = 'エクイティカーブ' }
     setRange(r)
   }, [data])
 
+  // スクロールで拡大縮小（passive: false が必要なため useEffect で登録）
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
@@ -158,8 +66,8 @@ export default function EquityChart({ data, title = 'エクイティカーブ' }
       const visible = endIndex - startIndex
       const zoomIn  = e.deltaY < 0
       const step    = Math.max(3, Math.round(visible * 0.15))
-      let s  = startIndex + (zoomIn ?  step : -step)
-      let en = endIndex   - (zoomIn ?  step : -step)
+      let s  = startIndex + (zoomIn ? step : -step)
+      let en = endIndex   - (zoomIn ? step : -step)
       if (en - s < 5) return
       s  = Math.max(0, s)
       en = Math.min(total - 1, en)
@@ -188,8 +96,9 @@ export default function EquityChart({ data, title = 'エクイティカーブ' }
   const ticks       = calcNiceTicks(minVal, maxVal)
   const domain      = [ticks[0], ticks[ticks.length - 1]]
 
+  // 等間隔 X 軸ティック（最大 7 本、視覚的に均等配置）
   const xTicks = useMemo(() => {
-    const MAX   = 7
+    const MAX = 7
     const total = safeEnd - safeStart
     if (total === 0) return [safeStart]
     const count = Math.min(MAX, total + 1)
@@ -204,12 +113,6 @@ export default function EquityChart({ data, title = 'エクイティカーブ' }
   const isProfit = final >= 0
   const isZoomed = safeStart > 0 || safeEnd < data.length - 1
 
-  const handleBrushChange = useCallback(({ startIndex: s, endIndex: e }) => {
-    const next = { startIndex: s, endIndex: e }
-    rangeRef.current = next
-    setRange(next)
-  }, [])
-
   const resetZoom = () => {
     const r = { startIndex: 0, endIndex: data.length - 1 }
     rangeRef.current = r
@@ -221,7 +124,7 @@ export default function EquityChart({ data, title = 'エクイティカーブ' }
       <div className="flex items-center justify-between mb-3">
         <div className="text-sm font-semibold text-slate-300">{title}</div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-slate-600 hidden sm:inline">スクロールで拡大縮小</span>
+          <span className="text-xs text-slate-600">スクロールで拡大縮小</span>
           {isZoomed && (
             <button onClick={resetZoom}
               className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
@@ -234,7 +137,7 @@ export default function EquityChart({ data, title = 'エクイティカーブ' }
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={280}>
+      <ResponsiveContainer width="100%" height={300}>
         <AreaChart data={indexedData} margin={{ top: 4, right: 36, bottom: 0, left: 8 }}>
           <defs>
             <linearGradient id={`grad-${isProfit}`} x1="0" y1="0" x2="0" y2="1">
@@ -244,34 +147,54 @@ export default function EquityChart({ data, title = 'エクイティカーブ' }
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#1f2d40" vertical={false} />
           <XAxis
-            type="number" scale="linear" dataKey="_i"
-            domain={[safeStart, safeEnd]} ticks={xTicks} interval={0}
+            type="number"
+            scale="linear"
+            dataKey="_i"
+            domain={[safeStart, safeEnd]}
+            ticks={xTicks}
+            interval={0}
             tickFormatter={i => data[i]?.date?.slice(5) ?? ''}
-            tick={{ fill: '#475569', fontSize: 10 }} tickLine={false} axisLine={false}
+            tick={{ fill: '#475569', fontSize: 10 }}
+            tickLine={false}
+            axisLine={false}
             allowDataOverflow={false}
           />
           <YAxis
-            domain={domain} ticks={ticks}
-            tick={{ fill: '#475569', fontSize: 10 }} tickLine={false} axisLine={false}
-            width={72} tickFormatter={fmtTick}
+            domain={domain}
+            ticks={ticks}
+            tick={{ fill: '#475569', fontSize: 10 }}
+            tickLine={false}
+            axisLine={false}
+            width={72}
+            tickFormatter={fmtTick}
           />
           <Tooltip content={<CustomTooltip />} />
           <ReferenceLine y={0} stroke="#2a3f5a" strokeDasharray="4 2" />
           <Area
-            type="monotone" dataKey="equity"
-            stroke={isProfit ? '#10b981' : '#ef4444'} strokeWidth={2}
-            fill={`url(#grad-${isProfit})`} dot={false}
+            type="monotone"
+            dataKey="equity"
+            stroke={isProfit ? '#10b981' : '#ef4444'}
+            strokeWidth={2}
+            fill={`url(#grad-${isProfit})`}
+            dot={false}
             activeDot={{ r: 4, fill: isProfit ? '#10b981' : '#ef4444' }}
+          />
+          <Brush
+            dataKey="date"
+            startIndex={safeStart}
+            endIndex={safeEnd}
+            height={30}
+            stroke="#1f2d40"
+            fill="#0a0e17"
+            travellerWidth={8}
+            onChange={({ startIndex: s, endIndex: e }) => {
+              const next = { startIndex: s, endIndex: e }
+              rangeRef.current = next
+              setRange(next)
+            }}
           />
         </AreaChart>
       </ResponsiveContainer>
-
-      <CustomBrush
-        total={data.length}
-        startIndex={safeStart}
-        endIndex={safeEnd}
-        onChange={handleBrushChange}
-      />
     </div>
   )
 }

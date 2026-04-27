@@ -113,22 +113,39 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
 
       {/* 展開詳細 */}
       {expanded && (
-        <div className="border-t border-[#1f2d40] px-4 py-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { label: '純益', value: fmt(stats.totalProfit), color: isProfit ? 'text-emerald-400' : 'text-red-400' },
-            { label: '総利益', value: '+' + stats.grossProfit.toFixed(2), color: 'text-emerald-400' },
-            { label: '総損失', value: '-' + stats.grossLoss.toFixed(2), color: 'text-red-400' },
-            { label: 'プロフィットファクター', value: isFinite(stats.profitFactor) ? stats.profitFactor.toFixed(2) : '∞', color: 'text-blue-400' },
-            { label: '勝率', value: stats.winRate.toFixed(1) + '%', color: 'text-slate-300' },
-            { label: '勝ちトレード', value: stats.wins, color: 'text-emerald-400' },
-            { label: '負けトレード', value: stats.losses, color: 'text-red-400' },
-            { label: '最大DD', value: stats.maxDrawdown.toFixed(2), color: 'text-amber-400' },
-          ].map(item => (
-            <div key={item.label} className="bg-[#0a0e17] rounded-lg p-2.5">
-              <div className="text-xs text-slate-600 mb-0.5">{item.label}</div>
-              <div className={`font-mono text-sm font-semibold ${item.color}`}>{item.value}</div>
-            </div>
-          ))}
+        <div className="border-t border-[#1f2d40] px-4 py-3 space-y-3">
+          {/* 口座情報 */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {[
+              { label: '残高',      value: (info.balance || 0).toLocaleString('en', { maximumFractionDigits: 2 }) + ' ' + (info.currency || ''), color: 'text-slate-200' },
+              { label: '有効証拠金', value: (info.equity  || 0).toLocaleString('en', { maximumFractionDigits: 2 }) + ' ' + (info.currency || ''), color: (info.equity || 0) >= (info.balance || 0) ? 'text-emerald-400' : 'text-amber-400' },
+              { label: '含み損益',  value: ((info.equity || 0) - (info.balance || 0) >= 0 ? '+' : '') + ((info.equity || 0) - (info.balance || 0)).toFixed(2), color: (info.equity || 0) - (info.balance || 0) >= 0 ? 'text-emerald-400' : 'text-red-400' },
+              { label: 'レバレッジ', value: info.leverage ? '1:' + info.leverage : '—', color: 'text-slate-400' },
+            ].map(item => (
+              <div key={item.label} className="bg-[#0a0e17] rounded-lg p-2.5">
+                <div className="text-xs text-slate-600 mb-0.5">{item.label}</div>
+                <div className={`font-mono text-sm font-semibold ${item.color}`}>{item.value}</div>
+              </div>
+            ))}
+          </div>
+          {/* 取引成績 */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {[
+              { label: '純益', value: fmt(stats.totalProfit), color: isProfit ? 'text-emerald-400' : 'text-red-400' },
+              { label: '総利益', value: '+' + stats.grossProfit.toFixed(2), color: 'text-emerald-400' },
+              { label: '総損失', value: '-' + stats.grossLoss.toFixed(2), color: 'text-red-400' },
+              { label: 'プロフィットファクター', value: isFinite(stats.profitFactor) ? stats.profitFactor.toFixed(2) : '∞', color: 'text-blue-400' },
+              { label: '勝率', value: stats.winRate.toFixed(1) + '%', color: 'text-slate-300' },
+              { label: '勝ちトレード', value: stats.wins, color: 'text-emerald-400' },
+              { label: '負けトレード', value: stats.losses, color: 'text-red-400' },
+              { label: '最大DD', value: stats.maxDrawdown.toFixed(2), color: 'text-amber-400' },
+            ].map(item => (
+              <div key={item.label} className="bg-[#0a0e17] rounded-lg p-2.5">
+                <div className="text-xs text-slate-600 mb-0.5">{item.label}</div>
+                <div className={`font-mono text-sm font-semibold ${item.color}`}>{item.value}</div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

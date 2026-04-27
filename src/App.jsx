@@ -644,6 +644,18 @@ export default function App() {
                         <span>の集計</span>
                       </div>
                     )}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {(() => {
+                        const totalBalance = accounts.reduce((s, a) => s + (a.account.balance || 0), 0)
+                        const totalEquity  = accounts.reduce((s, a) => s + (a.account.equity  || 0), 0)
+                        const currency = accounts[0]?.account.currency || ''
+                        return (<>
+                          <StatCard label="残高合計"    value={totalBalance.toLocaleString('en', { maximumFractionDigits: 2 }) + ' ' + currency} color="white" size="lg" />
+                          <StatCard label="有効証拠金合計" value={totalEquity.toLocaleString('en', { maximumFractionDigits: 2 }) + ' ' + currency} color={totalEquity >= totalBalance ? 'profit' : 'warn'} size="lg" />
+                          <StatCard label="含み損益合計" value={(totalEquity - totalBalance >= 0 ? '+' : '') + (totalEquity - totalBalance).toFixed(2) + ' ' + currency} color={totalEquity - totalBalance >= 0 ? 'profit' : 'loss'} size="lg" />
+                        </>)
+                      })()}
+                    </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:grid-cols-7">
                       <StatCard label="純益合計"
                         value={(agg.totalProfit >= 0 ? '+' : '-') + fmt(agg.totalProfit)}

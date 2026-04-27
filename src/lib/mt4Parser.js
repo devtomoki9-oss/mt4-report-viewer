@@ -332,6 +332,7 @@ export function parseMT4Json(jsonText, accountLabel = '') {
       currency:   data.currency   || '',
       balance:    data.balance    || 0,
       equity:     data.equity     || 0,
+      credit:     data.credit     || 0,
       exportTime: data.exportTime || '',
     },
     trades,

@@ -153,6 +153,7 @@ void ExportTrades()
    json += "  \"currency\": \""  + AccountCurrency()                    + "\",\n";
    json += "  \"balance\": "     + DoubleToString(AccountBalance(), 2)  + ",\n";
    json += "  \"equity\": "      + DoubleToString(AccountEquity(),  2)  + ",\n";
+   json += "  \"credit\": "      + DoubleToString(AccountCredit(),  2)  + ",\n";
    json += "  \"leverage\": "    + IntegerToString(AccountLeverage())   + ",\n";
    json += "  \"exportTime\": \""+ TimeToISO(TimeCurrent())             + "\",\n";
    json += "  \"trades\": [\n";

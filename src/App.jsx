@@ -775,8 +775,8 @@ export default function App() {
                   <div>
                     <div className="text-slate-400 mb-1 font-medium">② 動作確認（Token・Owner・Repo を書き換えて実行）</div>
                     <div className="flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded-lg px-3 py-2 overflow-x-auto">
-                      <code className="text-green-400 font-mono flex-1 whitespace-nowrap text-[11px]">{'& "$env:USERPROFILE\\Downloads\\sync-to-github.ps1" -Token "ghp_xxxx" -Owner "ユーザー名" -Repo "mt4-report-data"'}</code>
-                      <button onClick={() => navigator.clipboard.writeText('& "$env:USERPROFILE\\Downloads\\sync-to-github.ps1" -Token "ghp_xxxx" -Owner "ユーザー名" -Repo "mt4-report-data"')}
+                      <code className="text-green-400 font-mono flex-1 whitespace-nowrap text-[11px]">{'& "$env:USERPROFILE\\Downloads\\sync-to-github.ps1" -Token "ghp_xxxx" -Owner "yourname" -Repo "mt4-report-data"'}</code>
+                      <button onClick={() => navigator.clipboard.writeText('& "$env:USERPROFILE\\Downloads\\sync-to-github.ps1" -Token "ghp_xxxx" -Owner "yourname" -Repo "mt4-report-data"')}
                         className="text-slate-600 hover:text-slate-300 flex-shrink-0 ml-1" title="コピー">⎘</button>
                     </div>
                     <div className="text-slate-600 mt-1"><span className="text-emerald-500">[OK] mt4_report_xxxx.json</span> と表示されれば成功</div>
@@ -787,11 +787,14 @@ export default function App() {
                     <div className="text-slate-400 mb-1 font-medium">③ タスクスケジューラに登録（5分ごと自動実行）</div>
                     <div className="text-slate-500 mb-1">Token・Owner・Repo の部分を書き換えてから実行</div>
                     <div className="flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded-lg px-3 py-2 overflow-x-auto">
-                      <code className="text-green-400 font-mono flex-1 whitespace-nowrap text-[11px]">{'schtasks /create /tn "MTExportSync" /sc minute /mo 5 /f /tr "powershell -NonInteractive -WindowStyle Hidden -File \\"%USERPROFILE%\\Downloads\\sync-to-github.ps1\\" -Token ghp_xxxx -Owner ユーザー名 -Repo mt4-report-data"'}</code>
-                      <button onClick={() => navigator.clipboard.writeText('schtasks /create /tn "MTExportSync" /sc minute /mo 5 /f /tr "powershell -NonInteractive -WindowStyle Hidden -File \\"%USERPROFILE%\\Downloads\\sync-to-github.ps1\\" -Token ghp_xxxx -Owner ユーザー名 -Repo mt4-report-data"')}
+                      <code className="text-green-400 font-mono flex-1 whitespace-nowrap text-[11px]">{'schtasks /create /tn "MTExportSync" /sc minute /mo 5 /f /tr "powershell -NonInteractive -WindowStyle Hidden -File %USERPROFILE%\\Downloads\\sync-to-github.ps1 -Token ghp_xxxx -Owner yourname -Repo mt4-report-data"'}</code>
+                      <button onClick={() => navigator.clipboard.writeText('schtasks /create /tn "MTExportSync" /sc minute /mo 5 /f /tr "powershell -NonInteractive -WindowStyle Hidden -File %USERPROFILE%\\Downloads\\sync-to-github.ps1 -Token ghp_xxxx -Owner yourname -Repo mt4-report-data"')}
                         className="text-slate-600 hover:text-slate-300 flex-shrink-0 ml-1" title="コピー">⎘</button>
                     </div>
                     <div className="text-slate-600 mt-1">「スケジュール タスク "MTExportSync" を作成しました。」と表示されれば完了</div>
+                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 text-amber-400 mt-2">
+                      ⚠ <span className="font-semibold">PowerShell から実行する場合の注意:</span> パスを <code className="font-mono bg-black/30 px-1 rounded">\"...\"</code> で囲むと PowerShell が <code className="font-mono bg-black/30 px-1 rounded">\"</code> を文字列の終端として誤解釈し「無効な引数」エラーになります。上のコマンドはパスを引用符なしで指定しているため問題ありません。ユーザー名にスペースが含まれる場合は代わりにコマンドプロンプト（Win+R → <code className="font-mono bg-black/30 px-1 rounded">cmd</code>）から実行してください。
+                    </div>
                   </div>
                 </div>
               </div>

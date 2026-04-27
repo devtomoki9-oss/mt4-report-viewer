@@ -1,12 +1,12 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import {
-  parseMT4Report, parseMT4Json, calcStatsFromTrades, buildEquityCurve
+  parseHTMLReport, parseMT4Json, calcStatsFromTrades, buildEquityCurve
 } from './lib/mt4Parser'
 import {
   saveHandle, loadHandle, collectReportFiles,
   FOLDER_KEY, supportsFileSystemAccess
 } from './lib/folderStore'
-import { INSTALL_BAT, MQ4_CONTENT } from './lib/downloadFiles'
+import { INSTALL_BAT, MQ4_CONTENT, MQ5_CONTENT } from './lib/downloadFiles'
 import UploadZone from './components/UploadZone'
 import StatCard from './components/StatCard'
 import AccountCard from './components/AccountCard'
@@ -21,7 +21,7 @@ const TABS = [
   { id: 'trades',   label: '全取引'   },
 ]
 
-const MT4_EXPORT_MS = 5 * 60 * 1000 // EA の RefreshMinutes に合わせる
+const EXPORT_INTERVAL_MS = 5 * 60 * 1000 // EA の RefreshMinutes に合わせる
 
 const ACC_SORT_FNS = {
   name:        (a) => a.account.name ?? '',
@@ -109,7 +109,7 @@ export default function App() {
         const label = file.name.replace(/\.(html?|json)$/i, '')
         const parsed = /\.json$/i.test(file.name)
           ? parseMT4Json(text, label)
-          : parseMT4Report(text, label)
+          : parseHTMLReport(text, label)
         if (parsed) results.push(parsed)
       } catch (e) {
         console.error('Parse error:', file.name, e)
@@ -133,7 +133,7 @@ export default function App() {
         lastModifiedRef.current.set(f.name, f.lastModified)
         if (f.lastModified > maxModified) maxModified = f.lastModified
       }
-      if (maxModified > 0) setNextExportAt(maxModified + MT4_EXPORT_MS)
+      if (maxModified > 0) setNextExportAt(maxModified + EXPORT_INTERVAL_MS)
     } catch (e) {
       console.error('Folder read error:', e)
     }
@@ -187,7 +187,7 @@ export default function App() {
             const snapshot = new Map()
             for (const f of await collectReportFiles(dirHandle)) snapshot.set(f.name, f.lastModified)
 
-            setLoadingMsg('MT4 にエクスポートをリクエスト中…')
+            setLoadingMsg('EA にエクスポートをリクエスト中…')
             setLoading(true)
             const fh = await dirHandle.getFileHandle('_refresh.cmd', { create: true })
             const writable = await fh.createWritable()
@@ -327,7 +327,7 @@ export default function App() {
             <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center text-sm">
               📈
             </div>
-            <span className="font-semibold text-slate-100 text-sm tracking-tight">MT4 Report Viewer</span>
+            <span className="font-semibold text-slate-100 text-sm tracking-tight">MT4/MT5 Report Viewer</span>
             {hasData && <span className="text-xs text-slate-600 ml-1">{accounts.length} 口座</span>}
           </div>
           <div className="flex items-center gap-3">
@@ -375,7 +375,7 @@ export default function App() {
           /* ── ウェルカム画面 ── */
           <div className="flex flex-col items-center justify-center min-h-[55vh] gap-6">
             <div className="text-center mb-2">
-              <h1 className="text-2xl font-bold text-slate-100 mb-2">MT4 取引レポートビューア</h1>
+              <h1 className="text-2xl font-bold text-slate-100 mb-2">MT4/MT5 取引レポートビューア</h1>
               <p className="text-slate-500 text-sm">複数口座のレポートを集約し、成績を分析します</p>
             </div>
 
@@ -384,7 +384,7 @@ export default function App() {
               {[
                 {
                   step: '1',
-                  text: '下のボタンから install.bat と MT4ReportExporter.mq4 を同じフォルダにダウンロード',
+                  text: '下のボタンから install.bat・MT4ReportExporter.mq4・MT5ReportExporter.mq5 を同じフォルダにダウンロード',
                   sub: null,
                   code: null,
                 },
@@ -396,23 +396,23 @@ export default function App() {
                 },
                 {
                   step: '3',
-                  text: '開いた MT4 ウィンドウそれぞれで初回セットアップを行う',
-                  sub: '① MT4ReportExporter をチャートにドラッグ → OK　② ファイル → プロファイル → 名前を付けて保存 → MT4Exporter → OK　③ MT4 を閉じる',
+                  text: '開いた MT4/MT5 ウィンドウそれぞれで初回セットアップを行う',
+                  sub: '① ReportExporter EA をチャートにドラッグ → OK　② ファイル → プロファイル → 名前を付けて保存 → MTExporter → OK　③ ターミナルを閉じる',
                   code: null,
                 },
                 {
                   step: '4',
-                  text: '以後はデスクトップの MT4_Exporter.bat で MT4 を起動（EA が自動ロード）',
-                  sub: '通常の MT4 ショートカットの代わりに使用してください',
+                  text: '以後はデスクトップの MT_Exporter.bat で MT4/MT5 を起動（EA が自動ロード）',
+                  sub: '通常の MT4/MT5 ショートカットの代わりに使用してください',
                   code: null,
                 },
                 {
                   step: '5',
                   text: supportsFileSystemAccess() && !dirHandle
-                    ? '下の「MT4Export フォルダを選択」をクリック（初回のみ）'
-                    : 'MT4 起動後に右上の「↻ 更新」を押すとデータが表示されます',
+                    ? '下の「MTExport フォルダを選択」をクリック（初回のみ）'
+                    : 'MT4/MT5 起動後に右上の「↻ 更新」を押すとデータが表示されます',
                   sub: supportsFileSystemAccess() && !dirHandle
-                    ? '%USERPROFILE%\\MT4Export を選択 → 以後は 5 分ごとに自動更新されます'
+                    ? '%USERPROFILE%\\MTExport を選択 → 以後は 5 分ごとに自動更新されます'
                     : '5 分ごとに自動更新されます。手動更新は右上の「↻ 更新」から',
                   code: null,
                 },
@@ -444,10 +444,14 @@ export default function App() {
                   className="text-xs text-slate-500 hover:text-slate-300 bg-[#1a2235] border border-[#1f2d40] px-3 py-1.5 rounded-lg transition-colors">
                   ↓ MT4ReportExporter.mq4
                 </button>
+                <button onClick={() => downloadText(MQ5_CONTENT, 'MT5ReportExporter.mq5')}
+                  className="text-xs text-slate-500 hover:text-slate-300 bg-[#1a2235] border border-[#1f2d40] px-3 py-1.5 rounded-lg transition-colors">
+                  ↓ MT5ReportExporter.mq5
+                </button>
                 {supportsFileSystemAccess() && (
                   <button onClick={registerFolder}
                     className="ml-auto text-xs text-blue-400 hover:text-blue-300 bg-blue-500/10 border border-blue-500/20 px-4 py-1.5 rounded-lg transition-colors">
-                    📁 {dirHandle ? 'MT4Export フォルダを変更' : 'MT4Export フォルダを選択'}
+                    📁 {dirHandle ? 'MTExport フォルダを変更' : 'MTExport フォルダを選択'}
                   </button>
                 )}
               </div>

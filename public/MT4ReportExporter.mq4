@@ -14,7 +14,7 @@
 //|  3. ダイアログで OK を押す（自動売買許可は不要）                 |
 //|                                                                  |
 //|  【出力先】                                                      |
-//|  %USERPROFILE%\MT4Export\                                        |
+//|  %USERPROFILE%\MTExport\                                        |
 //|  mt4_report_<口座番号>.json                                      |
 //+------------------------------------------------------------------+
 #property copyright ""
@@ -41,7 +41,7 @@
 #define FILE_SHARE_READ       1
 
 input int    RefreshMinutes  = 5;            // 定期エクスポート間隔（分）
-input string ExportSubFolder = "MT4Export";  // USERPROFILE 直下のサブフォルダ名
+input string ExportSubFolder = "MTExport";  // USERPROFILE 直下のサブフォルダ名
 
 // タイマー間隔（秒）: トリガーファイルをこの間隔でチェックする
 #define TIMER_SEC 5
@@ -125,7 +125,7 @@ void ExportTrades()
    string exportDir = GetExportDir();
    if (exportDir == "")
    {
-      Print("[MT4Exporter] USERPROFILE が取得できません");
+      Print("[MTExporter] USERPROFILE が取得できません");
       return;
    }
 
@@ -182,9 +182,9 @@ void ExportTrades()
    json += "\n  ]\n}\n";
 
    if (WriteStringToFile(filepath, json))
-      Print("[MT4Exporter] エクスポート完了: ", filepath, "  (", total, " 件)");
+      Print("[MTExporter] エクスポート完了: ", filepath, "  (", total, " 件)");
    else
-      Print("[MT4Exporter] 書き込み失敗: ", filepath, "  エラー: ", GetLastError());
+      Print("[MTExporter] 書き込み失敗: ", filepath, "  エラー: ", GetLastError());
 }
 
 //+------------------------------------------------------------------+

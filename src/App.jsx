@@ -17,6 +17,7 @@ import AccountCard from './components/AccountCard'
 import AccountBreakdown from './components/AccountBreakdown'
 import EquityChart from './components/EquityChart'
 import TradeTable from './components/TradeTable'
+import OpenPositions from './components/OpenPositions'
 import DateRangeFilter from './components/DateRangeFilter'
 
 const TABS = [
@@ -408,6 +409,10 @@ export default function App() {
     () => accounts.flatMap(a => a.trades.map(t => ({ ...t, account: a.account.name }))),
     [accounts]
   )
+  const allPositions = useMemo(
+    () => accounts.flatMap(a => (a.positions || []).map(p => ({ ...p, account: a.account.name }))),
+    [accounts]
+  )
   const { dataMin, dataMax } = useMemo(() => {
     const dates = allTrades.map(t => toDay(t.closeTime)).filter(Boolean).sort()
     return { dataMin: dates[0] || '', dataMax: dates[dates.length - 1] || '' }
@@ -671,6 +676,7 @@ export default function App() {
                       <StatCard label="最大DD" value={fmt(agg.maxDrawdown)} color="warn" />
                     </div>
                     <EquityChart data={equityCurve} title="全口座合算 エクイティカーブ" />
+                    <OpenPositions positions={allPositions} aliases={aliases} />
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <div className="text-sm font-semibold text-slate-400">口座別成績</div>

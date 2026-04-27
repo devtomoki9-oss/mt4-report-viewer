@@ -179,10 +179,40 @@ void ExportTrades()
       json += "}";
    }
 
+   json += "\n  ],\n";
+   json += "  \"positions\": [\n";
+
+   int openTotal = OrdersTotal();
+   bool firstPos = true;
+   for (int i = 0; i < openTotal; i++)
+   {
+      if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
+      if (OrderType() > OP_SELL) continue;
+
+      if (!firstPos) json += ",\n";
+      firstPos = false;
+
+      string posType = (OrderType() == OP_BUY) ? "buy" : "sell";
+      json += "    {";
+      json += "\"ticket\":"       + IntegerToString(OrderTicket())             + ",";
+      json += "\"openTime\":\""   + TimeToISO(OrderOpenTime())                 + "\",";
+      json += "\"type\":\""       + posType                                    + "\",";
+      json += "\"size\":"         + DoubleToString(OrderLots(),       2)       + ",";
+      json += "\"symbol\":\""     + OrderSymbol()                              + "\",";
+      json += "\"openPrice\":"    + DoubleToString(OrderOpenPrice(),  5)       + ",";
+      json += "\"currentPrice\":" + DoubleToString(OrderClosePrice(), 5)       + ",";
+      json += "\"sl\":"           + DoubleToString(OrderStopLoss(),   5)       + ",";
+      json += "\"tp\":"           + DoubleToString(OrderTakeProfit(), 5)       + ",";
+      json += "\"profit\":"       + DoubleToString(OrderProfit(),     2)       + ",";
+      json += "\"swap\":"         + DoubleToString(OrderSwap(),       2)       + ",";
+      json += "\"comment\":\""    + EscapeJson(OrderComment())                 + "\"";
+      json += "}";
+   }
+
    json += "\n  ]\n}\n";
 
    if (WriteStringToFile(filepath, json))
-      Print("[MTExporter] エクスポート完了: ", filepath, "  (", total, " 件)");
+      Print("[MTExporter] エクスポート完了: ", filepath, "  (", total, " 件, ", openTotal, " positions)");
    else
       Print("[MTExporter] 書き込み失敗: ", filepath, "  エラー: ", GetLastError());
 }

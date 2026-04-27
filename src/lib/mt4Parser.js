@@ -307,6 +307,21 @@ export function parseMT4Json(jsonText, accountLabel = '') {
     }
   })
 
+  const positions = (data.positions || []).map(p => ({
+    ticket:       String(p.ticket || ''),
+    openTime:     normMT4Date(p.openTime || ''),
+    type:         p.type || '',
+    size:         Number(p.size || p.lots || 0),
+    symbol:       p.symbol || '',
+    openPrice:    Number(p.openPrice)    || 0,
+    currentPrice: Number(p.currentPrice) || 0,
+    sl:           Number(p.sl) || 0,
+    tp:           Number(p.tp) || 0,
+    profit:       Number(p.profit) || 0,
+    swap:         Number(p.swap)   || 0,
+    comment:      (p.comment || '').trim() || 'Manual',
+  }))
+
   const name = accountLabel || `Account ${data.account}`
   return {
     account: {
@@ -320,6 +335,7 @@ export function parseMT4Json(jsonText, accountLabel = '') {
       exportTime: data.exportTime || '',
     },
     trades,
+    positions,
     stats: calcStatsFromTrades(trades),
   }
 }

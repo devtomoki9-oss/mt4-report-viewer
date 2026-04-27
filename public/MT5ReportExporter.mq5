@@ -221,10 +221,42 @@ void ExportTrades()
       json += "}";
    }
 
+   json += "\n  ],\n";
+   json += "  \"positions\": [\n";
+
+   int posTotal = PositionsTotal();
+   bool firstPos = true;
+   for (int i = 0; i < posTotal; i++)
+   {
+      ulong posTicket = PositionGetTicket(i);
+      if (posTicket == 0) continue;
+
+      ENUM_POSITION_TYPE posType = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+      string typeStr = (posType == POSITION_TYPE_BUY) ? "buy" : "sell";
+
+      if (!firstPos) json += ",\n";
+      firstPos = false;
+
+      json += "    {";
+      json += "\"ticket\":"       + IntegerToString(posTicket)                                    + ",";
+      json += "\"openTime\":\""   + TimeToISO((datetime)PositionGetInteger(POSITION_TIME))        + "\",";
+      json += "\"type\":\""       + typeStr                                                        + "\",";
+      json += "\"size\":"         + DoubleToString(PositionGetDouble(POSITION_VOLUME),       2)   + ",";
+      json += "\"symbol\":\""     + PositionGetString(POSITION_SYMBOL)                            + "\",";
+      json += "\"openPrice\":"    + DoubleToString(PositionGetDouble(POSITION_PRICE_OPEN),    5)  + ",";
+      json += "\"currentPrice\":" + DoubleToString(PositionGetDouble(POSITION_PRICE_CURRENT), 5)  + ",";
+      json += "\"sl\":"           + DoubleToString(PositionGetDouble(POSITION_SL),           5)   + ",";
+      json += "\"tp\":"           + DoubleToString(PositionGetDouble(POSITION_TP),           5)   + ",";
+      json += "\"profit\":"       + DoubleToString(PositionGetDouble(POSITION_PROFIT),       2)   + ",";
+      json += "\"swap\":"         + DoubleToString(PositionGetDouble(POSITION_SWAP),         2)   + ",";
+      json += "\"comment\":\""    + EscapeJson(PositionGetString(POSITION_COMMENT))               + "\"";
+      json += "}";
+   }
+
    json += "\n  ]\n}\n";
 
    if (WriteStringToFile(filepath, json))
-      Print("[MT5Exporter] エクスポート完了: ", filepath, "  (", total, " deals)");
+      Print("[MT5Exporter] エクスポート完了: ", filepath, "  (", total, " deals, ", posTotal, " positions)");
    else
       Print("[MT5Exporter] 書き込み失敗: ", filepath, "  エラー: ", GetLastError());
 }

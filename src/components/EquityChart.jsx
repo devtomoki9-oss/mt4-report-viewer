@@ -41,6 +41,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export default function EquityChart({ data, title = 'エクイティカーブ' }) {
   const [range, setRange] = useState({ startIndex: 0, endIndex: 0 })
+  const [brushKey, setBrushKey] = useState(0)
   const rangeRef = useRef(range)
   const dataRef  = useRef(data)
   const containerRef = useRef(null)
@@ -53,6 +54,7 @@ export default function EquityChart({ data, title = 'エクイティカーブ' }
     const r = { startIndex: 0, endIndex: data.length - 1 }
     rangeRef.current = r
     setRange(r)
+    setBrushKey(k => k + 1)
   }, [data])
 
   // スクロールで拡大縮小（passive: false が必要なため useEffect で登録）
@@ -75,6 +77,7 @@ export default function EquityChart({ data, title = 'エクイティカーブ' }
       const next = { startIndex: s, endIndex: en }
       rangeRef.current = next
       setRange(next)
+      setBrushKey(k => k + 1)
     }
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
@@ -117,6 +120,7 @@ export default function EquityChart({ data, title = 'エクイティカーブ' }
     const r = { startIndex: 0, endIndex: data.length - 1 }
     rangeRef.current = r
     setRange(r)
+    setBrushKey(k => k + 1)
   }
 
   return (
@@ -137,8 +141,8 @@ export default function EquityChart({ data, title = 'エクイティカーブ' }
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={300}>
-        <AreaChart data={indexedData} margin={{ top: 4, right: 36, bottom: 0, left: 8 }}>
+      <ResponsiveContainer width="100%" height={320}>
+        <AreaChart data={indexedData} margin={{ top: 4, right: 36, bottom: 5, left: 8 }}>
           <defs>
             <linearGradient id={`grad-${isProfit}`} x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%"  stopColor={isProfit ? '#10b981' : '#ef4444'} stopOpacity={0.3} />
@@ -180,6 +184,7 @@ export default function EquityChart({ data, title = 'エクイティカーブ' }
             activeDot={{ r: 4, fill: isProfit ? '#10b981' : '#ef4444' }}
           />
           <Brush
+            key={brushKey}
             dataKey="date"
             startIndex={safeStart}
             endIndex={safeEnd}

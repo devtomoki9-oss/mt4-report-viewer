@@ -27,3 +27,8 @@ body {
 ::-webkit-scrollbar-track { background: #0a0e17; }
 ::-webkit-scrollbar-thumb { background: #1f2d40; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #2a3f5a; }
+
+/* recharts Brush ダークテーマ */
+.recharts-brush > rect:first-child { fill: #0a0e17 !important; stroke: #1f2d40 !important; }
+.recharts-brush-slide { fill: #1a2235 !important; fill-opacity: 1 !important; }
+.recharts-brush-traveller rect { fill: #2a3f5a !important; stroke: #3d5a7e !important; }

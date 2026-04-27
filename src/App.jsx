@@ -187,8 +187,6 @@ export default function App() {
   const syncFromGitHub = useCallback(async (settings) => {
     const s = settings ?? githubSettings
     if (!s) return
-    setLoading(true)
-    setLoadingMsg('GitHub から取得中…')
     try {
       const files   = await fetchReportFilesFromGitHub(s)
       const results = await parseFiles(files)
@@ -202,8 +200,6 @@ export default function App() {
     } catch (e) {
       console.error('GitHub sync error:', e)
       throw e
-    } finally {
-      setLoading(false)
     }
   }, [githubSettings, parseFiles])
 
@@ -229,7 +225,6 @@ export default function App() {
       if (gs) {
         const jsonFiles = files.filter(f => /\.json$/i.test(f.name))
         if (jsonFiles.length > 0) {
-          setLoadingMsg('GitHub へ同期中…')
           try { await pushFilesToGitHub(gs, jsonFiles) }
           catch (e) { console.error('GitHub push error:', e) }
         }

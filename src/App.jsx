@@ -444,8 +444,9 @@ export default function App() {
                 </div>
               ) : (
                 <button onClick={() => setShowGitHubModal(true)}
-                  className="text-xs text-slate-500 hover:text-purple-400 transition-colors border border-[#1f2d40] hover:border-purple-500/30 px-3 py-1.5 rounded-lg hidden sm:block">
-                  GitHub 同期
+                  className="text-xs text-slate-500 hover:text-purple-400 transition-colors border border-[#1f2d40] hover:border-purple-500/30 px-3 py-1.5 rounded-lg">
+                  <span className="hidden sm:inline">GitHub 同期</span>
+                  <span className="sm:hidden">GH 設定</span>
                 </button>
               )}
               {hasData && (

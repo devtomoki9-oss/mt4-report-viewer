@@ -121,8 +121,6 @@ function fmtCountdown(s) {
 export default function App() {
   const [accounts,   setAccounts]   = useState([])
   const [tab,        setTab]        = useState('overview')
-  const [loading,    setLoading]    = useState(false)
-  const [loadingMsg, setLoadingMsg] = useState('レポートを解析中…')
   const [dateRange,  setDateRange]  = useState({ from: '', to: '' })
   const [aliases,    setAliasesState] = useState(() => {
     try { return JSON.parse(localStorage.getItem('mt4_aliases') || '{}') } catch { return {} }
@@ -205,8 +203,6 @@ export default function App() {
 
   // ── フォルダから読み込み ──────────────────────────────
   const loadFromDir = useCallback(async (handle) => {
-    setLoading(true)
-    setLoadingMsg(`${handle.name} を読み込み中…`)
     try {
       const files   = await collectReportFiles(handle)
       const results = await parseFiles(files)
@@ -233,13 +229,10 @@ export default function App() {
       console.error('Folder read error:', e)
     }
     setLastUpdated(new Date())
-    setLoading(false)
   }, [parseFiles])
 
   // ── 手動アップロード ──────────────────────────────────
   const handleFiles = async (files) => {
-    setLoading(true)
-    setLoadingMsg('レポートを解析中…')
     const results = await parseFiles(files)
     setAccounts(prev => {
       const byName = new Map(prev.map(a => [a.account.name, a]))
@@ -247,7 +240,6 @@ export default function App() {
       return [...byName.values()]
     })
     setLastUpdated(new Date())
-    setLoading(false)
   }
 
   // ── フォルダ登録 ─────────────────────────────────────
@@ -282,8 +274,6 @@ export default function App() {
             const snapshot = new Map()
             for (const f of await collectReportFiles(dirHandle)) snapshot.set(f.name, f.lastModified)
 
-            setLoadingMsg('EA にエクスポートをリクエスト中…')
-            setLoading(true)
             const fh = await dirHandle.getFileHandle('_refresh.cmd', { create: true })
             const writable = await fh.createWritable()
             await writable.write('1')
@@ -709,15 +699,6 @@ export default function App() {
           </>
         )}
       </main>
-
-      {loading && (
-        <div className="fixed inset-0 bg-[#0a0e17]/80 backdrop-blur flex items-center justify-center z-50">
-          <div className="bg-[#111827] border border-[#1f2d40] rounded-2xl px-8 py-6 text-slate-300 flex items-center gap-4">
-            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm">{loadingMsg}</span>
-          </div>
-        </div>
-      )}
 
       {/* GitHub 同期設定モーダル */}
       {showGitHubModal && (

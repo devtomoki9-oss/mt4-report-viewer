@@ -94,6 +94,14 @@ function downloadText(content, filename) {
   URL.revokeObjectURL(url)
 }
 
+function makeRunSyncVbs(owner, repo, token) {
+  return [
+    'Dim ps1',
+    'ps1 = CreateObject("WScript.Shell").ExpandEnvironmentStrings("%USERPROFILE%\\Downloads\\sync-to-github.ps1")',
+    `CreateObject("WScript.Shell").Run "powershell.exe -NonInteractive -ExecutionPolicy Bypass -File """ & ps1 & """ -Token ${token} -Owner ${owner} -Repo ${repo}", 0, False`,
+  ].join('\r\n') + '\r\n'
+}
+
 function fmt(n) {
   if (n == null) return '—'
   const abs = Math.abs(n)
@@ -830,10 +838,10 @@ export default function App() {
                   <div className="bg-[#0a0e17] rounded-lg p-3 space-y-1.5 border border-[#1f2d40]">
                     <div className="flex items-start gap-2"><span className="text-purple-400 flex-shrink-0">①</span><span>下の入力欄に GitHub ユーザー名・リポジトリ名・Token を入力して「接続して同期」をタップ</span></div>
                     <div className="flex items-start gap-2"><span className="text-purple-400 flex-shrink-0">②</span><span>ページ上部の「📁 MTExport フォルダを選択」をクリックして <span className="font-mono text-slate-300">%USERPROFILE%\MTExport</span> を選択</span></div>
-                    <div className="flex items-start gap-2"><span className="text-purple-400 flex-shrink-0">③</span><span>以後は MT4/MT5 がデータを書き出すたびに、ブラウザが自動で GitHub へアップロードします（5分ごと）</span></div>
+                    <div className="flex items-start gap-2"><span className="text-purple-400 flex-shrink-0">③</span><span>ブラウザが開いている間は 5 分ごとに自動で GitHub へアップロードされます</span></div>
                   </div>
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2 text-emerald-400">
-                    ✓ タスクスケジューラや PS1 スクリプトは不要です
+                  <div className="bg-slate-500/10 border border-slate-500/20 rounded-lg px-3 py-2 text-slate-400">
+                    ⚠ ブラウザを閉じると同期が止まります。ブラウザを閉じていても同期を続けたい場合は STEP 4 も設定してください。
                   </div>
                 </div>
               </div>
@@ -842,6 +850,51 @@ export default function App() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-purple-600/30 text-purple-400 text-xs flex items-center justify-center font-bold flex-shrink-0">4</span>
+                  <span className="font-semibold text-slate-200">タスクスケジューラ設定（ブラウザを閉じても同期）</span>
+                </div>
+                <div className="ml-7 space-y-3 text-slate-400">
+                  <p>PC を起動しているだけで 5 分ごとに自動プッシュします。ブラウザは不要です。</p>
+
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={() => downloadText(SYNC_PS1, 'sync-to-github.ps1')}
+                      className="text-purple-400 hover:text-purple-300 bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 rounded-lg transition-colors text-xs">
+                      ↓ sync-to-github.ps1
+                    </button>
+                    {githubSettings ? (
+                      <button onClick={() => downloadText(makeRunSyncVbs(githubSettings.owner, githubSettings.repo, githubSettings.token), 'run-sync.vbs')}
+                        className="text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition-colors text-xs">
+                        ↓ run-sync.vbs（設定情報入り）
+                      </button>
+                    ) : (
+                      <span className="text-slate-600 text-xs py-1.5">※ 先に下の入力欄で接続すると run-sync.vbs に設定が自動入力されます</span>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="text-slate-400 mb-1 font-medium">① 両ファイルをブロック解除（PowerShell）</div>
+                    <div className="flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded-lg px-3 py-2 overflow-x-auto">
+                      <code className="text-green-400 font-mono flex-1 whitespace-nowrap text-[11px]">{'Unblock-File "$env:USERPROFILE\\Downloads\\sync-to-github.ps1"; Unblock-File "$env:USERPROFILE\\Downloads\\run-sync.vbs"'}</code>
+                      <button onClick={() => navigator.clipboard.writeText('Unblock-File "$env:USERPROFILE\\Downloads\\sync-to-github.ps1"; Unblock-File "$env:USERPROFILE\\Downloads\\run-sync.vbs"')}
+                        className="text-slate-600 hover:text-slate-300 flex-shrink-0 ml-1" title="コピー">⎘</button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-slate-400 mb-1 font-medium">② タスクスケジューラに登録（5 分ごと・完全サイレント）</div>
+                    <div className="flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded-lg px-3 py-2 overflow-x-auto">
+                      <code className="text-green-400 font-mono flex-1 whitespace-nowrap text-[11px]">{'schtasks /create /tn "MTExportSync" /sc minute /mo 5 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"'}</code>
+                      <button onClick={() => navigator.clipboard.writeText('schtasks /create /tn "MTExportSync" /sc minute /mo 5 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"')}
+                        className="text-slate-600 hover:text-slate-300 flex-shrink-0 ml-1" title="コピー">⎘</button>
+                    </div>
+                    <div className="text-slate-600 mt-1">「スケジュール タスク "MTExportSync" を作成しました。」と表示されれば完了。ウィンドウは一切表示されません。</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* STEP 5 */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-purple-600/30 text-purple-400 text-xs flex items-center justify-center font-bold flex-shrink-0">5</span>
                   <span className="font-semibold text-slate-200">スマホで接続</span>
                 </div>
                 <div className="ml-7 space-y-2 text-slate-400">

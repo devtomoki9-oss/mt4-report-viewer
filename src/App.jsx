@@ -10,6 +10,7 @@ import { INSTALL_BAT, MQ4_CONTENT, MQ5_CONTENT } from './lib/downloadFiles'
 import {
   loadGitHubSettings, saveGitHubSettings, clearGitHubSettings,
   fetchReportFilesFromGitHub, pushFilesToGitHub,
+  writeTrigger, checkTrigger, deleteTrigger,
 } from './lib/githubSync'
 import UploadZone from './components/UploadZone'
 import StatCard from './components/StatCard'
@@ -136,6 +137,7 @@ export default function App() {
   const [ghOwner,          setGhOwner]          = useState('')
   const [ghRepo,           setGhRepo]           = useState('')
   const [ghToken,          setGhToken]          = useState('')
+  const [ghRequesting,     setGhRequesting]     = useState(false)
 
   const [accSort, setAccSort] = useState({ key: 'profit', dir: 'desc' })
   const onAccSort = useCallback((col) => {
@@ -332,6 +334,46 @@ export default function App() {
   useEffect(() => { reloadFolderRef.current = reloadFolder }, [reloadFolder])
   useEffect(() => { githubSettingsRef.current = githubSettings }, [githubSettings])
 
+  // ── スマホ → PC への更新リクエスト ────────────────────
+  const requestGitHubRefresh = useCallback(async () => {
+    if (!githubSettings || ghRequesting) return
+    setGhRequesting(true)
+    setLoadingMsg('PC に更新をリクエスト中…')
+    setLoading(true)
+    try {
+      await writeTrigger(githubSettings)
+      // PC がトリガーを処理するまで最大40秒ポーリング
+      const deadline = Date.now() + 40000
+      while (Date.now() < deadline) {
+        await new Promise(r => setTimeout(r, 3000))
+        const t = await checkTrigger(githubSettings)
+        if (!t) break  // PC がトリガーを削除した = 処理完了
+      }
+      await syncFromGitHub(githubSettings)
+    } catch (e) {
+      console.error('Request refresh error:', e)
+      try { await syncFromGitHub(githubSettings) } catch {}
+    } finally {
+      setGhRequesting(false)
+      setLoading(false)
+    }
+  }, [githubSettings, ghRequesting, syncFromGitHub])
+
+  // ── PC: GitHub トリガー監視（30秒ごと） ──────────────
+  useEffect(() => {
+    if (!dirHandle || !githubSettings) return
+    const poll = async () => {
+      try {
+        const t = await checkTrigger(githubSettings)
+        if (!t) return
+        await deleteTrigger(githubSettings, t.sha)
+        reloadFolderRef.current?.(true)
+      } catch {}
+    }
+    const id = setInterval(poll, 30 * 1000)
+    return () => clearInterval(id)
+  }, [dirHandle, githubSettings])
+
   // ── GitHub 自動更新（5分ごと） ───────────────────────
   useEffect(() => {
     if (!githubSettings) return
@@ -446,9 +488,11 @@ export default function App() {
               )}
               {githubSettings ? (
                 <div className="flex items-center gap-1">
-                  <button onClick={() => syncFromGitHub()}
-                    className="text-xs text-purple-400 hover:text-purple-300 transition-colors bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 rounded-lg">
-                    ↻ GitHub
+                  <button
+                    onClick={() => dirHandle ? syncFromGitHub() : requestGitHubRefresh()}
+                    disabled={ghRequesting}
+                    className="text-xs text-purple-400 hover:text-purple-300 disabled:opacity-50 transition-colors bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 rounded-lg">
+                    {ghRequesting ? '…' : dirHandle ? '↻ GitHub' : '↻ 更新'}
                   </button>
                   <button onClick={() => { setGhOwner(githubSettings.owner); setGhRepo(githubSettings.repo); setGhToken(githubSettings.token); setShowGitHubModal(true) }}
                     className="text-slate-600 hover:text-purple-400 transition-colors px-1 py-1.5 text-sm" title="GitHub 設定">

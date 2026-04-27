@@ -41,6 +41,45 @@ export async function fetchReportFilesFromGitHub({ owner, repo, token }) {
   return files
 }
 
+const TRIGGER_FILE = '_refresh_trigger'
+
+export async function writeTrigger({ owner, repo, token }) {
+  const headers = {
+    Authorization: `token ${token}`,
+    Accept: 'application/vnd.github.v3+json',
+    'Content-Type': 'application/json',
+  }
+  let sha = null
+  try {
+    const r = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${TRIGGER_FILE}`, { headers })
+    if (r.ok) sha = (await r.json()).sha
+  } catch {}
+  const body = { message: 'trigger: refresh', content: btoa(String(Date.now())) }
+  if (sha) body.sha = sha
+  const r = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${TRIGGER_FILE}`, {
+    method: 'PUT', headers, body: JSON.stringify(body),
+  })
+  if (!r.ok) throw new Error(`HTTP ${r.status}`)
+}
+
+export async function checkTrigger({ owner, repo, token }) {
+  const headers = { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
+  const r = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${TRIGGER_FILE}`, { headers })
+  if (!r.ok) return null
+  return await r.json()
+}
+
+export async function deleteTrigger({ owner, repo, token }, sha) {
+  const headers = {
+    Authorization: `token ${token}`,
+    Accept: 'application/vnd.github.v3+json',
+    'Content-Type': 'application/json',
+  }
+  await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${TRIGGER_FILE}`, {
+    method: 'DELETE', headers, body: JSON.stringify({ message: 'trigger: done', sha }),
+  })
+}
+
 export async function pushFilesToGitHub({ owner, repo, token }, files) {
   const headers = {
     Authorization: `token ${token}`,

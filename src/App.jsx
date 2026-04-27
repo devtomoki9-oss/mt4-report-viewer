@@ -678,16 +678,26 @@ export default function App() {
 
       {/* GitHub 同期設定モーダル */}
       {showGitHubModal && (
-        <div className="fixed inset-0 bg-[#0a0e17]/80 backdrop-blur flex items-end sm:items-center justify-center z-50 p-3 sm:p-4">
-          <div className="bg-[#111827] border border-[#1f2d40] rounded-2xl w-full max-w-lg flex flex-col max-h-[92vh]">
+        <div
+          className="fixed inset-0 bg-[#0a0e17]/80 backdrop-blur flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+          onClick={() => setShowGitHubModal(false)}
+        >
+          <div
+            className="bg-[#111827] border border-[#1f2d40] rounded-t-2xl sm:rounded-2xl w-full max-w-lg flex flex-col max-h-[80vh] sm:max-h-[92vh]"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* ドラッグハンドル（モバイルのみ） */}
+            <div className="sm:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
+              <div className="w-10 h-1 bg-[#1f2d40] rounded-full" />
+            </div>
 
             {/* ヘッダ */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#1f2d40] flex-shrink-0">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-[#1f2d40] flex-shrink-0">
               <div>
                 <div className="text-sm font-semibold text-slate-100">GitHub 同期設定</div>
                 <div className="text-xs text-slate-500 mt-0.5">PC の MTExport フォルダをスマホで自動更新</div>
               </div>
-              <button onClick={() => setShowGitHubModal(false)} className="text-slate-600 hover:text-slate-300 text-lg px-1 flex-shrink-0">✕</button>
+              <button onClick={() => setShowGitHubModal(false)} className="text-slate-400 hover:text-slate-100 text-xl px-2 py-1 flex-shrink-0">✕</button>
             </div>
 
             {/* スクロール可能な本文 */}

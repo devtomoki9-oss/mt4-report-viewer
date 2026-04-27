@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, ReferenceLine, Brush
+  ResponsiveContainer, ReferenceLine,
 } from 'recharts'
 
 function calcNiceTicks(min, max, targetCount = 5) {
@@ -113,10 +113,20 @@ export default function EquityChart({ data, title = 'エクイティカーブ' }
   const isProfit = final >= 0
   const isZoomed = safeStart > 0 || safeEnd < data.length - 1
 
+  const windowSize = safeEnd - safeStart
+  const maxStart   = Math.max(0, data.length - 1 - windowSize)
+
   const resetZoom = () => {
     const r = { startIndex: 0, endIndex: data.length - 1 }
     rangeRef.current = r
     setRange(r)
+  }
+
+  const handlePan = (newStart) => {
+    const s    = Math.max(0, Math.min(Number(newStart), maxStart))
+    const next = { startIndex: s, endIndex: s + windowSize }
+    rangeRef.current = next
+    setRange(next)
   }
 
   return (
@@ -137,7 +147,7 @@ export default function EquityChart({ data, title = 'エクイティカーブ' }
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={300}>
+      <ResponsiveContainer width="100%" height={280}>
         <AreaChart data={indexedData} margin={{ top: 4, right: 36, bottom: 0, left: 8 }}>
           <defs>
             <linearGradient id={`grad-${isProfit}`} x1="0" y1="0" x2="0" y2="1">
@@ -179,22 +189,22 @@ export default function EquityChart({ data, title = 'エクイティカーブ' }
             dot={false}
             activeDot={{ r: 4, fill: isProfit ? '#10b981' : '#ef4444' }}
           />
-          <Brush
-            dataKey="date"
-            startIndex={safeStart}
-            endIndex={safeEnd}
-            height={30}
-            stroke="#1f2d40"
-            fill="#0a0e17"
-            travellerWidth={8}
-            onChange={({ startIndex: s, endIndex: e }) => {
-              const next = { startIndex: s, endIndex: e }
-              rangeRef.current = next
-              setRange(next)
-            }}
-          />
         </AreaChart>
       </ResponsiveContainer>
+
+      {isZoomed && maxStart > 0 && (
+        <div className="mt-2 px-1">
+          <input
+            type="range"
+            min={0}
+            max={maxStart}
+            value={safeStart}
+            onChange={e => handlePan(e.target.value)}
+            className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-blue-500"
+            style={{ background: `linear-gradient(to right, #3b82f6 ${(safeStart / maxStart) * 100}%, #1f2d40 ${(safeStart / maxStart) * 100}%)` }}
+          />
+        </div>
+      )}
     </div>
   )
 }

@@ -34,6 +34,7 @@ import {
 } from './lib/supabaseClient'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import DeleteAccountModal from './components/DeleteAccountModal'
+import FeedbackModal from './components/FeedbackModal'
 import UploadZone from './components/UploadZone'
 import StatCard from './components/StatCard'
 import AccountCard from './components/AccountCard'
@@ -122,6 +123,7 @@ export default function App() {
   const [deletingAccount,   setDeletingAccount]   = useState(false)
   const [showVbsModal,      setShowVbsModal]      = useState(false)
   const [vbsPass,           setVbsPass]           = useState('')
+  const [showFeedback,      setShowFeedback]      = useState(false)
 
   const [accSort, setAccSort] = useState({ key: 'profit', dir: 'desc' })
   const onAccSort = useCallback((col) => {
@@ -699,13 +701,17 @@ export default function App() {
       </main>
 
       {/* フッター */}
-      <footer className="text-center py-4 text-xs text-slate-700">
+      <footer className="text-center py-4 text-xs text-slate-700 space-x-4">
         <button onClick={() => setShowPrivacy(true)} className="hover:text-slate-400 underline">
           プライバシーポリシー
         </button>
+        <button onClick={() => setShowFeedback(true)} className="hover:text-slate-400 underline">
+          お問い合わせ
+        </button>
       </footer>
 
-      {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} />}
+      {showPrivacy  && <PrivacyPolicy   onClose={() => setShowPrivacy(false)} />}
+      {showFeedback && <FeedbackModal   onClose={() => setShowFeedback(false)} />}
 
       {showVbsModal && (
         <div className="fixed inset-0 bg-[#0a0e17]/90 backdrop-blur flex items-center justify-center z-50 p-4"

@@ -68,7 +68,7 @@ export default function PrivacyPolicy({ onClose }) {
 
           <section className="space-y-2">
             <h2 className="text-sm font-semibold text-slate-200">9. お問い合わせ</h2>
-            <p>プライバシーに関するお問い合わせは、アプリ内のフィードバック機能またはサービス運営者までご連絡ください。</p>
+            <p>プライバシーに関するお問い合わせは、画面下部の「お問い合わせ」またはメール（<span className="text-slate-300">devtomoki9@gmail.com</span>）にてご連絡ください。</p>
           </section>
 
         </div>

@@ -130,6 +130,8 @@ export default function App() {
   const [showFeedback,      setShowFeedback]      = useState(false)
   const [showManual,        setShowManual]        = useState(false)
   const [showTerms,         setShowTerms]         = useState(false)
+  const [showMobileMenu,    setShowMobileMenu]    = useState(false)
+  const mobileMenuRef = useRef(null)
 
   const hasData = accounts.length > 0
 
@@ -304,6 +306,17 @@ export default function App() {
     syncFromSupabase()
   }, [user, syncFromSupabase])
 
+  // ── モバイルメニューの外側クリックで閉じる ──────────
+  useEffect(() => {
+    if (!showMobileMenu) return
+    const close = (e) => {
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target))
+        setShowMobileMenu(false)
+    }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [showMobileMenu])
+
   // ── 各 ref を常に最新に保つ ──────────────────────────
   const syncFromSupabaseRef = useRef(null)
   useEffect(() => { reloadFolderRef.current     = reloadFolder     }, [reloadFolder])
@@ -471,6 +484,32 @@ export default function App() {
                   </button>
                 </>
               )}
+              {/* モバイル用メニュー（⋮ボタン + ドロップダウン） */}
+              <div className="relative sm:hidden" ref={mobileMenuRef}>
+                <button
+                  onClick={() => setShowMobileMenu(v => !v)}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-200 hover:bg-[#1a2235] transition-colors text-base">
+                  ⋮
+                </button>
+                {showMobileMenu && (
+                  <div className="absolute right-0 top-full mt-1 w-44 bg-[#111827] border border-[#1f2d40] rounded-xl shadow-2xl py-1 z-50">
+                    {hasData && (
+                      <button
+                        onClick={() => { clearAll(); setShowMobileMenu(false) }}
+                        className="w-full text-left px-4 py-2.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-[#1a2235] transition-colors">
+                        データをクリア
+                      </button>
+                    )}
+                    {user && (
+                      <button
+                        onClick={() => { setShowDeleteAccount(true); setShowMobileMenu(false) }}
+                        className="w-full text-left px-4 py-2.5 text-xs text-red-400/70 hover:text-red-400 hover:bg-[#1a2235] transition-colors">
+                        アカウント削除
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           {hasData && (

@@ -125,6 +125,8 @@ export default function App() {
   const [vbsPass,           setVbsPass]           = useState('')
   const [showFeedback,      setShowFeedback]      = useState(false)
 
+  const hasData = accounts.length > 0
+
   const [accSort, setAccSort] = useState({ key: 'profit', dir: 'desc' })
   const onAccSort = useCallback((col) => {
     setAccSort(s => s.key === col
@@ -397,7 +399,6 @@ export default function App() {
     })
   }, [filteredAccStats, accSort])
 
-  const hasData    = accounts.length > 0
   const isFiltered = !!(dateRange.from || dateRange.to)
 
   if (authLoading) {

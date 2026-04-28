@@ -45,12 +45,14 @@ import EquityChart from './components/EquityChart'
 import TradeTable from './components/TradeTable'
 import OpenPositions from './components/OpenPositions'
 import DateRangeFilter from './components/DateRangeFilter'
+import TradeCalendar from './components/TradeCalendar'
 import LoginScreen from './components/LoginScreen'
 
 const TABS = [
-  { id: 'overview', label: 'サマリー' },
-  { id: 'ea',       label: '口座別成績' },
-  { id: 'trades',   label: '全取引'   },
+  { id: 'overview',  label: 'サマリー'   },
+  { id: 'ea',        label: '口座別成績' },
+  { id: 'trades',    label: '全取引'     },
+  { id: 'calendar',  label: 'カレンダー' },
 ]
 
 const EXPORT_INTERVAL_MS = 1 * 60 * 1000
@@ -697,8 +699,9 @@ export default function App() {
                     </div>
                   </div>
                 )}
-                {tab === 'ea'     && <AccountBreakdown accounts={sortedFilteredAccStats} filteredTrades={filteredTrades} aliases={aliases} setAlias={setAlias} sortKey={accSort.key} sortDir={accSort.dir} onSort={onAccSort} />}
-                {tab === 'trades' && <TradeTable trades={filteredTrades} showSearch aliases={aliases} />}
+                {tab === 'ea'       && <AccountBreakdown accounts={sortedFilteredAccStats} filteredTrades={filteredTrades} aliases={aliases} setAlias={setAlias} sortKey={accSort.key} sortDir={accSort.dir} onSort={onAccSort} />}
+                {tab === 'trades'   && <TradeTable trades={filteredTrades} showSearch aliases={aliases} />}
+                {tab === 'calendar' && <TradeCalendar trades={filteredTrades} />}
               </>
             )}
           </>

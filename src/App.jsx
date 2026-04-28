@@ -8,7 +8,7 @@ import {
   saveHandle, loadHandle, collectReportFiles,
   FOLDER_KEY, supportsFileSystemAccess
 } from './lib/folderStore'
-import { INSTALL_BAT, MQ4_CONTENT, MQ5_CONTENT } from './lib/downloadFiles'
+import { INSTALL_BAT, MQ4_CONTENT, MQ5_CONTENT, SYNC_PS1_CONTENT } from './lib/downloadFiles'
 import {
   supabase, signOut, getSession, fetchReports
 } from './lib/supabaseClient'
@@ -459,8 +459,7 @@ export default function App() {
                 {
                   step: '1',
                   text: '下のボタンから install.bat・MT4ReportExporter.mq4・MT5ReportExporter.mq5 を同じフォルダにダウンロード',
-                  sub: null,
-                  code: null,
+                  sub: null, code: null,
                 },
                 {
                   step: '2',
@@ -470,7 +469,7 @@ export default function App() {
                 },
                 {
                   step: '3',
-                  text: '開いた MT4/MT5 ウィンドウそれぞれで���回セットアップを行う',
+                  text: '開いた MT4/MT5 ウィンドウそれぞれで一回セットアップを行う',
                   sub: '① ReportExporter EA をチャートにドラッグ → OK　② ファイル → プロファイル → 名前を付けて保存 → MTExporter → OK　③ ターミナルを閉じる',
                   code: null,
                 },
@@ -482,13 +481,9 @@ export default function App() {
                 },
                 {
                   step: '5',
-                  text: supportsFileSystemAccess() && !dirHandle
-                    ? '下の「MTExport フォルダを選択」をクリック（初回のみ）'
-                    : 'MT4/MT5 起動後に右上の「↻ 更新」を押すとデータが表示されます',
-                  sub: supportsFileSystemAccess() && !dirHandle
-                    ? '%USERPROFILE%\\MTExport を選択 → 以後は 5 分ごとに自動更新されます'
-                    : '5 分ごとに自動更新されます。手動更新は右上の「↻ 更新」から',
-                  code: null,
+                  text: 'sync-to-supabase.ps1 をダウンロードしてタスクスケジューラに登録',
+                  sub: '1分ごとに MTExport フォルダの JSON を自動アップロードします',
+                  code: 'schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"',
                 },
               ].map(s => (
                 <div key={s.step} className="flex items-start gap-3 text-xs">
@@ -522,12 +517,10 @@ export default function App() {
                   className="text-xs text-slate-500 hover:text-slate-300 bg-[#1a2235] border border-[#1f2d40] px-3 py-1.5 rounded-lg transition-colors">
                   ↓ MT5ReportExporter.mq5
                 </button>
-                {supportsFileSystemAccess() && (
-                  <button onClick={registerFolder}
-                    className="sm:ml-auto text-xs text-blue-400 hover:text-blue-300 bg-blue-500/10 border border-blue-500/20 px-4 py-1.5 rounded-lg transition-colors">
-                    📁 {dirHandle ? 'MTExport フォルダを変更' : 'MTExport フォルダを選択'}
-                  </button>
-                )}
+                <button onClick={() => downloadText(SYNC_PS1_CONTENT, 'sync-to-supabase.ps1')}
+                  className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition-colors">
+                  ↓ sync-to-supabase.ps1
+                </button>
               </div>
             </div>
 

@@ -504,8 +504,14 @@ export default function App() {
                 },
                 {
                   step: '5',
-                  text: 'sync-to-supabase.ps1 をダウンロードしてタスクスケジューラに登録',
-                  sub: '1分ごとに MTExport フォルダの JSON を自動アップロードします',
+                  text: 'sync-to-supabase.ps1 をダウンロードし、PowerShell でブロック解除する',
+                  sub: 'ダウンロードしたスクリプトは Windows によってブロックされるため、先に解除が必要です',
+                  code: 'Unblock-File "$env:USERPROFILE\\Downloads\\sync-to-supabase.ps1"',
+                },
+                {
+                  step: '6',
+                  text: 'タスクスケジューラに登録（1分ごとに自動アップロード）',
+                  sub: 'コマンドプロンプト（管理者）またはタスクスケジューラ GUI から登録してください',
                   code: 'schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"',
                 },
               ].map(s => (

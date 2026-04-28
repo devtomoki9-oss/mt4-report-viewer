@@ -14,14 +14,20 @@ const SUPABASE_URL     = import.meta.env.VITE_SUPABASE_URL     ?? ''
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ?? ''
 
 function generateRunSyncVbs(url, anonKey, email, password) {
-  return `' MT Report Viewer - Auto Sync Script\n` +
-    `' sync-to-supabase.ps1 と同じフォルダに置いてタスクスケジューラに登録してください\n` +
-    `Dim WshShell, ps1Path, psArgs\n` +
-    `Set WshShell = CreateObject("WScript.Shell")\n` +
-    `ps1Path = Left(WScript.ScriptFullName, InStrRev(WScript.ScriptFullName, "\\\\")) & "sync-to-supabase.ps1"\n` +
-    `psArgs = " -Url ""${url}"" -AnonKey ""${anonKey}"" -Email ""${email}"" -Password ""${password.replace(/"/g, '""')}"""\n` +
-    `WshShell.Run "powershell.exe -NonInteractive -ExecutionPolicy Bypass -File """ & ps1Path & """" & psArgs, 0, False\n` +
-    `Set WshShell = Nothing\n`
+  const u = url.trim()
+  const k = anonKey.trim()
+  const e = email.trim()
+  const p = password.replace(/"/g, '""')
+  return (
+    `' MT Report Viewer - Auto Sync\r\n` +
+    `' Place in the same folder as sync-to-supabase.ps1\r\n` +
+    `Dim WshShell, ps1Path, psArgs\r\n` +
+    `Set WshShell = CreateObject("WScript.Shell")\r\n` +
+    `ps1Path = Left(WScript.ScriptFullName, InStrRev(WScript.ScriptFullName, "\\")) & "sync-to-supabase.ps1"\r\n` +
+    `psArgs = " -Url ""${u}"" -AnonKey ""${k}"" -Email ""${e}"" -Password ""${p}"""\r\n` +
+    `WshShell.Run "powershell.exe -NonInteractive -ExecutionPolicy Bypass -File """ & ps1Path & """" & psArgs, 0, False\r\n` +
+    `Set WshShell = Nothing\r\n`
+  )
 }
 import {
   supabase, signOut, getSession, fetchReports, deleteAccount

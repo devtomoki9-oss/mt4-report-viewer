@@ -15,6 +15,11 @@ param(
     [string]$Folder   = "$env:USERPROFILE\MTExport"
 )
 
+$Url      = $Url.Trim()
+$AnonKey  = $AnonKey.Trim()
+$Email    = $Email.Trim()
+$Password = $Password.Trim()
+
 if (-not $Url -or -not $AnonKey -or -not $Email -or -not $Password) {
     Write-Error "Missing credentials. Provide -Url -AnonKey -Email -Password or use run-sync.vbs."
     exit 1

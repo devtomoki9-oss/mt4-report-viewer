@@ -30,7 +30,8 @@ function generateRunSyncVbs(url, anonKey, email, password) {
   )
 }
 import {
-  supabase, signOut, getSession, fetchReports, deleteAccount
+  supabase, signOut, getSession, fetchReports, deleteAccount,
+  fetchAliases, saveAliases,
 } from './lib/supabaseClient'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import DeleteAccountModal from './components/DeleteAccountModal'
@@ -105,6 +106,7 @@ export default function App() {
   const [aliases,    setAliasesState] = useState(() => {
     try { return JSON.parse(localStorage.getItem('mt4_aliases') || '{}') } catch { return {} }
   })
+  const aliasesSyncTimerRef = useRef(null)
   const setAlias = useCallback((originalName, displayName) => {
     setAliasesState(prev => {
       const next = { ...prev }
@@ -114,6 +116,11 @@ export default function App() {
         delete next[originalName]
       }
       localStorage.setItem('mt4_aliases', JSON.stringify(next))
+      // Supabase へデバウンス保存（0.8秒）
+      if (aliasesSyncTimerRef.current) clearTimeout(aliasesSyncTimerRef.current)
+      aliasesSyncTimerRef.current = setTimeout(() => {
+        saveAliases(next).catch(console.error)
+      }, 800)
       return next
     })
   }, [])
@@ -303,6 +310,21 @@ export default function App() {
   useEffect(() => {
     if (!user || autoLoadDoneRef.current) return
     autoLoadDoneRef.current = true
+
+    // Supabase から最新の alias を取得してローカルに反映
+    fetchAliases().then(remote => {
+      if (Object.keys(remote).length > 0) {
+        setAliasesState(remote)
+        localStorage.setItem('mt4_aliases', JSON.stringify(remote))
+      } else {
+        // リモートが空の場合、ローカルの alias をアップロード（初回同期）
+        setAliasesState(local => {
+          if (Object.keys(local).length > 0) saveAliases(local).catch(console.error)
+          return local
+        })
+      }
+    }).catch(console.error)
+
     syncFromSupabase()
   }, [user, syncFromSupabase])
 

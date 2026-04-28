@@ -57,6 +57,17 @@ export async function deleteAccount() {
   if (error) throw error
 }
 
+export async function fetchAliases() {
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) return {}
+  return user.user_metadata?.aliases ?? {}
+}
+
+export async function saveAliases(aliases) {
+  const { error } = await supabase.auth.updateUser({ data: { aliases } })
+  if (error) throw error
+}
+
 export async function upsertReport(accountNumber, filename, jsonData) {
   const { error } = await supabase
     .from('reports')

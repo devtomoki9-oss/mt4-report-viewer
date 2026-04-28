@@ -455,22 +455,14 @@ export default function App() {
               {hasData && <span className="text-xs text-slate-600 ml-1 hidden sm:inline">{accounts.length} 口座</span>}
             </div>
             <div className="flex items-center gap-2">
-              {dirHandle && (
-                <button onClick={() => reloadFolder(true)}
-                  className="text-xs text-blue-400 hover:text-blue-300 transition-colors bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg">
-                  ↻ 更新
-                </button>
-              )}
               {githubSettings ? (
                 <div className="flex items-center gap-1">
-                  {!dirHandle && (
-                    <button
-                      onClick={requestGitHubRefresh}
-                      disabled={ghRequesting}
-                      className="text-xs text-purple-400 hover:text-purple-300 disabled:opacity-50 transition-colors bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 rounded-lg">
-                      {ghRequesting ? '…' : '↻ 更新'}
-                    </button>
-                  )}
+                  <button
+                    onClick={requestGitHubRefresh}
+                    disabled={ghRequesting}
+                    className="text-xs text-purple-400 hover:text-purple-300 disabled:opacity-50 transition-colors bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 rounded-lg">
+                    {ghRequesting ? '…' : '↻ 更新'}
+                  </button>
                   <button onClick={() => { setGhOwner(githubSettings.owner); setGhRepo(githubSettings.repo); setGhToken(githubSettings.token); setShowGitHubModal(true) }}
                     className="text-slate-600 hover:text-purple-400 transition-colors px-1 py-1.5 text-sm" title="GitHub 設定">
                     ⚙

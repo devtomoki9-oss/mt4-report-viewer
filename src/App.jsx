@@ -10,9 +10,10 @@ import {
 } from './lib/folderStore'
 import { INSTALL_BAT, MQ4_CONTENT, MQ5_CONTENT, SYNC_PS1_CONTENT } from './lib/downloadFiles'
 import {
-  supabase, signOut, getSession, fetchReports
+  supabase, signOut, getSession, fetchReports, deleteAccount
 } from './lib/supabaseClient'
 import PrivacyPolicy from './components/PrivacyPolicy'
+import DeleteAccountModal from './components/DeleteAccountModal'
 import UploadZone from './components/UploadZone'
 import StatCard from './components/StatCard'
 import AccountCard from './components/AccountCard'
@@ -96,7 +97,9 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true)
   const [refreshing,   setRefreshing]  = useState(false)
   const [showPrivacy,  setShowPrivacy] = useState(false)
-  const [syncDone,     setSyncDone]    = useState(false)
+  const [syncDone,        setSyncDone]        = useState(false)
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false)
+  const [deletingAccount,   setDeletingAccount]   = useState(false)
 
   const [accSort, setAccSort] = useState({ key: 'profit', dir: 'desc' })
   const onAccSort = useCallback((col) => {
@@ -410,8 +413,14 @@ export default function App() {
                   </button>
                   <button
                     onClick={async () => { await signOut(); setAccounts([]); setUser(null) }}
-                    className="text-slate-600 hover:text-red-400 transition-colors px-2 py-1.5 text-xs" title="ログアウト">
+                    className="text-slate-600 hover:text-slate-300 transition-colors px-2 py-1.5 text-xs">
                     ログアウト
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteAccount(true)}
+                    className="text-slate-700 hover:text-red-400 transition-colors px-2 py-1.5 text-xs"
+                    title="アカウント削除">
+                    アカウント削除
                   </button>
                 </div>
               )}
@@ -659,6 +668,26 @@ export default function App() {
       </footer>
 
       {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} />}
+
+      {showDeleteAccount && (
+        <DeleteAccountModal
+          loading={deletingAccount}
+          onClose={() => setShowDeleteAccount(false)}
+          onConfirm={async () => {
+            setDeletingAccount(true)
+            try {
+              await deleteAccount()
+              setUser(null)
+              setAccounts([])
+              setShowDeleteAccount(false)
+            } catch (e) {
+              alert('削除に失敗しました: ' + e.message)
+            } finally {
+              setDeletingAccount(false)
+            }
+          }}
+        />
+      )}
 
       <Analytics />
       <SpeedInsights />

@@ -52,6 +52,11 @@ export async function fetchReports() {
   }))
 }
 
+export async function deleteAccount() {
+  const { error } = await supabase.rpc('delete_own_account')
+  if (error) throw error
+}
+
 export async function upsertReport(accountNumber, filename, jsonData) {
   const { error } = await supabase
     .from('reports')

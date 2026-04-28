@@ -148,8 +148,6 @@ export default function App() {
       setNextExportAt(Date.now() + SUPABASE_INTERVAL_MS)
     } catch (e) {
       console.error('Supabase sync error:', e)
-    } finally {
-      setSyncDone(true)
     }
   }, [parseFiles])
 
@@ -285,6 +283,7 @@ export default function App() {
       await syncFromSupabase()
     } finally {
       setRefreshing(false)
+      setSyncDone(true)
     }
   }, [refreshing, syncFromSupabase])
 

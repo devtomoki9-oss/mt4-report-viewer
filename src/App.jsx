@@ -96,6 +96,7 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true)
   const [refreshing,   setRefreshing]  = useState(false)
   const [showPrivacy,  setShowPrivacy] = useState(false)
+  const [syncDone,     setSyncDone]    = useState(false)
 
   const [accSort, setAccSort] = useState({ key: 'profit', dir: 'desc' })
   const onAccSort = useCallback((col) => {
@@ -147,6 +148,8 @@ export default function App() {
       setNextExportAt(Date.now() + SUPABASE_INTERVAL_MS)
     } catch (e) {
       console.error('Supabase sync error:', e)
+    } finally {
+      setSyncDone(true)
     }
   }, [parseFiles])
 
@@ -454,6 +457,16 @@ export default function App() {
               <h1 className="text-2xl font-bold text-slate-100 mb-2">MT4/MT5 取引レポートビューア</h1>
               <p className="text-slate-500 text-sm">複数口座のレポートを集約し、成績を分析します</p>
             </div>
+
+            {syncDone && (
+              <div className="w-full max-w-2xl bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 flex items-start gap-3 text-xs text-amber-400">
+                <span className="text-base flex-shrink-0">⚠</span>
+                <div className="space-y-1">
+                  <div className="font-semibold">Supabase にレポートデータが見つかりません</div>
+                  <div className="text-amber-500/80">MT4/MT5 が起動しているか、<code className="font-mono bg-amber-500/10 px-1 rounded">sync-to-supabase.ps1</code> のタスクスケジューラが動作しているか確認してください。</div>
+                </div>
+              </div>
+            )}
 
             <div className="w-full max-w-2xl bg-[#111827] border border-[#1f2d40] rounded-xl p-5 space-y-3">
               <div className="text-xs font-semibold text-blue-400 uppercase tracking-wide">セットアップ（初回のみ）</div>

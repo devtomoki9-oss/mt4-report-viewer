@@ -11,16 +11,51 @@ function fmt2(n) {
   return (n >= 0 ? '+' : '-') + s
 }
 
-export default function TradeCalendar({ trades = [] }) {
+export default function TradeCalendar({ trades = [], aliases = {} }) {
   const today = new Date()
   const [year,  setYear]  = useState(today.getFullYear())
-  const [month, setMonth] = useState(today.getMonth()) // 0-indexed
+  const [month, setMonth] = useState(today.getMonth())
   const [selectedDay, setSelectedDay] = useState(null)
+  const [selectedAccounts, setSelectedAccounts] = useState(null) // null = 全口座
+
+  // 口座名一覧
+  const accountNames = useMemo(() => {
+    const names = new Set()
+    for (const t of trades) if (t.account) names.add(t.account)
+    return [...names].sort()
+  }, [trades])
+
+  // 口座フィルタ済みトレード
+  const activeTrades = useMemo(() => {
+    if (!selectedAccounts) return trades
+    return trades.filter(t => selectedAccounts.has(t.account))
+  }, [trades, selectedAccounts])
+
+  const toggleAccount = (name) => {
+    setSelectedAccounts(prev => {
+      if (!prev) {
+        // 全口座選択中 → この口座だけ選択
+        return new Set([name])
+      }
+      const next = new Set(prev)
+      if (next.has(name)) {
+        next.delete(name)
+        // 全部外れたら全口座に戻す
+        if (next.size === 0) return null
+      } else {
+        next.add(name)
+        // 全口座が選択されたら null に戻す
+        if (next.size === accountNames.length) return null
+      }
+      return next
+    })
+    setSelectedDay(null)
+  }
 
   // 日別集計
   const dailyMap = useMemo(() => {
     const map = new Map()
-    for (const t of trades) {
+    for (const t of activeTrades) {
       const day = t.closeTime?.slice(0, 10)
       if (!day) continue
       if (!map.has(day)) map.set(day, { trades: [], profit: 0 })
@@ -29,7 +64,7 @@ export default function TradeCalendar({ trades = [] }) {
       d.profit = Math.round((d.profit + (t.netProfit ?? t.profit ?? 0)) * 100) / 100
     }
     return map
-  }, [trades])
+  }, [activeTrades])
 
   // 月集計
   const monthStats = useMemo(() => {
@@ -48,12 +83,11 @@ export default function TradeCalendar({ trades = [] }) {
 
   // カレンダーグリッド生成
   const calendarDays = useMemo(() => {
-    const firstDay = new Date(year, month, 1).getDay() // 0=Sun
+    const firstDay = new Date(year, month, 1).getDay()
     const daysInMonth = new Date(year, month + 1, 0).getDate()
     const cells = []
     for (let i = 0; i < firstDay; i++) cells.push(null)
     for (let d = 1; d <= daysInMonth; d++) cells.push(d)
-    // 6行になるよう末尾を埋める
     while (cells.length % 7 !== 0) cells.push(null)
     return cells
   }, [year, month])
@@ -76,7 +110,37 @@ export default function TradeCalendar({ trades = [] }) {
 
   return (
     <div className="space-y-4">
-      {/* ヘッダ：ナビ＋月集計 */}
+      {/* 口座フィルタ */}
+      {accountNames.length > 1 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-slate-500 mr-1">口座：</span>
+          <button
+            onClick={() => { setSelectedAccounts(null); setSelectedDay(null) }}
+            className={`px-3 py-1 text-xs rounded-full border transition-colors
+              ${!selectedAccounts
+                ? 'bg-blue-600/30 border-blue-500/50 text-blue-300'
+                : 'border-[#1f2d40] text-slate-500 hover:text-slate-300'}`}>
+            全口座
+          </button>
+          {accountNames.map(name => {
+            const active = selectedAccounts?.has(name) ?? false
+            const display = aliases[name] || name
+            return (
+              <button
+                key={name}
+                onClick={() => toggleAccount(name)}
+                className={`px-3 py-1 text-xs rounded-full border transition-colors
+                  ${active
+                    ? 'bg-blue-600/30 border-blue-500/50 text-blue-300'
+                    : 'border-[#1f2d40] text-slate-500 hover:text-slate-300'}`}>
+                {display}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {/* ヘッダ：月ナビ＋月集計 */}
       <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4">
         <div className="flex items-center justify-between mb-4">
           <button
@@ -84,10 +148,8 @@ export default function TradeCalendar({ trades = [] }) {
             className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-200 hover:bg-[#1a2235] transition-colors text-lg">
             ‹
           </button>
-          <div className="text-center">
-            <div className="text-base font-semibold text-slate-100">
-              {year}年 {month + 1}月
-            </div>
+          <div className="text-base font-semibold text-slate-100">
+            {year}年 {month + 1}月
           </div>
           <button
             onClick={nextMonth}
@@ -125,7 +187,6 @@ export default function TradeCalendar({ trades = [] }) {
 
       {/* カレンダーグリッド */}
       <div className="bg-[#111827] border border-[#1f2d40] rounded-xl overflow-hidden">
-        {/* 曜日ヘッダ */}
         <div className="grid grid-cols-7 border-b border-[#1f2d40]">
           {WEEKDAYS.map((w, i) => (
             <div key={w} className={`py-2 text-center text-xs font-medium
@@ -135,7 +196,6 @@ export default function TradeCalendar({ trades = [] }) {
           ))}
         </div>
 
-        {/* 日付セル */}
         <div className="grid grid-cols-7">
           {calendarDays.map((day, idx) => {
             if (!day) {
@@ -145,7 +205,7 @@ export default function TradeCalendar({ trades = [] }) {
             const data = dailyMap.get(key)
             const isToday = key === today.toISOString().slice(0, 10)
             const isSelected = day === selectedDay
-            const dow = (idx) % 7
+            const dow = idx % 7
             const isSun = dow === 0
             const isSat = dow === 6
 
@@ -156,7 +216,6 @@ export default function TradeCalendar({ trades = [] }) {
                 className={`border-b border-r border-[#1a2235] h-16 sm:h-20 p-1.5 text-left flex flex-col transition-colors
                   ${isSelected ? 'bg-blue-600/20 border-blue-500/30' : 'hover:bg-[#1a2235]'}
                   ${(idx + 1) % 7 === 0 ? 'border-r-0' : ''}`}>
-                {/* 日付番号 */}
                 <span className={`text-xs font-medium w-5 h-5 flex items-center justify-center rounded-full
                   ${isToday ? 'bg-blue-500 text-white' : isSun ? 'text-red-400' : isSat ? 'text-blue-400' : 'text-slate-400'}`}>
                   {day}
@@ -164,7 +223,6 @@ export default function TradeCalendar({ trades = [] }) {
 
                 {data && (
                   <div className="mt-auto w-full">
-                    {/* 損益バー */}
                     <div className={`text-[10px] sm:text-xs font-semibold leading-tight truncate
                       ${data.profit > 0 ? 'text-emerald-400' : data.profit < 0 ? 'text-red-400' : 'text-slate-500'}`}>
                       {fmt2(data.profit)}
@@ -222,7 +280,9 @@ export default function TradeCalendar({ trades = [] }) {
                         <td className={`px-3 py-2 text-right font-semibold tabular-nums ${p > 0 ? 'text-emerald-400' : p < 0 ? 'text-red-400' : 'text-slate-500'}`}>
                           {fmt2(p)}
                         </td>
-                        <td className="px-3 py-2 text-slate-600 hidden sm:table-cell truncate max-w-[120px]">{t.account}</td>
+                        <td className="px-3 py-2 text-slate-600 hidden sm:table-cell truncate max-w-[120px]">
+                          {aliases[t.account] || t.account}
+                        </td>
                       </tr>
                     )
                   })}

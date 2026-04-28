@@ -610,14 +610,18 @@ export default function App() {
               </label>
             </div>
 
-            {/* 期間フィルタ */}
-            <DateRangeFilter
-              from={dateRange.from} to={dateRange.to} onChange={setDateRange}
-              dataMin={dataMin} dataMax={dataMax}
-              totalCount={allTrades.length} filteredCount={filteredTrades.length}
-            />
+            {/* 期間フィルタ（カレンダータブでは非表示） */}
+            {tab !== 'calendar' && (
+              <DateRangeFilter
+                from={dateRange.from} to={dateRange.to} onChange={setDateRange}
+                dataMin={dataMin} dataMax={dataMax}
+                totalCount={allTrades.length} filteredCount={filteredTrades.length}
+              />
+            )}
 
-            {filteredTrades.length === 0 ? (
+            {tab === 'calendar' ? (
+              <TradeCalendar trades={allTrades} aliases={aliases} />
+            ) : filteredTrades.length === 0 ? (
               <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-8 text-center text-slate-500 text-sm">
                 選択期間に取引がありません
                 <button onClick={() => setDateRange({ from: '', to: '' })}
@@ -699,9 +703,8 @@ export default function App() {
                     </div>
                   </div>
                 )}
-                {tab === 'ea'       && <AccountBreakdown accounts={sortedFilteredAccStats} filteredTrades={filteredTrades} aliases={aliases} setAlias={setAlias} sortKey={accSort.key} sortDir={accSort.dir} onSort={onAccSort} />}
-                {tab === 'trades'   && <TradeTable trades={filteredTrades} showSearch aliases={aliases} />}
-                {tab === 'calendar' && <TradeCalendar trades={filteredTrades} />}
+                {tab === 'ea'     && <AccountBreakdown accounts={sortedFilteredAccStats} filteredTrades={filteredTrades} aliases={aliases} setAlias={setAlias} sortKey={accSort.key} sortDir={accSort.dir} onSort={onAccSort} />}
+                {tab === 'trades' && <TradeTable trades={filteredTrades} showSearch aliases={aliases} />}
               </>
             )}
           </>

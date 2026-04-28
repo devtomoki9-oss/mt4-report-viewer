@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { signIn, signUp } from '../lib/supabaseClient'
 import PrivacyPolicy from './PrivacyPolicy'
+import TermsModal from './TermsModal'
 
 function translateAuthError(msg) {
   if (!msg) return '不明なエラーが発生しました'
@@ -28,6 +29,7 @@ export default function LoginScreen({ onLogin }) {
   const [loading,       setLoading]       = useState(false)
   const [done,          setDone]          = useState(false)
   const [showPrivacy,   setShowPrivacy]   = useState(false)
+  const [showTerms,     setShowTerms]     = useState(false)
 
   const submit = async (e) => {
     e.preventDefault()
@@ -131,11 +133,16 @@ export default function LoginScreen({ onLogin }) {
           <button onClick={() => setShowPrivacy(true)} className="text-slate-500 hover:text-slate-300 underline">
             プライバシーポリシー
           </button>
+          {' '}および{' '}
+          <button onClick={() => setShowTerms(true)} className="text-slate-500 hover:text-slate-300 underline">
+            利用規約
+          </button>
           {' '}に同意したものとみなします
         </div>
       </div>
 
       {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} />}
+      {showTerms   && <TermsModal   onClose={() => setShowTerms(false)} />}
     </div>
   )
 }

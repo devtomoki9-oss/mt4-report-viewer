@@ -36,6 +36,7 @@ import PrivacyPolicy from './components/PrivacyPolicy'
 import DeleteAccountModal from './components/DeleteAccountModal'
 import FeedbackModal from './components/FeedbackModal'
 import ManualModal from './components/ManualModal'
+import TermsModal from './components/TermsModal'
 import UploadZone from './components/UploadZone'
 import StatCard from './components/StatCard'
 import AccountCard from './components/AccountCard'
@@ -126,6 +127,7 @@ export default function App() {
   const [vbsPass,           setVbsPass]           = useState('')
   const [showFeedback,      setShowFeedback]      = useState(false)
   const [showManual,        setShowManual]        = useState(false)
+  const [showTerms,         setShowTerms]         = useState(false)
 
   const hasData = accounts.length > 0
 
@@ -708,6 +710,9 @@ export default function App() {
         <button onClick={() => setShowManual(true)} className="hover:text-slate-400 underline">
           操作マニュアル
         </button>
+        <button onClick={() => setShowTerms(true)} className="hover:text-slate-400 underline">
+          利用規約
+        </button>
         <button onClick={() => setShowPrivacy(true)} className="hover:text-slate-400 underline">
           プライバシーポリシー
         </button>
@@ -717,6 +722,7 @@ export default function App() {
       </footer>
 
       {showManual   && <ManualModal     onClose={() => setShowManual(false)} />}
+      {showTerms    && <TermsModal      onClose={() => setShowTerms(false)} />}
       {showPrivacy  && <PrivacyPolicy   onClose={() => setShowPrivacy(false)} />}
       {showFeedback && <FeedbackModal   onClose={() => setShowFeedback(false)} />}
 

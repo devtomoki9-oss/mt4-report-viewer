@@ -31,7 +31,7 @@ function generateRunSyncVbs(url, anonKey, email, password) {
 }
 import {
   supabase, signOut, getSession, fetchReports, deleteAccount,
-  fetchAliases, saveAliases,
+  fetchAliases, saveAliases, fetchPlan,
 } from './lib/supabaseClient'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import DeleteAccountModal from './components/DeleteAccountModal'
@@ -47,6 +47,7 @@ import TradeTable from './components/TradeTable'
 import OpenPositions from './components/OpenPositions'
 import DateRangeFilter from './components/DateRangeFilter'
 import TradeCalendar from './components/TradeCalendar'
+import InsightPanel from './components/InsightPanel'
 import LoginScreen from './components/LoginScreen'
 
 const TABS = [
@@ -139,6 +140,7 @@ export default function App() {
   const [showTerms,         setShowTerms]         = useState(false)
   const [showMobileMenu,    setShowMobileMenu]    = useState(false)
   const mobileMenuRef = useRef(null)
+  const [plan, setPlan] = useState('free')
 
   const hasData = accounts.length > 0
 
@@ -311,6 +313,9 @@ export default function App() {
     if (!user || autoLoadDoneRef.current) return
     autoLoadDoneRef.current = true
 
+    // プランを取得
+    fetchPlan().then(setPlan).catch(console.error)
+
     // Supabase から最新の alias を取得してローカルに反映
     fetchAliases().then(remote => {
       if (Object.keys(remote).length > 0) {
@@ -356,6 +361,23 @@ export default function App() {
       setSyncDone(true)
     }
   }, [refreshing, syncFromSupabase])
+
+  // ── Stripe アップグレード ─────────────────────────────
+  const handleUpgrade = useCallback(async () => {
+    try {
+      const res = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user?.id, email: user?.email, returnUrl: window.location.href }),
+      })
+      if (!res.ok) throw new Error('checkout session failed')
+      const { url } = await res.json()
+      window.location.href = url
+    } catch (e) {
+      alert('アップグレードの処理中にエラーが発生しました。しばらく経ってから再試行してください。')
+      console.error(e)
+    }
+  }, [user])
 
   // ── Supabase 自動更新（1分ごと・メイン画面のみ） ────
   useEffect(() => {
@@ -702,6 +724,7 @@ export default function App() {
               <>
                 {tab === 'overview' && agg && (
                   <div className="space-y-5">
+                    <InsightPanel trades={filteredTrades} stats={agg} plan={plan} onUpgrade={handleUpgrade} />
                     {isFiltered && (
                       <div className="flex items-center gap-2 text-xs text-slate-500">
                         <span className="bg-blue-500/15 text-blue-400 px-2 py-0.5 rounded font-medium">

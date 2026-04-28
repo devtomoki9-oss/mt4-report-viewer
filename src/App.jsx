@@ -12,6 +12,7 @@ import { INSTALL_BAT, MQ4_CONTENT, MQ5_CONTENT, SYNC_PS1_CONTENT } from './lib/d
 import {
   supabase, signOut, getSession, fetchReports
 } from './lib/supabaseClient'
+import PrivacyPolicy from './components/PrivacyPolicy'
 import UploadZone from './components/UploadZone'
 import StatCard from './components/StatCard'
 import AccountCard from './components/AccountCard'
@@ -93,7 +94,8 @@ export default function App() {
 
   const [user,        setUser]        = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
-  const [refreshing,  setRefreshing]  = useState(false)
+  const [refreshing,   setRefreshing]  = useState(false)
+  const [showPrivacy,  setShowPrivacy] = useState(false)
 
   const [accSort, setAccSort] = useState({ key: 'profit', dir: 'desc' })
   const onAccSort = useCallback((col) => {
@@ -636,6 +638,15 @@ export default function App() {
           </>
         )}
       </main>
+
+      {/* フッター */}
+      <footer className="text-center py-4 text-xs text-slate-700">
+        <button onClick={() => setShowPrivacy(true)} className="hover:text-slate-400 underline">
+          プライバシーポリシー
+        </button>
+      </footer>
+
+      {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} />}
 
       <Analytics />
       <SpeedInsights />

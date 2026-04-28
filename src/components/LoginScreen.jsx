@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { signIn, signUp } from '../lib/supabaseClient'
+import PrivacyPolicy from './PrivacyPolicy'
 
 export default function LoginScreen({ onLogin }) {
-  const [mode,     setMode]     = useState('login')  // 'login' | 'signup'
-  const [email,    setEmail]    = useState('')
-  const [password, setPassword] = useState('')
-  const [error,    setError]    = useState('')
-  const [loading,  setLoading]  = useState(false)
-  const [done,     setDone]     = useState(false)
+  const [mode,          setMode]          = useState('login')
+  const [email,         setEmail]         = useState('')
+  const [password,      setPassword]      = useState('')
+  const [error,         setError]         = useState('')
+  const [loading,       setLoading]       = useState(false)
+  const [done,          setDone]          = useState(false)
+  const [showPrivacy,   setShowPrivacy]   = useState(false)
 
   const submit = async (e) => {
     e.preventDefault()
@@ -105,7 +107,17 @@ export default function LoginScreen({ onLogin }) {
             </>
           )}
         </div>
+
+        <div className="text-center text-xs text-slate-700">
+          登録することで{' '}
+          <button onClick={() => setShowPrivacy(true)} className="text-slate-500 hover:text-slate-300 underline">
+            プライバシーポリシー
+          </button>
+          {' '}に同意したものとみなします
+        </div>
       </div>
+
+      {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} />}
     </div>
   )
 }

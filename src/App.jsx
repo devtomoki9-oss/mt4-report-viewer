@@ -699,19 +699,10 @@ export default function App() {
       </main>
 
       {/* フッター */}
-      <footer className="border-t border-[#1a2235] mt-4 py-4 text-xs text-slate-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
-          <button onClick={() => setShowPrivacy(true)} className="hover:text-slate-400 underline">
-            プライバシーポリシー
-          </button>
-          <span className="text-slate-800">|</span>
-          <span className="text-slate-700">ツールダウンロード：</span>
-          <button onClick={() => downloadText(SYNC_PS1_CONTENT, 'sync-to-supabase.ps1')} className="hover:text-emerald-400 transition-colors">↓ sync-to-supabase.ps1</button>
-          <button onClick={() => { setVbsPass(''); setShowVbsModal(true) }}               className="hover:text-emerald-400 transition-colors">↓ run-sync.vbs</button>
-          <button onClick={() => downloadText(INSTALL_BAT,      'install.bat')}            className="hover:text-blue-400 transition-colors">↓ install.bat</button>
-          <button onClick={() => downloadText(MQ4_CONTENT,      'MT4ReportExporter.mq4')} className="hover:text-slate-400 transition-colors">↓ MT4ReportExporter.mq4</button>
-          <button onClick={() => downloadText(MQ5_CONTENT,      'MT5ReportExporter.mq5')} className="hover:text-slate-400 transition-colors">↓ MT5ReportExporter.mq5</button>
-        </div>
+      <footer className="text-center py-4 text-xs text-slate-700">
+        <button onClick={() => setShowPrivacy(true)} className="hover:text-slate-400 underline">
+          プライバシーポリシー
+        </button>
       </footer>
 
       {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} />}

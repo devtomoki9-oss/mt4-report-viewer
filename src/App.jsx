@@ -174,7 +174,6 @@ export default function App() {
         return [...byName.values()]
       })
       setLastUpdated(new Date())
-      if (results.length > 0) setNextExportAt(Date.now() + SUPABASE_INTERVAL_MS)
     } catch (e) {
       console.error('Supabase sync error:', e)
     }
@@ -316,13 +315,6 @@ export default function App() {
     }
   }, [refreshing, syncFromSupabase])
 
-  // ── Supabase 自動更新（1分ごと・データあり時のみ） ────
-  useEffect(() => {
-    if (!user || !hasData) return
-    const id = setInterval(() => syncFromSupabase(), SUPABASE_INTERVAL_MS)
-    return () => clearInterval(id)
-  }, [user, hasData, syncFromSupabase])
-
   // ── 30秒ポーリング（変化検知） ────────────────────
   useEffect(() => {
     if (!dirHandle) return
@@ -340,7 +332,6 @@ export default function App() {
       if (s === 0 && !fired) {
         fired = true
         if (dirHandleRef.current) reloadFolderRef.current?.(false)
-        else syncFromSupabaseRef.current?.()
       }
     }
     update()

@@ -21,7 +21,10 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
   const [year,  setYear]  = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
   const [selectedDay, setSelectedDay] = useState(null)
+  const [tradePage, setTradePage] = useState(0)
   const [selectedAccount, setSelectedAccount] = useState(null) // null = 全口座
+
+  const PAGE_SIZE = 20
 
   // 口座名一覧
   const accountNames = useMemo(() => {
@@ -39,6 +42,7 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
   const selectAccount = (name) => {
     setSelectedAccount(prev => prev === name ? null : name)
     setSelectedDay(null)
+    setTradePage(0)
   }
 
   // 日別集計
@@ -85,11 +89,13 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
     if (month === 0) { setYear(y => y - 1); setMonth(11) }
     else setMonth(m => m - 1)
     setSelectedDay(null)
+    setTradePage(0)
   }
   const nextMonth = () => {
     if (month === 11) { setYear(y => y + 1); setMonth(0) }
     else setMonth(m => m + 1)
     setSelectedDay(null)
+    setTradePage(0)
   }
 
   const selectedKey = selectedDay
@@ -201,7 +207,7 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
             return (
               <button
                 key={key}
-                onClick={() => setSelectedDay(isSelected ? null : day)}
+                onClick={() => { setSelectedDay(isSelected ? null : day); setTradePage(0) }}
                 className={`border-b border-r border-[#1a2235] h-16 sm:h-20 p-1.5 text-left flex flex-col transition-colors
                   ${isSelected ? 'bg-blue-600/20 border-blue-500/30' : 'hover:bg-[#1a2235]'}
                   ${(idx + 1) % 7 === 0 ? 'border-r-0' : ''}`}>
@@ -228,33 +234,35 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
       </div>
 
       {/* 選択日の取引詳細 */}
-      {selectedData && (
-        <div className="bg-[#111827] border border-[#1f2d40] rounded-xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-[#1f2d40] flex items-center justify-between">
-            <div className="text-sm font-semibold text-slate-300">
-              {year}年{month + 1}月{selectedDay}日 — {selectedData.trades.length}件
+      {selectedData && (() => {
+        const sorted = selectedData.trades.slice().sort((a, b) => (a.closeTime > b.closeTime ? 1 : -1))
+        const pages  = Math.ceil(sorted.length / PAGE_SIZE)
+        const paged  = sorted.slice(tradePage * PAGE_SIZE, (tradePage + 1) * PAGE_SIZE)
+        return (
+          <div className="bg-[#111827] border border-[#1f2d40] rounded-xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-[#1f2d40] flex items-center justify-between">
+              <div className="text-sm font-semibold text-slate-300">
+                {year}年{month + 1}月{selectedDay}日
+                <span className="ml-2 text-xs font-normal text-slate-500">{sorted.length}件</span>
+              </div>
+              <div className={`text-sm font-bold ${selectedData.profit > 0 ? 'text-emerald-400' : selectedData.profit < 0 ? 'text-red-400' : 'text-slate-400'}`}>
+                {fmt2(selectedData.profit)}
+              </div>
             </div>
-            <div className={`text-sm font-bold ${selectedData.profit > 0 ? 'text-emerald-400' : selectedData.profit < 0 ? 'text-red-400' : 'text-slate-400'}`}>
-              {fmt2(selectedData.profit)}
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="text-slate-500 border-b border-[#1f2d40]">
-                  <th className="px-3 py-2 text-left font-medium">時刻</th>
-                  <th className="px-3 py-2 text-left font-medium">通貨</th>
-                  <th className="px-3 py-2 text-left font-medium">タイプ</th>
-                  <th className="px-3 py-2 text-right font-medium">ロット</th>
-                  <th className="px-3 py-2 text-right font-medium">損益</th>
-                  <th className="px-3 py-2 text-left font-medium hidden sm:table-cell">口座</th>
-                </tr>
-              </thead>
-              <tbody>
-                {selectedData.trades
-                  .slice()
-                  .sort((a, b) => (a.closeTime > b.closeTime ? 1 : -1))
-                  .map((t, i) => {
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-slate-500 border-b border-[#1f2d40]">
+                    <th className="px-3 py-2 text-left font-medium">時刻</th>
+                    <th className="px-3 py-2 text-left font-medium">通貨</th>
+                    <th className="px-3 py-2 text-left font-medium">タイプ</th>
+                    <th className="px-3 py-2 text-right font-medium">ロット</th>
+                    <th className="px-3 py-2 text-right font-medium">損益</th>
+                    <th className="px-3 py-2 text-left font-medium hidden sm:table-cell">口座</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paged.map((t, i) => {
                     const p = t.netProfit ?? t.profit ?? 0
                     return (
                       <tr key={t.ticket ?? i} className="border-b border-[#1a2235] hover:bg-[#1a2235] transition-colors">
@@ -275,11 +283,31 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
                       </tr>
                     )
                   })}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
+            {pages > 1 && (
+              <div className="flex items-center justify-center gap-2 px-4 py-3 border-t border-[#1f2d40]">
+                <button
+                  disabled={tradePage === 0}
+                  onClick={() => setTradePage(p => p - 1)}
+                  className="px-3 py-1.5 text-xs rounded-lg bg-[#1a2235] text-slate-400 disabled:opacity-30 hover:bg-[#1f2d40] transition-colors">
+                  ← 前
+                </button>
+                <span className="text-xs text-slate-500 tabular-nums">
+                  {tradePage + 1} / {pages}
+                </span>
+                <button
+                  disabled={tradePage >= pages - 1}
+                  onClick={() => setTradePage(p => p + 1)}
+                  className="px-3 py-1.5 text-xs rounded-lg bg-[#1a2235] text-slate-400 disabled:opacity-30 hover:bg-[#1f2d40] transition-colors">
+                  次 →
+                </button>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )
+      })()}
     </div>
   )
 }

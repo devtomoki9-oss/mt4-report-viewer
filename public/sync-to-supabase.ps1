@@ -1,15 +1,11 @@
-# MT4/MT5 Export JSON を Supabase へ同期するスクリプト
+# sync-to-supabase.ps1
+# Upload MT4/MT5 JSON reports to Supabase
 #
-# 【使い方 A: 直接実行】
-#   .\sync-to-supabase.ps1 -Url "https://xxxx.supabase.co" -AnonKey "eyJ..." -Email "you@example.com" -Password "yourpass"
+# Usage A (direct):
+#   .\sync-to-supabase.ps1 -Url "https://xxxx.supabase.co" -AnonKey "eyJ..." -Email "you@example.com" -Password "pass"
 #
-# 【使い方 B: 設定ファイル経由（タスクスケジューラ推奨）】
-#   1. sync-config.json を同じフォルダに作成して接続情報を記入
-#   2. run-sync.vbs を同じフォルダに置いてタスクスケジューラに登録
-#   schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "wscript /b %USERPROFILE%\Downloads\run-sync.vbs"
-#
-# 【出力先フォルダ】
-#   %USERPROFILE%\MTExport\mt4_report_*.json
+# Usage B (via run-sync.vbs, no args needed - credentials embedded in vbs):
+#   wscript run-sync.vbs
 
 param(
     [string]$Url      = '',
@@ -19,25 +15,12 @@ param(
     [string]$Folder   = "$env:USERPROFILE\MTExport"
 )
 
-# ── 0. パラメータ未指定なら sync-config.json から読み込む ────
 if (-not $Url -or -not $AnonKey -or -not $Email -or -not $Password) {
-    $scriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path
-    $configPath = Join-Path $scriptDir "sync-config.json"
-    if (Test-Path $configPath) {
-        $cfg = Get-Content $configPath -Raw | ConvertFrom-Json
-        if (-not $Url)      { $Url      = $cfg.url }
-        if (-not $AnonKey)  { $AnonKey  = $cfg.anonKey }
-        if (-not $Email)    { $Email    = $cfg.email }
-        if (-not $Password) { $Password = $cfg.password }
-    }
-}
-
-if (-not $Url -or -not $AnonKey -or -not $Email -or -not $Password) {
-    Write-Error "接続情報が不足しています。パラメータを指定するか sync-config.json を作成してください。"
+    Write-Error "Missing credentials. Provide -Url -AnonKey -Email -Password or use run-sync.vbs."
     exit 1
 }
 
-# ── 1. Supabase にサインイン → JWT 取得 ───────────────────────
+# 1. Sign in to Supabase
 $authBody = @{ email = $Email; password = $Password } | ConvertTo-Json
 try {
     $auth = Invoke-RestMethod "$Url/auth/v1/token?grant_type=password" `
@@ -57,7 +40,7 @@ $headers = @{
     "Prefer"        = "resolution=merge-duplicates"
 }
 
-# ── 2. JSON ファイルをアップロード ────────────────────────────
+# 2. Upload JSON files
 $files = Get-ChildItem -Path $Folder -Filter "mt4_report_*.json" -ErrorAction SilentlyContinue
 if (-not $files) {
     Write-Host "No JSON files found in: $Folder"
@@ -66,7 +49,7 @@ if (-not $files) {
 
 foreach ($file in $files) {
     try {
-        $text = [IO.File]::ReadAllText($file.FullName, [Text.Encoding]::UTF8)
+        $text   = [IO.File]::ReadAllText($file.FullName, [Text.Encoding]::UTF8)
         $parsed = $text | ConvertFrom-Json
 
         $accountNumber = [long]$parsed.account

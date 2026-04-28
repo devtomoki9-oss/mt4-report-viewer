@@ -249,10 +249,10 @@ export default function App() {
 
   // ── Supabase セッション監視 ───────────────────────────
   useEffect(() => {
-    getSession().then(session => {
-      setUser(session?.user ?? null)
-      setAuthLoading(false)
-    })
+    getSession()
+      .then(session => setUser(session?.user ?? null))
+      .catch(() => setUser(null))
+      .finally(() => setAuthLoading(false))
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
     })

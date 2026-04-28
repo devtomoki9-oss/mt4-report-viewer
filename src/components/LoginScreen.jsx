@@ -2,6 +2,24 @@ import { useState } from 'react'
 import { signIn, signUp } from '../lib/supabaseClient'
 import PrivacyPolicy from './PrivacyPolicy'
 
+function translateAuthError(msg) {
+  if (!msg) return '不明なエラーが発生しました'
+  const m = msg.toLowerCase()
+  if (m.includes('email rate limit') || m.includes('rate limit'))
+    return 'メール送信の上限に達しました。しばらく時間をおいてから再度お試しください（Supabase 無料プランの制限）'
+  if (m.includes('invalid login credentials') || m.includes('invalid credentials'))
+    return 'メールアドレスまたはパスワードが正しくありません'
+  if (m.includes('email not confirmed'))
+    return '確認メールのリンクをクリックしてから再度ログインしてください'
+  if (m.includes('user already registered'))
+    return 'このメールアドレスはすでに登録されています'
+  if (m.includes('password should be at least'))
+    return 'パスワードは8文字以上で入力してください'
+  if (m.includes('unable to validate email'))
+    return 'メールアドレスの形式が正しくありません'
+  return msg
+}
+
 export default function LoginScreen({ onLogin }) {
   const [mode,          setMode]          = useState('login')
   const [email,         setEmail]         = useState('')
@@ -24,7 +42,7 @@ export default function LoginScreen({ onLogin }) {
         setDone(true)
       }
     } catch (err) {
-      setError(err.message)
+      setError(translateAuthError(err.message))
     } finally {
       setLoading(false)
     }

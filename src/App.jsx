@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import {
   parseHTMLReport, parseMT4Json, calcStatsFromTrades, buildEquityCurve
 } from './lib/mt4Parser'
@@ -540,7 +541,7 @@ export default function App() {
                 },
                 {
                   step: '3',
-                  text: '開いた MT4/MT5 ウィンドウそれぞれで初回セットアップを行う',
+                  text: '開いた MT4/MT5 ウィンドウそれぞれで���回セットアップを行う',
                   sub: '① ReportExporter EA をチャートにドラッグ → OK　② ファイル → プロファイル → 名前を付けて保存 → MTExporter → OK　③ ターミナルを閉じる',
                   code: null,
                 },
@@ -783,7 +784,7 @@ export default function App() {
                     トークン発行ページを開く ↗
                   </a>
                   <div className="bg-[#0a0e17] rounded-lg p-3 space-y-1.5 border border-[#1f2d40]">
-                    <div><span className="text-slate-500">Note: </span><span className="text-slate-300">MT4 Report Viewer</span><span className="text-slate-600">（任意の名前）</span></div>
+                    <div><span className="text-slate-500">Note: </span><span className="text-slate-300">MT4 Report Viewer</span><span className="text-slate-600">（任意���名前）</span></div>
                     <div><span className="text-slate-500">Expiration: </span><span className="text-slate-300">No expiration</span><span className="text-slate-600">（推奨）</span></div>
                     <div><span className="text-slate-500">Scopes: </span><span className="text-purple-300 font-mono font-bold">repo</span><span className="text-slate-600"> にチェック ✅（1箇所のみ）</span></div>
                   </div>
@@ -922,6 +923,7 @@ export default function App() {
           </div>
         </div>
       )}
+      <Analytics />
     </div>
   )
 }

@@ -8,7 +8,21 @@ import {
   saveHandle, loadHandle, collectReportFiles,
   FOLDER_KEY, supportsFileSystemAccess
 } from './lib/folderStore'
-import { INSTALL_BAT, MQ4_CONTENT, MQ5_CONTENT, SYNC_PS1_CONTENT, RUN_VBS_CONTENT } from './lib/downloadFiles'
+import { INSTALL_BAT, MQ4_CONTENT, MQ5_CONTENT, SYNC_PS1_CONTENT } from './lib/downloadFiles'
+
+const SUPABASE_URL     = import.meta.env.VITE_SUPABASE_URL     ?? ''
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ?? ''
+
+function generateRunSyncVbs(url, anonKey, email, password) {
+  return `' MT Report Viewer - Auto Sync Script\n` +
+    `' sync-to-supabase.ps1 と同じフォルダに置いてタスクスケジューラに登録してください\n` +
+    `Dim WshShell, ps1Path, psArgs\n` +
+    `Set WshShell = CreateObject("WScript.Shell")\n` +
+    `ps1Path = Left(WScript.ScriptFullName, InStrRev(WScript.ScriptFullName, "\\\\")) & "sync-to-supabase.ps1"\n` +
+    `psArgs = " -Url ""${url}"" -AnonKey ""${anonKey}"" -Email ""${email}"" -Password ""${password.replace(/"/g, '""')}"""\n` +
+    `WshShell.Run "powershell.exe -NonInteractive -ExecutionPolicy Bypass -File """ & ps1Path & """" & psArgs, 0, False\n` +
+    `Set WshShell = Nothing\n`
+}
 import {
   supabase, signOut, getSession, fetchReports, deleteAccount
 } from './lib/supabaseClient'
@@ -100,6 +114,8 @@ export default function App() {
   const [syncDone,        setSyncDone]        = useState(false)
   const [showDeleteAccount, setShowDeleteAccount] = useState(false)
   const [deletingAccount,   setDeletingAccount]   = useState(false)
+  const [showVbsModal,      setShowVbsModal]      = useState(false)
+  const [vbsPass,           setVbsPass]           = useState('')
 
   const [accSort, setAccSort] = useState({ key: 'profit', dir: 'desc' })
   const onAccSort = useCallback((col) => {
@@ -504,15 +520,15 @@ export default function App() {
                 },
                 {
                   step: '5',
-                  text: 'sync-to-supabase.ps1・run-sync.vbs をダウンロードし、同じフォルダに置く',
-                  sub: 'ダウンロード後、PowerShell でブロック解除してください',
-                  code: 'Unblock-File "$env:USERPROFILE\\Downloads\\sync-to-supabase.ps1"',
+                  text: '下のボタンから sync-to-supabase.ps1 と run-sync.vbs を同じフォルダにダウンロード',
+                  sub: 'run-sync.vbs はログイン情報が自動で埋め込まれます。パスワード入力ダイアログが表示されます',
+                  code: null,
                 },
                 {
                   step: '6',
-                  text: '同じフォルダに sync-config.json を作成して接続情報を記入する',
-                  sub: 'メモ帳で新規作成 → 下記を貼り付けて URL・AnonKey・メール・パスワードを入力 → sync-config.json として保存',
-                  code: '{"url":"https://★★★.supabase.co","anonKey":"eyJ...","email":"you@example.com","password":"yourpass"}',
+                  text: 'PowerShell で PS1 ファイルのブロックを解除する',
+                  sub: 'ダウンロード先が異なる場合はパスを変更してください',
+                  code: 'Unblock-File "$env:USERPROFILE\\Downloads\\sync-to-supabase.ps1"',
                 },
                 {
                   step: '7',
@@ -556,7 +572,7 @@ export default function App() {
                   className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition-colors">
                   ↓ sync-to-supabase.ps1
                 </button>
-                <button onClick={() => downloadText(RUN_VBS_CONTENT, 'run-sync.vbs')}
+                <button onClick={() => { setVbsPass(''); setShowVbsModal(true) }}
                   className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition-colors">
                   ↓ run-sync.vbs
                 </button>
@@ -685,7 +701,7 @@ export default function App() {
           <span className="text-slate-800">|</span>
           <span className="text-slate-700">ツールダウンロード：</span>
           <button onClick={() => downloadText(SYNC_PS1_CONTENT, 'sync-to-supabase.ps1')} className="hover:text-emerald-400 transition-colors">↓ sync-to-supabase.ps1</button>
-          <button onClick={() => downloadText(RUN_VBS_CONTENT,  'run-sync.vbs')}          className="hover:text-emerald-400 transition-colors">↓ run-sync.vbs</button>
+          <button onClick={() => { setVbsPass(''); setShowVbsModal(true) }}               className="hover:text-emerald-400 transition-colors">↓ run-sync.vbs</button>
           <button onClick={() => downloadText(INSTALL_BAT,      'install.bat')}            className="hover:text-blue-400 transition-colors">↓ install.bat</button>
           <button onClick={() => downloadText(MQ4_CONTENT,      'MT4ReportExporter.mq4')} className="hover:text-slate-400 transition-colors">↓ MT4ReportExporter.mq4</button>
           <button onClick={() => downloadText(MQ5_CONTENT,      'MT5ReportExporter.mq5')} className="hover:text-slate-400 transition-colors">↓ MT5ReportExporter.mq5</button>
@@ -693,6 +709,58 @@ export default function App() {
       </footer>
 
       {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} />}
+
+      {showVbsModal && (
+        <div className="fixed inset-0 bg-[#0a0e17]/90 backdrop-blur flex items-center justify-center z-50 p-4"
+          onClick={() => setShowVbsModal(false)}>
+          <div className="bg-[#111827] border border-[#1f2d40] rounded-2xl w-full max-w-sm p-6 space-y-4"
+            onClick={e => e.stopPropagation()}>
+            <div className="space-y-1">
+              <h2 className="text-sm font-semibold text-slate-200">run-sync.vbs を生成</h2>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                パスワードを入力すると接続情報が埋め込まれた VBS ファイルをダウンロードします。<br />
+                sync-to-supabase.ps1 と同じフォルダに置いてください。
+              </p>
+            </div>
+            <div className="space-y-1">
+              <div className="text-xs text-slate-500">メールアドレス</div>
+              <div className="text-xs text-slate-400 bg-[#0a0e17] border border-[#1f2d40] rounded px-3 py-2">{user?.email}</div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs text-slate-500">パスワード</label>
+              <input
+                type="password"
+                value={vbsPass}
+                onChange={e => setVbsPass(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && vbsPass) {
+                    downloadText(generateRunSyncVbs(SUPABASE_URL, SUPABASE_ANON_KEY, user.email, vbsPass), 'run-sync.vbs')
+                    setShowVbsModal(false)
+                  }
+                }}
+                className="w-full bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-3 py-2.5 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:border-blue-500/50"
+                placeholder="ログインパスワード"
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setShowVbsModal(false)}
+                className="flex-1 bg-[#1a2235] border border-[#1f2d40] text-slate-400 hover:text-slate-200 text-xs px-4 py-2.5 rounded-lg transition-colors">
+                キャンセル
+              </button>
+              <button
+                disabled={!vbsPass}
+                onClick={() => {
+                  downloadText(generateRunSyncVbs(SUPABASE_URL, SUPABASE_ANON_KEY, user.email, vbsPass), 'run-sync.vbs')
+                  setShowVbsModal(false)
+                }}
+                className="flex-1 bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-600/30 disabled:opacity-30 disabled:cursor-not-allowed text-xs px-4 py-2.5 rounded-lg transition-colors">
+                ↓ ダウンロード
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showDeleteAccount && (
         <DeleteAccountModal

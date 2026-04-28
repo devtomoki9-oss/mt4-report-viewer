@@ -148,7 +148,7 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
         </div>
 
         {/* 月集計バー */}
-        <div className="grid grid-cols-4 gap-2 text-center text-xs border-t border-[#1f2d40] pt-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs border-t border-[#1f2d40] pt-3">
           <div>
             <div className="text-slate-500 mb-0.5">月間損益</div>
             <div className={`font-semibold text-sm ${monthStats.profit > 0 ? 'text-emerald-400' : monthStats.profit < 0 ? 'text-red-400' : 'text-slate-400'}`}>

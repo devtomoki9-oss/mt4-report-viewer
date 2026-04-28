@@ -17,44 +17,27 @@ function subtractDays(dateStr, days) {
 }
 
 export default function DateRangeFilter({ from, to, onChange, dataMin, dataMax, totalCount, filteredCount }) {
-  // どのプリセットが選択中かを明示的に管理する
-  const [activeKey, setActiveKey] = useState(null) // null=全期間, number=days, 'custom'=手動入力
+  const [activeKey, setActiveKey] = useState(null)
 
-  // 外部から from/to が '' にリセットされたとき（clearAll 等）を検知
   useEffect(() => {
     if (!from && !to) setActiveKey(null)
   }, [from, to])
 
   const applyPreset = (days) => {
     setActiveKey(days)
-    if (days === null) {
-      onChange({ from: '', to: '' })
-      return
-    }
+    if (days === null) { onChange({ from: '', to: '' }); return }
     const end = dataMax || new Date().toISOString().slice(0, 10)
-    const start = subtractDays(end, days)
-    onChange({ from: start, to: end })
+    onChange({ from: subtractDays(end, days), to: end })
   }
 
-  const handleFromChange = (e) => {
-    setActiveKey('custom')
-    onChange({ from: e.target.value, to })
-  }
-
-  const handleToChange = (e) => {
-    setActiveKey('custom')
-    onChange({ from, to: e.target.value })
-  }
-
-  const handleClear = () => {
-    setActiveKey(null)
-    onChange({ from: '', to: '' })
-  }
+  const handleFromChange = (e) => { setActiveKey('custom'); onChange({ from: e.target.value, to }) }
+  const handleToChange   = (e) => { setActiveKey('custom'); onChange({ from, to: e.target.value }) }
+  const handleClear      = () => { setActiveKey(null); onChange({ from: '', to: '' }) }
 
   const isFiltered = from || to
 
   return (
-    <div className="bg-[#111827] border border-[#1f2d40] rounded-xl px-4 py-3 flex flex-wrap items-center gap-3">
+    <div className="bg-[#111827] border border-[#1f2d40] rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3">
       {/* プリセットボタン */}
       <div className="flex items-center gap-1 flex-wrap">
         {PRESETS.map(p => (
@@ -72,52 +55,39 @@ export default function DateRangeFilter({ from, to, onChange, dataMin, dataMax, 
         ))}
       </div>
 
-      <div className="hidden sm:block w-px h-4 bg-[#1f2d40]" />
-
-      {/* カスタム日付入力 */}
-      <div className="flex items-center gap-2 text-xs">
+      {/* 日付入力 + 件数バッジ（モバイルは横並び 1行、デスクトップはインライン） */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="hidden sm:block w-px h-4 bg-[#1f2d40]" />
         <input
-          type="date"
-          value={from}
-          min={dataMin}
-          max={to || dataMax}
+          type="date" value={from} min={dataMin} max={to || dataMax}
           onChange={handleFromChange}
           className="bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-2 py-1 text-slate-300 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 [color-scheme:dark]"
         />
-        <span className="text-slate-600">〜</span>
+        <span className="text-slate-600 text-xs">〜</span>
         <input
-          type="date"
-          value={to}
-          min={from || dataMin}
-          max={dataMax}
+          type="date" value={to} min={from || dataMin} max={dataMax}
           onChange={handleToChange}
           className="bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-2 py-1 text-slate-300 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 [color-scheme:dark]"
         />
         {isFiltered && (
-          <button
-            onClick={handleClear}
-            className="text-slate-600 hover:text-slate-400 transition-colors ml-1"
-            title="絞り込みをクリア"
-          >
+          <button onClick={handleClear} className="text-slate-600 hover:text-slate-400 transition-colors" title="絞り込みをクリア">
             ✕
           </button>
         )}
+        {totalCount > 0 && (
+          <div className="ml-auto sm:ml-0 flex items-center gap-1.5 text-xs">
+            {isFiltered && filteredCount !== totalCount ? (
+              <>
+                <span className="font-mono text-blue-400 font-semibold">{filteredCount.toLocaleString()}</span>
+                <span className="text-slate-600">/ {totalCount.toLocaleString()} 件</span>
+                <span className="hidden sm:inline bg-blue-500/15 text-blue-400 px-1.5 py-0.5 rounded font-medium">絞り込み中</span>
+              </>
+            ) : (
+              <span className="text-slate-500 font-mono">{totalCount.toLocaleString()} 件</span>
+            )}
+          </div>
+        )}
       </div>
-
-      {/* 件数バッジ */}
-      {totalCount > 0 && (
-        <div className="ml-auto flex items-center gap-1.5 text-xs">
-          {isFiltered && filteredCount !== totalCount ? (
-            <>
-              <span className="font-mono text-blue-400 font-semibold">{filteredCount.toLocaleString()}</span>
-              <span className="text-slate-600">/ {totalCount.toLocaleString()} 件</span>
-              <span className="bg-blue-500/15 text-blue-400 px-1.5 py-0.5 rounded font-medium">絞り込み中</span>
-            </>
-          ) : (
-            <span className="text-slate-500 font-mono">{totalCount.toLocaleString()} 件</span>
-          )}
-        </div>
-      )}
     </div>
   )
 }

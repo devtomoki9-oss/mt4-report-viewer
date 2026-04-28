@@ -80,7 +80,7 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
                 </button>
               </div>
             )}
-            <div className="text-xs text-slate-500">{stats.totalTrades} trades</div>
+            <div className="text-xs text-slate-500">{stats.totalTrades} 取引</div>
           </div>
         </div>
         <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">

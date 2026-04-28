@@ -433,9 +433,9 @@ export default function App() {
               <span className="font-semibold text-slate-100 text-sm tracking-tight">MT4/MT5 Report Viewer</span>
               {hasData && <span className="text-xs text-slate-600 ml-1 hidden sm:inline">{accounts.length} 口座</span>}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               {user && (
-                <div className="flex items-center gap-1">
+                <>
                   <button
                     onClick={requestRefresh}
                     disabled={refreshing}
@@ -449,11 +449,11 @@ export default function App() {
                   </button>
                   <button
                     onClick={() => setShowDeleteAccount(true)}
-                    className="text-slate-700 hover:text-red-400 transition-colors px-2 py-1.5 text-xs"
+                    className="hidden sm:inline text-slate-700 hover:text-red-400 transition-colors px-2 py-1.5 text-xs"
                     title="アカウント削除">
                     アカウント削除
                   </button>
-                </div>
+                </>
               )}
               {hasData && (
                 <>
@@ -466,7 +466,7 @@ export default function App() {
                       </button>
                     ))}
                   </nav>
-                  <button onClick={clearAll} className="text-xs text-slate-600 hover:text-red-400 transition-colors px-2 py-1">
+                  <button onClick={clearAll} className="hidden sm:inline text-xs text-slate-600 hover:text-red-400 transition-colors px-2 py-1">
                     クリア
                   </button>
                 </>
@@ -474,10 +474,10 @@ export default function App() {
             </div>
           </div>
           {hasData && (
-            <div className="sm:hidden flex gap-1 pb-2">
+            <div className="sm:hidden flex gap-1 pb-2 overflow-x-auto">
               {TABS.map(t => (
                 <button key={t.id} onClick={() => setTab(t.id)}
-                  className={`flex-1 py-1.5 text-xs rounded-md font-medium transition-all
+                  className={`flex-1 flex-shrink-0 py-1.5 text-xs rounded-md font-medium transition-all whitespace-nowrap
                     ${tab === t.id ? 'bg-blue-600 text-white shadow' : 'bg-[#111827] border border-[#1f2d40] text-slate-500'}`}>
                   {t.label}
                 </button>
@@ -602,7 +602,15 @@ export default function App() {
         ) : (
           <>
             {/* ツールバー */}
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs text-slate-600">
+                {lastUpdated && (
+                  <span>最終更新: {fmtTime(lastUpdated)}</span>
+                )}
+                {secondsLeft != null && (
+                  <span className="text-slate-700">次回 {fmtCountdown(secondsLeft)}</span>
+                )}
+              </div>
               <label className="cursor-pointer text-xs text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg">
                 <input type="file" accept=".htm,.html,.json" multiple className="hidden"
                   onChange={e => handleFiles(e.target.files)} />

@@ -203,7 +203,7 @@ export default function AccountBreakdown({ accounts, filteredTrades, aliases = {
           <div className="flex items-center gap-4 px-4 py-3 border-b border-[#1f2d40]">
             <div className="text-sm font-semibold text-slate-200 flex-1">
               {displayName(selectedAcc.account.name)}
-              <span className="ml-2 text-xs text-slate-500 font-normal">{selectedTrades.length} trades</span>
+              <span className="ml-2 text-xs text-slate-500 font-normal">{selectedTrades.length} 取引</span>
             </div>
             <div className="flex gap-1">
               {['equity', 'trades'].map(t => (

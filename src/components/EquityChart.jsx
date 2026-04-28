@@ -128,7 +128,7 @@ export default function EquityChart({ data, title = 'エクイティカーブ' }
       <div className="flex items-center justify-between mb-3">
         <div className="text-sm font-semibold text-slate-300">{title}</div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-slate-600">スクロールで拡大縮小</span>
+          <span className="hidden sm:inline text-xs text-slate-600">スクロールで拡大縮小</span>
           {isZoomed && (
             <button onClick={resetZoom}
               className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
@@ -141,7 +141,8 @@ export default function EquityChart({ data, title = 'エクイティカーブ' }
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={320}>
+      <div className="h-[200px] sm:h-[300px]">
+      <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={indexedData} margin={{ top: 4, right: 36, bottom: 5, left: 8 }}>
           <defs>
             <linearGradient id={`grad-${isProfit}`} x1="0" y1="0" x2="0" y2="1">
@@ -200,6 +201,7 @@ export default function EquityChart({ data, title = 'エクイティカーブ' }
           />
         </AreaChart>
       </ResponsiveContainer>
+      </div>
     </div>
   )
 }

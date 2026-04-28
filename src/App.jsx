@@ -541,8 +541,8 @@ export default function App() {
                 },
                 {
                   step: '7',
-                  text: 'タスクスケジューラに登録（1分ごとに自動アップロード）',
-                  sub: 'コマンドプロンプト（管理者）で実行してください',
+                  text: 'PowerShell で タスクスケジューラに登録（1分ごとに自動アップロード）',
+                  sub: 'ダウンロード先が異なる場合はパスを変更してください',
                   code: 'schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"',
                 },
               ].map(s => (

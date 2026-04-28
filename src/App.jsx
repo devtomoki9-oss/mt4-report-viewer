@@ -10,9 +10,8 @@ import {
 } from './lib/folderStore'
 import { INSTALL_BAT, MQ4_CONTENT, MQ5_CONTENT } from './lib/downloadFiles'
 import {
-  loadGitHubSettings, saveGitHubSettings, clearGitHubSettings,
-  fetchReportFilesFromGitHub, pushFilesToGitHub,
-} from './lib/githubSync'
+  supabase, signOut, getSession, fetchReports
+} from './lib/supabaseClient'
 import UploadZone from './components/UploadZone'
 import StatCard from './components/StatCard'
 import AccountCard from './components/AccountCard'
@@ -21,6 +20,7 @@ import EquityChart from './components/EquityChart'
 import TradeTable from './components/TradeTable'
 import OpenPositions from './components/OpenPositions'
 import DateRangeFilter from './components/DateRangeFilter'
+import LoginScreen from './components/LoginScreen'
 
 const TABS = [
   { id: 'overview', label: 'サマリー' },
@@ -29,49 +29,7 @@ const TABS = [
 ]
 
 const EXPORT_INTERVAL_MS = 1 * 60 * 1000
-const GITHUB_INTERVAL_MS = 1 * 60 * 1000
-
-const SYNC_PS1 = `# Sync JSON files from MTExport folder to a private GitHub repository
-#
-# Usage:
-#   Unblock-File ".\\sync-to-github.ps1"
-#   .\\sync-to-github.ps1 -Token "ghp_xxxx" -Owner "yourname" -Repo "mt4-report-data"
-#
-# Register with Task Scheduler (run every 1 minute):
-#   schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "powershell -NonInteractive -File \\"%USERPROFILE%\\Downloads\\sync-to-github.ps1\\" -Token ghp_xxxx -Owner yourname -Repo mt4-report-data"
-
-param(
-    [Parameter(Mandatory)][string]$Token,
-    [Parameter(Mandatory)][string]$Owner,
-    [Parameter(Mandatory)][string]$Repo,
-    [string]$Folder = "$env:USERPROFILE\\MTExport"
-)
-
-$headers = @{
-    Authorization = "token $Token"
-    "User-Agent"  = "MTExporter-Sync/1.0"
-    Accept        = "application/vnd.github.v3+json"
-}
-
-$files = Get-ChildItem -Path $Folder -Filter "*.json" -ErrorAction SilentlyContinue
-if (-not $files) { Write-Host "No JSON files found: $Folder"; exit 0 }
-
-foreach ($file in $files) {
-    $b64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes($file.FullName))
-    $sha = $null
-    try {
-        $existing = Invoke-RestMethod "https://api.github.com/repos/$Owner/$Repo/contents/$($file.Name)" -Headers $headers -ErrorAction Stop
-        $sha = $existing.sha
-    } catch {}
-    $body = @{ message = "sync: $($file.Name)"; content = $b64 }
-    if ($sha) { $body.sha = $sha }
-    try {
-        Invoke-RestMethod "https://api.github.com/repos/$Owner/$Repo/contents/$($file.Name)" -Method Put -Headers $headers -Body ($body | ConvertTo-Json -Depth 3) -ContentType "application/json" | Out-Null
-        Write-Host "[OK] $($file.Name)"
-    } catch { Write-Warning "[NG] $($file.Name): $($_.Exception.Message)" }
-}
-Write-Host "Sync complete"
-`
+const SUPABASE_INTERVAL_MS = 1 * 60 * 1000
 
 const ACC_SORT_FNS = {
   name:        (a) => a.account.name ?? '',
@@ -96,13 +54,6 @@ function downloadText(content, filename) {
   URL.revokeObjectURL(url)
 }
 
-function makeRunSyncVbs(owner, repo, token) {
-  return [
-    'Dim ps1',
-    'ps1 = CreateObject("WScript.Shell").ExpandEnvironmentStrings("%USERPROFILE%\\Downloads\\sync-to-github.ps1")',
-    `CreateObject("WScript.Shell").Run "powershell.exe -NonInteractive -ExecutionPolicy Bypass -File """ & ps1 & """ -Token ${token} -Owner ${owner} -Repo ${repo}", 0, False`,
-  ].join('\r\n') + '\r\n'
-}
 
 function fmt(n) {
   if (n == null) return '—'
@@ -140,12 +91,9 @@ export default function App() {
     })
   }, [])
 
-  const [githubSettings,   setGitHubSettings]   = useState(() => loadGitHubSettings())
-  const [showGitHubModal,  setShowGitHubModal]  = useState(false)
-  const [ghOwner,          setGhOwner]          = useState('')
-  const [ghRepo,           setGhRepo]           = useState('')
-  const [ghToken,          setGhToken]          = useState('')
-  const [ghRequesting,     setGhRequesting]     = useState(false)
+  const [user,        setUser]        = useState(null)
+  const [authLoading, setAuthLoading] = useState(true)
+  const [refreshing,  setRefreshing]  = useState(false)
 
   const [accSort, setAccSort] = useState({ key: 'profit', dir: 'desc' })
   const onAccSort = useCallback((col) => {
@@ -159,11 +107,10 @@ export default function App() {
   const [lastUpdated,  setLastUpdated] = useState(null)
   const [secondsLeft,  setSecondsLeft] = useState(null)
   const [nextExportAt, setNextExportAt] = useState(null)
-  const autoLoadDoneRef     = useRef(false)
-  const lastModifiedRef     = useRef(new Map())
-  const reloadFolderRef     = useRef(null)
-  const githubSettingsRef   = useRef(githubSettings)
-  const dirHandleRef        = useRef(null)
+  const autoLoadDoneRef = useRef(false)
+  const lastModifiedRef = useRef(new Map())
+  const reloadFolderRef = useRef(null)
+  const dirHandleRef    = useRef(null)
 
   // ── ファイル解析 ──────────────────────────────────────
   const parseFiles = useCallback(async (files) => {
@@ -183,12 +130,11 @@ export default function App() {
     return results
   }, [])
 
-  // ── GitHub から同期 ───────────────────────────────────
-  const syncFromGitHub = useCallback(async (settings) => {
-    const s = settings ?? githubSettings
-    if (!s) return
+  // ── Supabase から同期 ─────────────────────────────────
+  const syncFromSupabase = useCallback(async () => {
     try {
-      const files   = await fetchReportFilesFromGitHub(s)
+      const rows    = await fetchReports()
+      const files   = rows.map(r => new File([r.text], r.name, { lastModified: r.lastModified }))
       const results = await parseFiles(files)
       setAccounts(prev => {
         const byName = new Map(prev.map(a => [a.account.name, a]))
@@ -196,12 +142,11 @@ export default function App() {
         return [...byName.values()]
       })
       setLastUpdated(new Date())
-      if (!dirHandleRef.current) setNextExportAt(Date.now() + GITHUB_INTERVAL_MS)
+      setNextExportAt(Date.now() + SUPABASE_INTERVAL_MS)
     } catch (e) {
-      console.error('GitHub sync error:', e)
-      throw e
+      console.error('Supabase sync error:', e)
     }
-  }, [githubSettings, parseFiles])
+  }, [parseFiles])
 
   // ── フォルダから読み込み ──────────────────────────────
   const loadFromDir = useCallback(async (handle) => {
@@ -218,15 +163,6 @@ export default function App() {
       }
       if (maxModified > 0) setNextExportAt(maxModified + EXPORT_INTERVAL_MS)
 
-      // GitHub 設定済みなら JSON ファイルを自動プッシュ
-      const gs = githubSettingsRef.current
-      if (gs) {
-        const jsonFiles = files.filter(f => /\.json$/i.test(f.name))
-        if (jsonFiles.length > 0) {
-          try { await pushFilesToGitHub(gs, jsonFiles) }
-          catch (e) { console.error('GitHub push error:', e) }
-        }
-      }
     } catch (e) {
       console.error('Folder read error:', e)
     }
@@ -311,55 +247,48 @@ export default function App() {
     } catch (e) { console.error(e) }
   }, [dirHandle, loadFromDir])
 
-// ── 起動時: 登録済みフォルダ or GitHub から自動読み込み ──
+  // ── Supabase セッション監視 ───────────────────────────
   useEffect(() => {
-    if (autoLoadDoneRef.current) return
+    getSession().then(session => {
+      setUser(session?.user ?? null)
+      setAuthLoading(false)
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
+  // ── 起動時: ログイン済みなら自動読み込み ─────────────
+  useEffect(() => {
+    if (!user || autoLoadDoneRef.current) return
     autoLoadDoneRef.current = true
-    ;(async () => {
-      try {
-        const handle = await loadHandle(FOLDER_KEY)
-        if (handle) {
-          const perm = await handle.queryPermission({ mode: 'read' })
-          setDirHandle(handle)
-          if (perm === 'granted') {
-            await loadFromDir(handle)
-            return
-          }
-        }
-        // ローカルフォルダなし or 権限なし → GitHub から取得
-        const gs = loadGitHubSettings()
-        if (gs) await syncFromGitHub(gs)
-      } catch (e) { console.error('Auto-load error:', e) }
-    })()
-  }, [loadFromDir, syncFromGitHub])
+    syncFromSupabase()
+  }, [user, syncFromSupabase])
 
   // ── 各 ref を常に最新に保つ ──────────────────────────
-  const syncFromGitHubRef = useRef(null)
-  useEffect(() => { reloadFolderRef.current    = reloadFolder    }, [reloadFolder])
-  useEffect(() => { syncFromGitHubRef.current  = syncFromGitHub  }, [syncFromGitHub])
-  useEffect(() => { githubSettingsRef.current  = githubSettings  }, [githubSettings])
-  useEffect(() => { dirHandleRef.current       = dirHandle       }, [dirHandle])
+  const syncFromSupabaseRef = useRef(null)
+  useEffect(() => { reloadFolderRef.current     = reloadFolder     }, [reloadFolder])
+  useEffect(() => { syncFromSupabaseRef.current = syncFromSupabase }, [syncFromSupabase])
+  useEffect(() => { dirHandleRef.current        = dirHandle        }, [dirHandle])
 
-  // ── スマホ: GitHub から直接同期 ────────────────────────
-  const requestGitHubRefresh = useCallback(async () => {
-    if (!githubSettings || ghRequesting) return
-    setGhRequesting(true)
+  // ── 手動更新 ─────────────────────────────────────────
+  const requestRefresh = useCallback(async () => {
+    if (refreshing) return
+    setRefreshing(true)
     try {
-      await syncFromGitHub(githubSettings)
-    } catch (e) {
-      console.error('GitHub sync error:', e)
+      await syncFromSupabase()
     } finally {
-      setGhRequesting(false)
+      setRefreshing(false)
     }
-  }, [githubSettings, ghRequesting, syncFromGitHub])
+  }, [refreshing, syncFromSupabase])
 
-
-  // ── GitHub 自動更新（5分ごと） ───────────────────────
+  // ── Supabase 自動更新（1分ごと） ──────────────────────
   useEffect(() => {
-    if (!githubSettings) return
-    const id = setInterval(() => syncFromGitHub(), GITHUB_INTERVAL_MS)
+    if (!user) return
+    const id = setInterval(() => syncFromSupabase(), SUPABASE_INTERVAL_MS)
     return () => clearInterval(id)
-  }, [githubSettings, syncFromGitHub])
+  }, [user, syncFromSupabase])
 
   // ── 30秒ポーリング（変化検知） ────────────────────
   useEffect(() => {
@@ -378,7 +307,7 @@ export default function App() {
       if (s === 0 && !fired) {
         fired = true
         if (dirHandleRef.current) reloadFolderRef.current?.(false)
-        else syncFromGitHubRef.current?.()
+        else syncFromSupabaseRef.current?.()
       }
     }
     update()
@@ -440,6 +369,18 @@ export default function App() {
   const hasData    = accounts.length > 0
   const isFiltered = !!(dateRange.from || dateRange.to)
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#0a0e17] flex items-center justify-center">
+        <div className="text-slate-500 text-sm">読み込み中…</div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <LoginScreen onLogin={setUser} />
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0e17] text-slate-200">
 
@@ -455,25 +396,20 @@ export default function App() {
               {hasData && <span className="text-xs text-slate-600 ml-1 hidden sm:inline">{accounts.length} 口座</span>}
             </div>
             <div className="flex items-center gap-2">
-              {githubSettings ? (
+              {user && (
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={requestGitHubRefresh}
-                    disabled={ghRequesting}
-                    className="text-xs text-purple-400 hover:text-purple-300 disabled:opacity-50 transition-colors bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 rounded-lg">
-                    {ghRequesting ? '…' : '↻ 更新'}
+                    onClick={requestRefresh}
+                    disabled={refreshing}
+                    className="text-xs text-blue-400 hover:text-blue-300 disabled:opacity-50 transition-colors bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg">
+                    {refreshing ? '…' : '↻ 更新'}
                   </button>
-                  <button onClick={() => { setGhOwner(githubSettings.owner); setGhRepo(githubSettings.repo); setGhToken(githubSettings.token); setShowGitHubModal(true) }}
-                    className="text-slate-600 hover:text-purple-400 transition-colors px-1 py-1.5 text-sm" title="GitHub 設定">
-                    ⚙
+                  <button
+                    onClick={async () => { await signOut(); setAccounts([]); setUser(null) }}
+                    className="text-slate-600 hover:text-red-400 transition-colors px-2 py-1.5 text-xs" title="ログアウト">
+                    ログアウト
                   </button>
                 </div>
-              ) : (
-                <button onClick={() => setShowGitHubModal(true)}
-                  className="text-xs text-slate-500 hover:text-purple-400 transition-colors border border-[#1f2d40] hover:border-purple-500/30 px-3 py-1.5 rounded-lg">
-                  <span className="hidden sm:inline">GitHub 同期</span>
-                  <span className="sm:hidden">GH 設定</span>
-                </button>
               )}
               {hasData && (
                 <>
@@ -708,214 +644,6 @@ export default function App() {
         )}
       </main>
 
-      {/* GitHub 同期設定モーダル */}
-      {showGitHubModal && (
-        <div
-          className="fixed inset-0 bg-[#0a0e17]/80 backdrop-blur flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
-          onClick={() => setShowGitHubModal(false)}
-        >
-          <div
-            className="bg-[#111827] border border-[#1f2d40] rounded-t-2xl sm:rounded-2xl w-full max-w-lg flex flex-col max-h-[80vh] sm:max-h-[92vh]"
-            onClick={e => e.stopPropagation()}
-          >
-            {/* ドラッグハンドル（モバイルのみ） */}
-            <div className="sm:hidden flex justify-center pt-3 pb-1 flex-shrink-0">
-              <div className="w-10 h-1 bg-[#1f2d40] rounded-full" />
-            </div>
-
-            {/* ヘッダ */}
-            <div className="flex items-center justify-between px-5 py-3 border-b border-[#1f2d40] flex-shrink-0">
-              <div>
-                <div className="text-sm font-semibold text-slate-100">GitHub 同期設定</div>
-                <div className="text-xs text-slate-500 mt-0.5">PC の MTExport フォルダをスマホで自動更新</div>
-              </div>
-              <button onClick={() => setShowGitHubModal(false)} className="text-slate-400 hover:text-slate-100 text-xl px-2 py-1 flex-shrink-0">✕</button>
-            </div>
-
-            {/* スクロール可能な本文 */}
-            <div className="overflow-y-auto px-5 py-4 space-y-5 text-xs">
-
-              {/* 接続済みバナー */}
-              {githubSettings && (
-                <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg px-3 py-2 flex items-center gap-2 text-purple-300">
-                  <span>✓</span>
-                  <span className="font-mono">{githubSettings.owner}/{githubSettings.repo}</span>
-                  <span className="text-purple-400">接続済み・1分ごと自動更新</span>
-                </div>
-              )}
-
-              {/* STEP 1 */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-purple-600/30 text-purple-400 text-xs flex items-center justify-center font-bold flex-shrink-0">1</span>
-                  <span className="font-semibold text-slate-200">GitHub プライベートリポジトリを作成</span>
-                </div>
-                <div className="ml-7 space-y-2 text-slate-400">
-                  <p>取引データを保存する専用リポジトリを作成します。</p>
-                  <a href="https://github.com/new" target="_blank" rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-purple-400 hover:text-purple-300 underline">
-                    github.com/new を開く ↗
-                  </a>
-                  <div className="bg-[#0a0e17] rounded-lg p-3 space-y-1.5 border border-[#1f2d40]">
-                    <div><span className="text-slate-500">Repository name: </span><span className="text-purple-300 font-mono">mt4-report-data</span><span className="text-slate-600">（任意）</span></div>
-                    <div><span className="text-slate-500">Visibility: </span><span className="text-slate-300 font-semibold">Private</span><span className="text-slate-600"> ← 必ずプライベートを選択</span></div>
-                    <div className="text-slate-600">README の追加は不要。そのまま「Create repository」をクリック</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* STEP 2 */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-purple-600/30 text-purple-400 text-xs flex items-center justify-center font-bold flex-shrink-0">2</span>
-                  <span className="font-semibold text-slate-200">Personal Access Token を発行</span>
-                </div>
-                <div className="ml-7 space-y-2 text-slate-400">
-                  <p>アプリが GitHub にアクセスするための鍵（トークン）を発行します。</p>
-                  <a href="https://github.com/settings/tokens/new" target="_blank" rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-purple-400 hover:text-purple-300 underline">
-                    トークン発行ページを開く ↗
-                  </a>
-                  <div className="bg-[#0a0e17] rounded-lg p-3 space-y-1.5 border border-[#1f2d40]">
-                    <div><span className="text-slate-500">Note: </span><span className="text-slate-300">MT4 Report Viewer</span><span className="text-slate-600">（任意���名前）</span></div>
-                    <div><span className="text-slate-500">Expiration: </span><span className="text-slate-300">No expiration</span><span className="text-slate-600">（推奨）</span></div>
-                    <div><span className="text-slate-500">Scopes: </span><span className="text-purple-300 font-mono font-bold">repo</span><span className="text-slate-600"> にチェック ✅（1箇所のみ）</span></div>
-                  </div>
-                  <p>ページ下部「Generate token」→ 表示された <span className="text-purple-300 font-mono">ghp_xxxx...</span> をコピー</p>
-                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 text-amber-400">
-                    ⚠ ページを閉じると二度と表示されません。必ずこの場でコピーしてください。
-                  </div>
-                </div>
-              </div>
-
-              {/* STEP 3 */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-purple-600/30 text-purple-400 text-xs flex items-center justify-center font-bold flex-shrink-0">3</span>
-                  <span className="font-semibold text-slate-200">PC（Chrome / Edge）で接続</span>
-                </div>
-                <div className="ml-7 space-y-2 text-slate-400">
-                  <p>MT4/MT5 が動いている PC の Chrome または Edge でこのアプリを開いてください。</p>
-                  <div className="bg-[#0a0e17] rounded-lg p-3 space-y-1.5 border border-[#1f2d40]">
-                    <div className="flex items-start gap-2"><span className="text-purple-400 flex-shrink-0">①</span><span>下の入力欄に GitHub ユーザー名・リポジトリ名・Token を入力して「接続して同期」をタップ</span></div>
-                    <div className="flex items-start gap-2"><span className="text-purple-400 flex-shrink-0">②</span><span>ページ上部の「📁 MTExport フォルダを選択」をクリックして <span className="font-mono text-slate-300">%USERPROFILE%\MTExport</span> を選択</span></div>
-                    <div className="flex items-start gap-2"><span className="text-purple-400 flex-shrink-0">③</span><span>ブラウザが開いている間は 5 分ごとに自動で GitHub へアップロードされます</span></div>
-                  </div>
-                  <div className="bg-slate-500/10 border border-slate-500/20 rounded-lg px-3 py-2 text-slate-400">
-                    ⚠ ブラウザを閉じると同期が止まります。ブラウザを閉じていても同期を続けたい場合は STEP 4 も設定してください。
-                  </div>
-                </div>
-              </div>
-
-              {/* STEP 4 */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-purple-600/30 text-purple-400 text-xs flex items-center justify-center font-bold flex-shrink-0">4</span>
-                  <span className="font-semibold text-slate-200">タスクスケジューラ設定（ブラウザを閉じても同期）</span>
-                </div>
-                <div className="ml-7 space-y-3 text-slate-400">
-                  <p>PC を起動しているだけで 5 分ごとに自動プッシュします。ブラウザは不要です。</p>
-
-                  <div className="flex flex-wrap gap-2">
-                    <button onClick={() => downloadText(SYNC_PS1, 'sync-to-github.ps1')}
-                      className="text-purple-400 hover:text-purple-300 bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 rounded-lg transition-colors text-xs">
-                      ↓ sync-to-github.ps1
-                    </button>
-                    {githubSettings ? (
-                      <button onClick={() => downloadText(makeRunSyncVbs(githubSettings.owner, githubSettings.repo, githubSettings.token), 'run-sync.vbs')}
-                        className="text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition-colors text-xs">
-                        ↓ run-sync.vbs（設定情報入り）
-                      </button>
-                    ) : (
-                      <span className="text-slate-600 text-xs py-1.5">※ 先に下の入力欄で接続すると run-sync.vbs に設定が自動入力されます</span>
-                    )}
-                  </div>
-
-                  <div>
-                    <div className="text-slate-400 mb-1 font-medium">① 両ファイルをブロック解除（PowerShell）</div>
-                    <div className="flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded-lg px-3 py-2 overflow-x-auto">
-                      <code className="text-green-400 font-mono flex-1 whitespace-nowrap text-[11px]">{'Unblock-File "$env:USERPROFILE\\Downloads\\sync-to-github.ps1"; Unblock-File "$env:USERPROFILE\\Downloads\\run-sync.vbs"'}</code>
-                      <button onClick={() => navigator.clipboard.writeText('Unblock-File "$env:USERPROFILE\\Downloads\\sync-to-github.ps1"; Unblock-File "$env:USERPROFILE\\Downloads\\run-sync.vbs"')}
-                        className="text-slate-600 hover:text-slate-300 flex-shrink-0 ml-1" title="コピー">⎘</button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-slate-400 mb-1 font-medium">② タスクスケジューラに登録（5 分ごと・完全サイレント）</div>
-                    <div className="flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded-lg px-3 py-2 overflow-x-auto">
-                      <code className="text-green-400 font-mono flex-1 whitespace-nowrap text-[11px]">{'schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"'}</code>
-                      <button onClick={() => navigator.clipboard.writeText('schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"')}
-                        className="text-slate-600 hover:text-slate-300 flex-shrink-0 ml-1" title="コピー">⎘</button>
-                    </div>
-                    <div className="text-slate-600 mt-1">「スケジュール タスク "MTExportSync" を作成しました。」と表示されれば完了。ウィンドウは一切表示されません。</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* STEP 5 */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-purple-600/30 text-purple-400 text-xs flex items-center justify-center font-bold flex-shrink-0">5</span>
-                  <span className="font-semibold text-slate-200">スマホで接続</span>
-                </div>
-                <div className="ml-7 space-y-2 text-slate-400">
-                  <div className="bg-[#0a0e17] rounded-lg p-3 space-y-1.5 border border-[#1f2d40]">
-                    <div className="flex items-start gap-2"><span className="text-purple-400 flex-shrink-0">①</span><span>スマホのブラウザでこのアプリ（Vercel の URL）を開く</span></div>
-                    <div className="flex items-start gap-2"><span className="text-purple-400 flex-shrink-0">②</span><span>右上の「GH 設定」をタップ → 同じ GitHub 情報を入力して「接続して同期」</span></div>
-                    <div className="flex items-start gap-2"><span className="text-purple-400 flex-shrink-0">③</span><span>以後は 5 分ごとに GitHub から最新データを自動取得します</span></div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 入力フォーム */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-purple-600/30 text-purple-400 text-xs flex items-center justify-center font-bold flex-shrink-0">↓</span>
-                  <span className="font-semibold text-slate-200">GitHub 接続情報を入力</span>
-                </div>
-                <div className="ml-7 space-y-2">
-                  <p className="text-slate-400">STEP 1〜2 が完了したら入力してください。PC・スマホそれぞれで設定します。</p>
-                  <input type="text" placeholder="GitHub ユーザー名 (例: tomoki)"
-                    value={ghOwner} onChange={e => setGhOwner(e.target.value)}
-                    className="w-full bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-3 py-2 text-slate-300 placeholder-slate-600 focus:outline-none focus:border-purple-500" />
-                  <input type="text" placeholder="リポジトリ名 (例: mt4-report-data)"
-                    value={ghRepo} onChange={e => setGhRepo(e.target.value)}
-                    className="w-full bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-3 py-2 text-slate-300 placeholder-slate-600 focus:outline-none focus:border-purple-500" />
-                  <input type="password" placeholder="Personal Access Token (ghp_xxxx...)"
-                    value={ghToken} onChange={e => setGhToken(e.target.value)}
-                    className="w-full bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-3 py-2 text-slate-300 placeholder-slate-600 focus:outline-none focus:border-purple-500" />
-                  <div className="flex gap-2 pt-1">
-                    <button
-                      disabled={!ghOwner || !ghRepo || !ghToken}
-                      onClick={async () => {
-                        const s = { owner: ghOwner.trim(), repo: ghRepo.trim(), token: ghToken.trim() }
-                        try {
-                          await syncFromGitHub(s)
-                          saveGitHubSettings(s)
-                          setGitHubSettings(s)
-                          setShowGitHubModal(false)
-                        } catch (e) {
-                          alert(`接続エラー: ${e.message}`)
-                        }
-                      }}
-                      className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-30 disabled:cursor-not-allowed text-white px-3 py-2 rounded-lg transition-colors font-semibold">
-                      接続して同期
-                    </button>
-                    {githubSettings && (
-                      <button
-                        onClick={() => { clearGitHubSettings(); setGitHubSettings(null); setShowGitHubModal(false) }}
-                        className="text-slate-500 hover:text-red-400 px-3 py-2 rounded-lg border border-[#1f2d40] transition-colors">
-                        設定削除
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </div>
-      )}
       <Analytics />
       <SpeedInsights />
     </div>

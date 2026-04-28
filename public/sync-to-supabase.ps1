@@ -54,12 +54,12 @@ foreach ($file in $files) {
 
         $accountNumber = [long]$parsed.account
         $body = @{
-            account_number = $accountNumber
-            filename       = $file.Name
-            data           = $parsed
+            p_account_number = $accountNumber
+            p_filename       = $file.Name
+            p_data           = $parsed
         } | ConvertTo-Json -Depth 20 -Compress
 
-        Invoke-RestMethod "$Url/rest/v1/reports" `
+        Invoke-RestMethod "$Url/rest/v1/rpc/upsert_report" `
             -Method Post `
             -Headers $headers `
             -Body $body `

@@ -11,12 +11,17 @@ function fmt2(n) {
   return (n >= 0 ? '+' : '-') + s
 }
 
+function toLocalDateKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 export default function TradeCalendar({ trades = [], aliases = {} }) {
   const today = new Date()
+  const todayKey = toLocalDateKey(today)
   const [year,  setYear]  = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
   const [selectedDay, setSelectedDay] = useState(null)
-  const [selectedAccounts, setSelectedAccounts] = useState(null) // null = 全口座
+  const [selectedAccount, setSelectedAccount] = useState(null) // null = 全口座
 
   // 口座名一覧
   const accountNames = useMemo(() => {
@@ -27,28 +32,12 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
 
   // 口座フィルタ済みトレード
   const activeTrades = useMemo(() => {
-    if (!selectedAccounts) return trades
-    return trades.filter(t => selectedAccounts.has(t.account))
-  }, [trades, selectedAccounts])
+    if (!selectedAccount) return trades
+    return trades.filter(t => t.account === selectedAccount)
+  }, [trades, selectedAccount])
 
-  const toggleAccount = (name) => {
-    setSelectedAccounts(prev => {
-      if (!prev) {
-        // 全口座選択中 → この口座だけ選択
-        return new Set([name])
-      }
-      const next = new Set(prev)
-      if (next.has(name)) {
-        next.delete(name)
-        // 全部外れたら全口座に戻す
-        if (next.size === 0) return null
-      } else {
-        next.add(name)
-        // 全口座が選択されたら null に戻す
-        if (next.size === accountNames.length) return null
-      }
-      return next
-    })
+  const selectAccount = (name) => {
+    setSelectedAccount(prev => prev === name ? null : name)
     setSelectedDay(null)
   }
 
@@ -115,20 +104,20 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-xs text-slate-500 mr-1">口座：</span>
           <button
-            onClick={() => { setSelectedAccounts(null); setSelectedDay(null) }}
+            onClick={() => { setSelectedAccount(null); setSelectedDay(null) }}
             className={`px-3 py-1 text-xs rounded-full border transition-colors
-              ${!selectedAccounts
+              ${!selectedAccount
                 ? 'bg-blue-600/30 border-blue-500/50 text-blue-300'
                 : 'border-[#1f2d40] text-slate-500 hover:text-slate-300'}`}>
             全口座
           </button>
           {accountNames.map(name => {
-            const active = selectedAccounts?.has(name) ?? false
+            const active = selectedAccount === name
             const display = aliases[name] || name
             return (
               <button
                 key={name}
-                onClick={() => toggleAccount(name)}
+                onClick={() => selectAccount(name)}
                 className={`px-3 py-1 text-xs rounded-full border transition-colors
                   ${active
                     ? 'bg-blue-600/30 border-blue-500/50 text-blue-300'
@@ -203,7 +192,7 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
             }
             const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
             const data = dailyMap.get(key)
-            const isToday = key === today.toISOString().slice(0, 10)
+            const isToday = key === todayKey
             const isSelected = day === selectedDay
             const dow = idx % 7
             const isSun = dow === 0

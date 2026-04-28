@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 import {
   parseHTMLReport, parseMT4Json, calcStatsFromTrades, buildEquityCurve
 } from './lib/mt4Parser'
@@ -924,6 +925,7 @@ export default function App() {
         </div>
       )}
       <Analytics />
+      <SpeedInsights />
     </div>
   )
 }

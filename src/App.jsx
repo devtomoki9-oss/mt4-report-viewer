@@ -8,7 +8,7 @@ import {
   saveHandle, loadHandle, collectReportFiles,
   FOLDER_KEY, supportsFileSystemAccess
 } from './lib/folderStore'
-import { INSTALL_BAT, MQ4_CONTENT, MQ5_CONTENT, SYNC_PS1_CONTENT } from './lib/downloadFiles'
+import { INSTALL_BAT, MQ4_CONTENT, MQ5_CONTENT, SYNC_PS1_CONTENT, RUN_VBS_CONTENT } from './lib/downloadFiles'
 import {
   supabase, signOut, getSession, fetchReports, deleteAccount
 } from './lib/supabaseClient'
@@ -504,14 +504,20 @@ export default function App() {
                 },
                 {
                   step: '5',
-                  text: 'sync-to-supabase.ps1 をダウンロードし、PowerShell でブロック解除する',
-                  sub: 'ダウンロードしたスクリプトは Windows によってブロックされるため、先に解除が必要です',
+                  text: 'sync-to-supabase.ps1・run-sync.vbs をダウンロードし、同じフォルダに置く',
+                  sub: 'ダウンロード後、PowerShell でブロック解除してください',
                   code: 'Unblock-File "$env:USERPROFILE\\Downloads\\sync-to-supabase.ps1"',
                 },
                 {
                   step: '6',
+                  text: '同じフォルダに sync-config.json を作成して接続情報を記入する',
+                  sub: 'メモ帳で新規作成 → 下記を貼り付けて URL・AnonKey・メール・パスワードを入力 → sync-config.json として保存',
+                  code: '{"url":"https://★★★.supabase.co","anonKey":"eyJ...","email":"you@example.com","password":"yourpass"}',
+                },
+                {
+                  step: '7',
                   text: 'タスクスケジューラに登録（1分ごとに自動アップロード）',
-                  sub: 'コマンドプロンプト（管理者）またはタスクスケジューラ GUI から登録してください',
+                  sub: 'コマンドプロンプト（管理者）で実行してください',
                   code: 'schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"',
                 },
               ].map(s => (
@@ -549,6 +555,10 @@ export default function App() {
                 <button onClick={() => downloadText(SYNC_PS1_CONTENT, 'sync-to-supabase.ps1')}
                   className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition-colors">
                   ↓ sync-to-supabase.ps1
+                </button>
+                <button onClick={() => downloadText(RUN_VBS_CONTENT, 'run-sync.vbs')}
+                  className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition-colors">
+                  ↓ run-sync.vbs
                 </button>
               </div>
             </div>

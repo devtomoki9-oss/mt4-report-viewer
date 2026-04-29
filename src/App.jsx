@@ -49,6 +49,7 @@ import DateRangeFilter from './components/DateRangeFilter'
 import TradeCalendar from './components/TradeCalendar'
 import InsightPanel from './components/InsightPanel'
 import LoginScreen from './components/LoginScreen'
+import LandingPage from './components/LandingPage'
 
 const TABS = [
   { id: 'overview',  label: 'サマリー'   },
@@ -126,6 +127,7 @@ export default function App() {
     })
   }, [])
 
+  const [showLp,      setShowLp]      = useState(true)
   const [user,        setUser]        = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [refreshing,   setRefreshing]  = useState(false)
@@ -473,7 +475,9 @@ export default function App() {
   }
 
   if (!user) {
-    return <LoginScreen onLogin={setUser} />
+    return showLp
+      ? <LandingPage onStart={() => setShowLp(false)} />
+      : <LoginScreen onLogin={setUser} />
   }
 
   return (

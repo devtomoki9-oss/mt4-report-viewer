@@ -688,7 +688,7 @@ export default function App() {
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-xs text-slate-600">
                 {lastUpdated && (
-                  <span>最終更新: {fmtTime(lastUpdated)}</span>
+                  <span>最終更新: {fmtTime(lastUpdated)} <span className="text-slate-700">JST</span></span>
                 )}
                 {secondsLeft != null && (
                   <span className="text-slate-700">次回 {fmtCountdown(secondsLeft)}</span>

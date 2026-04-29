@@ -253,7 +253,7 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
               <table className="w-full text-xs">
                 <thead>
                   <tr className="text-slate-500 border-b border-[#1f2d40]">
-                    <th className="px-3 py-2 text-left font-medium">時刻</th>
+                    <th className="px-3 py-2 text-left font-medium">時刻 (ブローカー)</th>
                     <th className="px-3 py-2 text-left font-medium">通貨</th>
                     <th className="px-3 py-2 text-left font-medium">タイプ</th>
                     <th className="px-3 py-2 text-right font-medium">ロット</th>

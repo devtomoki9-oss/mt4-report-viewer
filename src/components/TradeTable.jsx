@@ -2,8 +2,8 @@ import { useState, useMemo } from 'react'
 
 const COLS = [
   { key: 'ticket', label: 'チケット', align: 'left' },
-  { key: 'openTime', label: 'オープン', align: 'left' },
-  { key: 'closeTime', label: 'クローズ', align: 'left' },
+  { key: 'openTime', label: 'オープン (ブローカー)', align: 'left' },
+  { key: 'closeTime', label: 'クローズ (ブローカー)', align: 'left' },
   { key: 'type', label: '種別', align: 'left' },
   { key: 'symbol', label: '通貨ペア', align: 'left' },
   { key: 'size', label: 'ロット', align: 'right' },

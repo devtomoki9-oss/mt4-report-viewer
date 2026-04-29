@@ -372,12 +372,13 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user?.id, email: user?.email, returnUrl: window.location.href }),
       })
-      if (!res.ok) throw new Error('checkout session failed')
-      const { url } = await res.json()
-      window.location.href = url
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`)
+      if (!json.url) throw new Error('Stripe から URL が返されませんでした')
+      window.location.href = json.url
     } catch (e) {
-      alert('アップグレードの処理中にエラーが発生しました。しばらく経ってから再試行してください。')
-      console.error(e)
+      console.error('[Stripe] upgrade error:', e)
+      alert(`アップグレードの処理中にエラーが発生しました。\n\n${e.message}`)
     }
   }, [user])
 

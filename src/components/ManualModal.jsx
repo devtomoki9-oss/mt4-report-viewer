@@ -53,12 +53,29 @@ export default function ManualModal({ onClose }) {
 
               <Step n="②" title="MT4/MT5 の初期設定">
                 <p>install.bat が MT4/MT5 を自動起動します。開いた各ウィンドウで以下を行います。</p>
-                <ol className="list-decimal list-inside space-y-1 ml-1 mt-1">
-                  <li>ナビゲーター → Experts から <strong className="text-slate-300">ReportExporter</strong> をチャートにドラッグ → OK</li>
-                  <li>ファイル → プロファイル → 名前を付けて保存 → <strong className="text-slate-300">MTExporter</strong> → OK</li>
-                  <li>ファイル → 終了</li>
-                </ol>
-                <p className="mt-1 text-slate-500">※ MT4 と MT5 の両方をお使いの場合は、それぞれのウィンドウで実施してください。</p>
+
+                <div className="mt-2 space-y-3">
+                  <div>
+                    <div className="text-slate-300 font-medium mb-1">MT4 の場合</div>
+                    <ol className="list-decimal list-inside space-y-1 ml-1">
+                      <li>ファイル → 新規チャート → 任意のチャートを選択</li>
+                      <li>ナビゲーター → Experts から <strong className="text-slate-300">MT4ReportExporter</strong> をチャートにドラッグ → OK</li>
+                      <li>ファイル → チャートの組表示 → 名前を付けて保存 → <strong className="text-slate-300">MTExporter</strong> → OK</li>
+                      <li>ファイル → 終了</li>
+                    </ol>
+                  </div>
+                  <div>
+                    <div className="text-slate-300 font-medium mb-1">MT5 の場合</div>
+                    <ol className="list-decimal list-inside space-y-1 ml-1">
+                      <li>ファイル → 新規チャート → 任意のチャートを選択</li>
+                      <li>ナビゲーター → Experts から <strong className="text-slate-300">MT5ReportExporter</strong> をチャートにドラッグ → OK</li>
+                      <li>ファイル → チャートのプロファイル → 保存 → <strong className="text-slate-300">MTExporter</strong> → OK</li>
+                      <li>ファイル → 終了</li>
+                    </ol>
+                  </div>
+                </div>
+
+                <p className="mt-2 text-slate-500">※ MT4 と MT5 の両方をお使いの場合は、それぞれのウィンドウで実施してください。</p>
               </Step>
 
               <Step n="③" title="同期スクリプトの設定">

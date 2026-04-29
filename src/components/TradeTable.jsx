@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 
 const COLS = [
   { key: 'ticket', label: 'チケット', align: 'left' },
@@ -21,6 +21,7 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
   const [sort, setSort] = useState({ key: 'closeTime', dir: 'desc' })
   const [filter, setFilter] = useState('')
   const [page, setPage] = useState(0)
+  const tableTopRef = useRef(null)
 
   const sorted = useMemo(() => {
     const f = filter.toLowerCase()
@@ -56,8 +57,13 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
     return typeof v === 'number' ? v.toFixed(5) : v
   }
 
+  const goToPage = (fn) => {
+    setPage(fn)
+    tableTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   return (
-    <div className="space-y-3">
+    <div ref={tableTopRef} className="space-y-3">
       {showSearch && (
         <div className="flex items-center gap-2">
           <div className="relative flex-1 max-w-xs">
@@ -176,7 +182,7 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
         <div className="flex items-center justify-center gap-2">
           <button
             disabled={page === 0}
-            onClick={() => setPage(p => p - 1)}
+            onClick={() => goToPage(p => p - 1)}
             className="px-3 py-1.5 text-xs rounded-lg bg-[#1a2235] text-slate-400 disabled:opacity-30 hover:bg-[#1f2d40] transition-colors"
           >
             ← 前
@@ -184,7 +190,7 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
           <span className="text-xs text-slate-500">{page + 1} / {pages}</span>
           <button
             disabled={page >= pages - 1}
-            onClick={() => setPage(p => p + 1)}
+            onClick={() => goToPage(p => p + 1)}
             className="px-3 py-1.5 text-xs rounded-lg bg-[#1a2235] text-slate-400 disabled:opacity-30 hover:bg-[#1f2d40] transition-colors"
           >
             次 →

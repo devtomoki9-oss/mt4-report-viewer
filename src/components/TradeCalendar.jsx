@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土']
 
@@ -23,6 +23,7 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
   const [selectedDay, setSelectedDay] = useState(null)
   const [tradePage, setTradePage] = useState(0)
   const [selectedAccount, setSelectedAccount] = useState(null) // null = 全口座
+  const tradeTableRef = useRef(null)
 
   const PAGE_SIZE = 20
 
@@ -239,7 +240,7 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
         const pages  = Math.ceil(sorted.length / PAGE_SIZE)
         const paged  = sorted.slice(tradePage * PAGE_SIZE, (tradePage + 1) * PAGE_SIZE)
         return (
-          <div className="bg-[#111827] border border-[#1f2d40] rounded-xl overflow-hidden">
+          <div ref={tradeTableRef} className="bg-[#111827] border border-[#1f2d40] rounded-xl overflow-hidden">
             <div className="px-4 py-3 border-b border-[#1f2d40] flex items-center justify-between">
               <div className="text-sm font-semibold text-slate-300">
                 {year}年{month + 1}月{selectedDay}日
@@ -290,7 +291,7 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
               <div className="flex items-center justify-center gap-2 px-4 py-3 border-t border-[#1f2d40]">
                 <button
                   disabled={tradePage === 0}
-                  onClick={() => setTradePage(p => p - 1)}
+                  onClick={() => { setTradePage(p => p - 1); tradeTableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
                   className="px-3 py-1.5 text-xs rounded-lg bg-[#1a2235] text-slate-400 disabled:opacity-30 hover:bg-[#1f2d40] transition-colors">
                   ← 前
                 </button>
@@ -299,7 +300,7 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
                 </span>
                 <button
                   disabled={tradePage >= pages - 1}
-                  onClick={() => setTradePage(p => p + 1)}
+                  onClick={() => { setTradePage(p => p + 1); tradeTableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
                   className="px-3 py-1.5 text-xs rounded-lg bg-[#1a2235] text-slate-400 disabled:opacity-30 hover:bg-[#1f2d40] transition-colors">
                   次 →
                 </button>

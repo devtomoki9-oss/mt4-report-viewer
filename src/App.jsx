@@ -538,6 +538,13 @@ export default function App() {
             <div className="flex items-center gap-1.5 sm:gap-2">
               {user && (
                 <>
+                  <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#111827] border border-[#1f2d40]">
+                    <span className="text-xs text-slate-500 max-w-[140px] truncate">{user.email}</span>
+                    {plan === 'pro'
+                      ? <span className="text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1.5 py-0.5 rounded font-semibold">Pro</span>
+                      : <span className="text-[10px] bg-slate-700/50 text-slate-500 border border-slate-700 px-1.5 py-0.5 rounded font-semibold">Free</span>
+                    }
+                  </div>
                   <button
                     onClick={requestRefresh}
                     disabled={refreshing}

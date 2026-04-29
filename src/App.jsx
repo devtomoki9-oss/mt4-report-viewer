@@ -607,7 +607,29 @@ export default function App() {
                 {
                   step: '3',
                   text: '開いた MT4/MT5 ウィンドウそれぞれで一回セットアップを行う',
-                  sub: '① ReportExporter EA をチャートにドラッグ → OK　② ファイル → プロファイル → 名前を付けて保存 → MTExporter → OK　③ ターミナルを閉じる',
+                  sub: null,
+                  subContent: (
+                    <div className="space-y-2 mt-1">
+                      <div>
+                        <div className="text-slate-400 font-medium mb-0.5">MT4 の場合</div>
+                        <ol className="list-decimal list-inside space-y-0.5 ml-1 text-slate-500">
+                          <li>ファイル → 新規チャート → 任意のチャートを選択</li>
+                          <li>ナビゲーター → Experts から <span className="text-slate-300">MT4ReportExporter</span> をチャートにドラッグ → OK</li>
+                          <li>ファイル → チャートの組表示 → 名前を付けて保存 → <span className="text-slate-300">MTExporter</span> → OK</li>
+                          <li>ファイル → 終了</li>
+                        </ol>
+                      </div>
+                      <div>
+                        <div className="text-slate-400 font-medium mb-0.5">MT5 の場合</div>
+                        <ol className="list-decimal list-inside space-y-0.5 ml-1 text-slate-500">
+                          <li>ファイル → 新規チャート → 任意のチャートを選択</li>
+                          <li>ナビゲーター → Experts から <span className="text-slate-300">MT5ReportExporter</span> をチャートにドラッグ → OK</li>
+                          <li>ファイル → チャートのプロファイル → 保存 → <span className="text-slate-300">MTExporter</span> → OK</li>
+                          <li>ファイル → 終了</li>
+                        </ol>
+                      </div>
+                    </div>
+                  ),
                   code: null,
                 },
                 {
@@ -640,6 +662,7 @@ export default function App() {
                   <div className="min-w-0">
                     <div className="text-slate-300">{s.text}</div>
                     {s.sub && <div className="text-slate-500 mt-0.5">{s.sub}</div>}
+                    {s.subContent && <div className="mt-0.5">{s.subContent}</div>}
                     {s.code && (
                       <div className="mt-1.5 flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded px-2.5 py-1.5 overflow-x-auto">
                         <code className="text-green-400 font-mono flex-1 select-all whitespace-nowrap text-[11px] sm:text-xs">{s.code}</code>

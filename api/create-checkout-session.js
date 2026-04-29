@@ -22,9 +22,11 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'userId and email are required' })
   }
 
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
-
   try {
+    if (!process.env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY が設定されていません')
+    if (!process.env.VITE_STRIPE_PRICE_ID) throw new Error('VITE_STRIPE_PRICE_ID が設定されていません')
+
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],

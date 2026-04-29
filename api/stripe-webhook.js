@@ -51,7 +51,7 @@ export default async function handler(req, res) {
         process.env.SUPABASE_SERVICE_ROLE_KEY
       )
       await supabaseAdmin.auth.admin.updateUserById(userId, {
-        user_metadata: { plan: 'pro' },
+        app_metadata: { plan: 'pro' },
       })
     }
   }

@@ -60,7 +60,7 @@ export async function deleteAccount() {
 export async function fetchPlan() {
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) return 'free'
-  return user.user_metadata?.plan ?? 'free'
+  return user.app_metadata?.plan ?? 'free'
 }
 
 export async function fetchAliases() {

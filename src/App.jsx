@@ -310,6 +310,29 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
+  // ── Stripe 決済完了後のプラン反映（?upgraded=true） ──
+  useEffect(() => {
+    if (!user) return
+    const params = new URLSearchParams(window.location.search)
+    if (!params.has('upgraded')) return
+
+    // URL から ?upgraded=true を除去
+    window.history.replaceState({}, '', window.location.pathname)
+
+    // Webhook の処理が完了するまで最大 10 秒リトライ
+    let tries = 0
+    const poll = async () => {
+      tries++
+      const p = await fetchPlan().catch(() => 'free')
+      if (p === 'pro') {
+        setPlan('pro')
+        return
+      }
+      if (tries < 10) setTimeout(poll, 1000)
+    }
+    poll()
+  }, [user])
+
   // ── 起動時: ログイン済みなら自動読み込み ─────────────
   useEffect(() => {
     if (!user || autoLoadDoneRef.current) return

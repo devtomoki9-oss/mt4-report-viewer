@@ -59,7 +59,10 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
 
   const goToPage = (fn) => {
     setPage(fn)
-    tableTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    if (tableTopRef.current) {
+      const y = tableTopRef.current.getBoundingClientRect().top + window.scrollY - 72
+      window.scrollTo({ top: y, behavior: 'smooth' })
+    }
   }
 
   return (

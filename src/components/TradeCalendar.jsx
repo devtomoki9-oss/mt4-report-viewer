@@ -291,7 +291,7 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
               <div className="flex items-center justify-center gap-2 px-4 py-3 border-t border-[#1f2d40]">
                 <button
                   disabled={tradePage === 0}
-                  onClick={() => { setTradePage(p => p - 1); tradeTableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
+                  onClick={() => { setTradePage(p => p - 1); if (tradeTableRef.current) { const y = tradeTableRef.current.getBoundingClientRect().top + window.scrollY - 72; window.scrollTo({ top: y, behavior: 'smooth' }) } }}
                   className="px-3 py-1.5 text-xs rounded-lg bg-[#1a2235] text-slate-400 disabled:opacity-30 hover:bg-[#1f2d40] transition-colors">
                   ← 前
                 </button>
@@ -300,7 +300,7 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
                 </span>
                 <button
                   disabled={tradePage >= pages - 1}
-                  onClick={() => { setTradePage(p => p + 1); tradeTableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
+                  onClick={() => { setTradePage(p => p + 1); if (tradeTableRef.current) { const y = tradeTableRef.current.getBoundingClientRect().top + window.scrollY - 72; window.scrollTo({ top: y, behavior: 'smooth' }) } }}
                   className="px-3 py-1.5 text-xs rounded-lg bg-[#1a2235] text-slate-400 disabled:opacity-30 hover:bg-[#1f2d40] transition-colors">
                   次 →
                 </button>

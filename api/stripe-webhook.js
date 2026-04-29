@@ -1,10 +1,14 @@
 /**
- * Stripe Webhook ハンドラー（支払い完了でプランを pro に昇格）
+ * Stripe Webhook ハンドラー
+ *
+ * 対応イベント:
+ *   - checkout.session.completed  : 支払い完了 → plan: pro に昇格
+ *   - customer.subscription.deleted: 解約完了 → plan: free に降格
  *
  * 【セットアップ手順】
  * 1. Stripe ダッシュボード → Webhooks → エンドポイント追加
  *    URL: https://your-app.vercel.app/api/stripe-webhook
- *    イベント: checkout.session.completed
+ *    イベント: checkout.session.completed, customer.subscription.deleted
  * 2. Vercel 環境変数に以下を追加:
  *    - STRIPE_WEBHOOK_SECRET    : Webhook 署名シークレット (whsec_xxx)
  *    - SUPABASE_URL             : SupabaseプロジェクトURL
@@ -41,17 +45,32 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: `Webhook signature verification failed: ${err.message}` })
   }
 
+  const supabaseAdmin = createClient(
+    process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
+
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object
-    const userId  = session.metadata?.supabase_user_id
+    const session    = event.data.object
+    const userId     = session.metadata?.supabase_user_id
+    const customerId = session.customer
 
     if (userId) {
-      const supabaseAdmin = createClient(
-        process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_ROLE_KEY
-      )
       await supabaseAdmin.auth.admin.updateUserById(userId, {
-        app_metadata: { plan: 'pro' },
+        app_metadata: { plan: 'pro', stripe_customer_id: customerId },
+      })
+    }
+  }
+
+  if (event.type === 'customer.subscription.deleted') {
+    const customerId = event.data.object.customer
+
+    // stripe_customer_id でユーザーを検索して plan を free に戻す
+    const { data: { users } } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
+    const target = users.find(u => u.app_metadata?.stripe_customer_id === customerId)
+    if (target) {
+      await supabaseAdmin.auth.admin.updateUserById(target.id, {
+        app_metadata: { plan: 'free' },
       })
     }
   }

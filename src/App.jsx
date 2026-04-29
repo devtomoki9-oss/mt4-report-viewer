@@ -387,6 +387,23 @@ export default function App() {
     }
   }, [refreshing, syncFromSupabase])
 
+  // ── Stripe カスタマーポータル（解約・管理） ──────────
+  const handleManagePlan = useCallback(async () => {
+    try {
+      const res = await fetch('/api/create-portal-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user?.id, returnUrl: window.location.href }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`)
+      window.location.href = json.url
+    } catch (e) {
+      console.error('[Stripe] portal error:', e)
+      alert(`エラーが発生しました。\n\n${e.message}`)
+    }
+  }, [user])
+
   // ── Stripe アップグレード ─────────────────────────────
   const handleUpgrade = useCallback(async () => {
     try {
@@ -527,6 +544,13 @@ export default function App() {
                     className="text-xs text-blue-400 hover:text-blue-300 disabled:opacity-50 transition-colors bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg">
                     {refreshing ? '…' : '↻ 更新'}
                   </button>
+                  {plan === 'pro' && (
+                    <button
+                      onClick={handleManagePlan}
+                      className="hidden sm:inline text-xs text-slate-500 hover:text-slate-300 transition-colors px-2 py-1.5">
+                      サブスクリプション管理
+                    </button>
+                  )}
                   <button
                     onClick={async () => { await signOut(); setAccounts([]); setUser(null) }}
                     className="text-slate-600 hover:text-slate-300 transition-colors px-2 py-1.5 text-xs">

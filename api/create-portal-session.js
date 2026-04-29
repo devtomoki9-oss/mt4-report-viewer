@@ -37,7 +37,8 @@ export default async function handler(req, res) {
 
     // なければメールアドレスで Stripe を検索
     if (!customerId) {
-      const customers = await stripe.customers.list({ email: user.email, limit: 1 })
+      const customers = await stripe.customers.list({ email: user.email, limit: 5 })
+      console.log(`[portal] searching Stripe by email: ${user.email}, found: ${customers.data.length}`)
       if (customers.data.length > 0) {
         customerId = customers.data[0].id
         // 次回以降のために app_metadata に保存
@@ -48,7 +49,10 @@ export default async function handler(req, res) {
     }
 
     if (!customerId) {
-      return res.status(400).json({ error: 'Stripe customer not found. Please contact support.' })
+      console.error(`[portal] customer not found for user: ${userId}, email: ${user.email}`)
+      return res.status(400).json({
+        error: `Stripe customer not found (email: ${user.email}). Please contact support.`,
+      })
     }
 
     const session = await stripe.billingPortal.sessions.create({

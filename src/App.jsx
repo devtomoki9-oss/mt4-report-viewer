@@ -32,7 +32,7 @@ function generateRunSyncVbs(url, anonKey, email, password) {
 import {
   supabase, signOut, getSession, fetchReports, deleteAccount,
   fetchAliases, saveAliases, fetchPlan, updatePassword, subscribeToReports,
-  fetchTradingEnabled, setTradingEnabled,
+  fetchTradingStates, setTradingEnabled,
 } from './lib/supabaseClient'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import DeleteAccountModal from './components/DeleteAccountModal'
@@ -145,7 +145,7 @@ export default function App() {
   const [showFeedback,      setShowFeedback]      = useState(false)
   const [showManual,        setShowManual]        = useState(false)
   const [showHelp,          setShowHelp]          = useState(false)
-  const [tradingEnabled,    setTradingEnabledState] = useState(null)
+  const [tradingStates,     setTradingStates]       = useState({})
   const [showTerms,         setShowTerms]         = useState(false)
 
   const [showUserMenu,      setShowUserMenu]      = useState(false)
@@ -353,8 +353,8 @@ export default function App() {
     // プランを取得
     fetchPlan().then(setPlan).catch(console.error)
 
-    // 自動取引グローバル状態を取得
-    fetchTradingEnabled().then(setTradingEnabledState).catch(console.error)
+    // 自動取引状態を取得
+    fetchTradingStates().then(setTradingStates).catch(console.error)
 
     // Supabase から最新の alias を取得してローカルに反映
     fetchAliases().then(remote => {
@@ -572,25 +572,6 @@ export default function App() {
               )}
               {user && (
                 <>
-                  {(() => {
-                    const isOn = tradingEnabled ?? true
-                    return (
-                      <button
-                        onClick={async () => {
-                          const next = !isOn
-                          setTradingEnabledState(next)
-                          await setTradingEnabled(next).catch(console.error)
-                        }}
-                        title="MT4/MT5の自動取引をON/OFFします（PS1経由でCtrl+Eを送信）"
-                        className={`text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition-colors hidden sm:block
-                          ${isOn
-                            ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30'
-                            : 'text-slate-500 border-slate-700 bg-slate-700/20 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/30'
-                          }`}>
-                        {isOn ? '自動取引 ON' : '自動取引 OFF'}
-                      </button>
-                    )
-                  })()}
                   <button
                     onClick={requestRefresh}
                     disabled={refreshing}
@@ -911,6 +892,11 @@ export default function App() {
                             aliases={aliases}
                             setAlias={setAlias}
                             sortKey={accSort.key}
+                            tradingEnabled={tradingStates[String(acc.account.number)] ?? true}
+                            onTradingToggle={acc.account.number ? async (val) => {
+                              setTradingStates(prev => ({ ...prev, [String(acc.account.number)]: val }))
+                              await setTradingEnabled(acc.account.number, val).catch(console.error)
+                            } : undefined}
                           />
                         ))}
                       </div>

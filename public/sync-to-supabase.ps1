@@ -89,32 +89,44 @@ function Send-Report($filePath, $headers) {
 }
 
 # ── AutoTrading toggle helpers ────────────────────────────────────
-function Get-TradingEnabled($headers) {
+function Get-TradingStates($headers) {
     try {
         $getHeaders = @{ "apikey" = $AnonKey; "Authorization" = $headers["Authorization"] }
-        $data = Invoke-RestMethod "$Url/rest/v1/ea_controls?account_number=eq.0&select=enabled&limit=1" `
+        $data = Invoke-RestMethod "$Url/rest/v1/ea_controls?select=account_number,enabled" `
             -Method Get -Headers $getHeaders -ErrorAction Stop
-        if ($data.Count -gt 0) { return [bool]$data[0].enabled }
-        return $null
+        $states = @{}
+        foreach ($row in $data) { $states[[string]$row.account_number] = [bool]$row.enabled }
+        return $states
     } catch {
-        Write-Warning "[AutoTrading] Failed to read state: $($_.Exception.Message)"
+        Write-Warning "[AutoTrading] Failed to read states: $($_.Exception.Message)"
         return $null
     }
 }
 
-function Send-AutoTradingToggle {
-    $mtProcesses = @(Get-Process | Where-Object {
+function Send-AutoTradingToggle($accountNumber) {
+    $allMt = @(Get-Process | Where-Object {
         $_.MainWindowHandle -ne [IntPtr]::Zero -and
-        ($_.ProcessName -match '^terminal' -or $_.MainWindowTitle -match 'MetaTrader')
+        $_.ProcessName -match '^terminal'
     })
-    if ($mtProcesses.Count -eq 0) {
+    if ($allMt.Count -eq 0) {
         Write-Warning "[AutoTrading] No MetaTrader windows found"
         return
     }
+    # 口座番号でウィンドウタイトルを検索、見つからなければフォールバック
+    $targets = @($allMt | Where-Object { $_.MainWindowTitle -match "\b$accountNumber\b" })
+    if ($targets.Count -eq 0) {
+        if ($allMt.Count -eq 1) {
+            $targets = $allMt
+            Write-Host "[AutoTrading] Account $accountNumber: title match failed, using only MT window"
+        } else {
+            Write-Warning "[AutoTrading] Cannot identify window for account $accountNumber (${$allMt.Count} windows open)"
+            return
+        }
+    }
     $prev = [Win32]::GetForegroundWindow()
-    foreach ($proc in $mtProcesses) {
+    foreach ($proc in $targets) {
         $hwnd = $proc.MainWindowHandle
-        [Win32]::ShowWindow($hwnd, 1)  | Out-Null
+        [Win32]::ShowWindow($hwnd, 1) | Out-Null
         [Win32]::SetForegroundWindow($hwnd) | Out-Null
         Start-Sleep -Milliseconds 150
         [Win32]::keybd_event([Win32]::VK_CONTROL, 0, 0, 0)
@@ -124,7 +136,7 @@ function Send-AutoTradingToggle {
         Start-Sleep -Milliseconds 150
     }
     if ($prev -ne [IntPtr]::Zero) { [Win32]::SetForegroundWindow($prev) | Out-Null }
-    Write-Host "[AutoTrading] Ctrl+E sent to $($mtProcesses.Count) MetaTrader window(s)"
+    Write-Host "[AutoTrading] Ctrl+E sent to account $accountNumber ($($targets.Count) window(s))"
 }
 
 try {
@@ -146,9 +158,10 @@ try {
         New-Item -ItemType Directory -Path $Folder -Force | Out-Null
     }
 
-    # ── Read initial AutoTrading state (track without applying) ──
-    $lastTradingEnabled = Get-TradingEnabled $headers
-    Write-Host "[AutoTrading] Initial state from Supabase: $lastTradingEnabled"
+    # ── Read initial AutoTrading states (track without applying) ─
+    $lastTradingStates = Get-TradingStates $headers
+    if ($lastTradingStates -eq $null) { $lastTradingStates = @{} }
+    Write-Host "[AutoTrading] Initial states: $($lastTradingStates.Count) account(s)"
 
     # ── FileSystemWatcher ─────────────────────────────────────────
     $watcher = New-Object System.IO.FileSystemWatcher
@@ -176,12 +189,19 @@ try {
             }
         }
 
-        # AutoTrading state poll (every ~5s via WaitForChanged timeout)
-        $desired = Get-TradingEnabled $headers
-        if ($desired -ne $null -and $desired -ne $lastTradingEnabled) {
-            Write-Host "[AutoTrading] State changed: $lastTradingEnabled -> $desired"
-            Send-AutoTradingToggle
-            $lastTradingEnabled = $desired
+        # AutoTrading states poll (every ~5s via WaitForChanged timeout)
+        $desired = Get-TradingStates $headers
+        if ($desired -ne $null) {
+            foreach ($acct in $desired.Keys) {
+                $prev = $lastTradingStates[$acct]
+                if ($prev -eq $null) {
+                    $lastTradingStates[$acct] = $desired[$acct]  # 初回: 記録のみ
+                } elseif ($desired[$acct] -ne $prev) {
+                    Write-Host "[AutoTrading] Account $acct state: $prev -> $($desired[$acct])"
+                    Send-AutoTradingToggle $acct
+                    $lastTradingStates[$acct] = $desired[$acct]
+                }
+            }
         }
 
         # Wait up to 5 seconds for a file change

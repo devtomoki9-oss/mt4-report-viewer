@@ -145,7 +145,7 @@ export default function App() {
   const [showFeedback,      setShowFeedback]      = useState(false)
   const [showManual,        setShowManual]        = useState(false)
   const [showHelp,          setShowHelp]          = useState(false)
-  const [tradingStates,     setTradingStates]       = useState({})
+  const [tradingStates,     setTradingStates]       = useState(null)
   const [showTerms,         setShowTerms]         = useState(false)
 
   const [showUserMenu,      setShowUserMenu]      = useState(false)
@@ -892,8 +892,8 @@ export default function App() {
                             aliases={aliases}
                             setAlias={setAlias}
                             sortKey={accSort.key}
-                            tradingEnabled={tradingStates[String(acc.account.number)] ?? true}
-                            onTradingToggle={acc.account.number ? async (val) => {
+                            tradingEnabled={tradingStates ? (tradingStates[String(acc.account.number)] ?? true) : true}
+                            onTradingToggle={tradingStates !== null && acc.account.number ? async (val) => {
                               setTradingStates(prev => ({ ...prev, [String(acc.account.number)]: val }))
                               await setTradingEnabled(acc.account.number, val).catch(console.error)
                             } : undefined}

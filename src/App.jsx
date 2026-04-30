@@ -572,22 +572,25 @@ export default function App() {
               )}
               {user && (
                 <>
-                  {tradingEnabled !== null && (
-                    <button
-                      onClick={async () => {
-                        const next = !tradingEnabled
-                        setTradingEnabledState(next)
-                        await setTradingEnabled(next).catch(console.error)
-                      }}
-                      title="MT4/MT5の自動取引をON/OFFします（PS1経由でCtrl+Eを送信）"
-                      className={`text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition-colors hidden sm:block
-                        ${tradingEnabled
-                          ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30'
-                          : 'text-slate-500 border-slate-700 bg-slate-700/20 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/30'
-                        }`}>
-                      {tradingEnabled ? '自動取引 ON' : '自動取引 OFF'}
-                    </button>
-                  )}
+                  {(() => {
+                    const isOn = tradingEnabled ?? true
+                    return (
+                      <button
+                        onClick={async () => {
+                          const next = !isOn
+                          setTradingEnabledState(next)
+                          await setTradingEnabled(next).catch(console.error)
+                        }}
+                        title="MT4/MT5の自動取引をON/OFFします（PS1経由でCtrl+Eを送信）"
+                        className={`text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition-colors hidden sm:block
+                          ${isOn
+                            ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30'
+                            : 'text-slate-500 border-slate-700 bg-slate-700/20 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/30'
+                          }`}>
+                        {isOn ? '自動取引 ON' : '自動取引 OFF'}
+                      </button>
+                    )
+                  })()}
                   <button
                     onClick={requestRefresh}
                     disabled={refreshing}

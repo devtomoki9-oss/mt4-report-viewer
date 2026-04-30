@@ -86,6 +86,17 @@ export async function saveAliases(aliases) {
   if (error) throw error
 }
 
+export function subscribeToReports(onUpdate) {
+  return supabase
+    .channel('reports-realtime')
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'reports',
+    }, onUpdate)
+    .subscribe()
+}
+
 export async function upsertReport(accountNumber, filename, jsonData) {
   const { error } = await supabase
     .from('reports')

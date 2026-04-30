@@ -86,7 +86,7 @@ export default function ManualModal({ onClose }) {
               </Step>
 
               <Step n="④" title="タスクスケジューラへの登録">
-                <p>1 分ごとに自動アップロードするよう登録します。PowerShell で実行してください。</p>
+                <p>ファイル変更を検知してリアルタイムでアップロードするよう登録します。PowerShell で実行してください。</p>
                 <Code>{'schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"'}</Code>
               </Step>
             </div>

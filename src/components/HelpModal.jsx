@@ -95,7 +95,7 @@ function SyncSection() {
       <p className="text-slate-500">タスクスケジューラーへの登録や同期スクリプトに関するトラブルです。</p>
 
       <CheckItem n="1" title="タスクを手動で再登録する">
-        <p>タスクが見つからない・エラーになる場合は、以下のコマンドで再登録できます。</p>
+        <p>タスクが見つからない・エラーになる場合は、以下のコマンドで再登録できます。スクリプトはファイル変更を検知してリアルタイムで同期します。</p>
         <Code>{'schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"'}</Code>
         <p className="mt-1">run-sync.vbs のパスは実際に保存した場所に合わせて変更してください。</p>
       </CheckItem>

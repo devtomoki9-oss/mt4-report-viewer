@@ -31,7 +31,7 @@ function generateRunSyncVbs(url, anonKey, email, password) {
 }
 import {
   supabase, signOut, getSession, fetchReports, deleteAccount,
-  fetchAliases, saveAliases, fetchPlan, updatePassword,
+  fetchAliases, saveAliases, fetchPlan, updatePassword, subscribeToReports,
 } from './lib/supabaseClient'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import DeleteAccountModal from './components/DeleteAccountModal'
@@ -444,12 +444,12 @@ export default function App() {
     }
   }, [user])
 
-  // ── Supabase 自動更新（1分ごと・メイン画面のみ） ────
+  // ── Supabase Realtime 購読（reports テーブル変更を即時検知） ──
   useEffect(() => {
-    if (!user || !hasData) return
-    const id = setInterval(() => syncFromSupabase(), SUPABASE_INTERVAL_MS)
-    return () => clearInterval(id)
-  }, [user, hasData, syncFromSupabase])
+    if (!user) return
+    const channel = subscribeToReports(() => syncFromSupabase())
+    return () => { supabase.removeChannel(channel) }
+  }, [user, syncFromSupabase])
 
   // ── 30秒ポーリング（変化検知） ────────────────────
   useEffect(() => {
@@ -752,7 +752,7 @@ export default function App() {
                 },
                 {
                   step: '7',
-                  text: 'PowerShell で タスクスケジューラに登録（1分ごとに自動アップロード）',
+                  text: 'PowerShell で タスクスケジューラに登録（ファイル変更を検知してリアルタイム同期）',
                   sub: 'ダウンロード先が異なる場合はパスを変更してください',
                   code: 'schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"',
                 },

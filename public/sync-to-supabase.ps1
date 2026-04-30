@@ -108,9 +108,14 @@ function Get-ActualTradingState($accountNumber) {
     if (-not (Test-Path $jsonPath)) { return $null }
     try {
         $data = [IO.File]::ReadAllText($jsonPath, [Text.Encoding]::UTF8) | ConvertFrom-Json
-        if ($data.PSObject.Properties.Name -contains 'autoTrading') { return [bool]$data.autoTrading }
-        return $null  # 旧バージョンEA（autoTradingフィールドなし）
-    } catch { return $null }
+        if ($data.PSObject.Properties.Name -contains 'autoTrading') {
+            return [bool]$data.autoTrading
+        }
+        return $null
+    }
+    catch {
+        return $null
+    }
 }
 
 function Send-AutoTradingToggle($accountNumber) {

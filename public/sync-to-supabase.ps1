@@ -252,12 +252,13 @@ try {
                     continue
                 }
 
-                $desiredChanged = $prevDesired -ne $null -and $prevDesired -ne $desiredState
-                if ($desiredChanged) {
-                    Write-Host "[AutoTrading] Account ${acct}: web command -> Ctrl+E"
+                if ($prevDesired -eq $null -or $prevDesired -ne $desiredState) {
+                    # 初回起動 or Web が desired を変更 → Ctrl+E で MT に適用
+                    Write-Host "[AutoTrading] Account ${acct}: applying desired=$desiredState -> Ctrl+E"
                     Send-AutoTradingToggle $acct
                     $ctrlECooldown[$acct] = Get-Date
                 } else {
+                    # desired 変化なし、actual が変化 → MT 手動変更 → ea_controls を同期
                     Write-Host "[AutoTrading] Account ${acct}: MT manual change -> syncing ea_controls"
                     Set-TradingState $acct $actualState $jwt
                 }

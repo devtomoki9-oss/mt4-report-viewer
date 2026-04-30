@@ -98,7 +98,7 @@ function Get-TradingStates($headers) {
         foreach ($row in $data) { $states[[string]$row.account_number] = [bool]$row.enabled }
         return $states
     } catch {
-        Write-Warning "[AutoTrading] Failed to read states: $($_.Exception.Message)"
+        Write-Host "[AutoTrading] ERROR: $_" -ForegroundColor Red
         return $null
     }
 }

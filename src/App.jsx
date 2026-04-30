@@ -145,8 +145,7 @@ export default function App() {
   const [showManual,        setShowManual]        = useState(false)
   const [showHelp,          setShowHelp]          = useState(false)
   const [showTerms,         setShowTerms]         = useState(false)
-  const [showMobileMenu,    setShowMobileMenu]    = useState(false)
-  const mobileMenuRef = useRef(null)
+
   const [showUserMenu,      setShowUserMenu]      = useState(false)
   const userMenuRef = useRef(null)
   const [plan, setPlan] = useState('free')
@@ -369,16 +368,6 @@ export default function App() {
     syncFromSupabase()
   }, [user, syncFromSupabase])
 
-  // ── モバイルメニューの外側クリックで閉じる ──────────
-  useEffect(() => {
-    if (!showMobileMenu) return
-    const close = (e) => {
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target))
-        setShowMobileMenu(false)
-    }
-    document.addEventListener('mousedown', close)
-    return () => document.removeEventListener('mousedown', close)
-  }, [showMobileMenu])
 
   // ── ユーザーメニューの外側クリックで閉じる ───────────
   useEffect(() => {
@@ -565,6 +554,17 @@ export default function App() {
               {hasData && <span className="text-xs text-slate-600 ml-1 hidden sm:inline">{accounts.length} 口座</span>}
             </div>
             <div className="flex items-center gap-1.5 sm:gap-2">
+              {hasData && (
+                <nav className="hidden sm:flex gap-1 bg-[#111827] border border-[#1f2d40] rounded-lg p-1">
+                  {TABS.map(t => (
+                    <button key={t.id} onClick={() => setTab(t.id)}
+                      className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all
+                        ${tab === t.id ? 'bg-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>
+                      {t.label}
+                    </button>
+                  ))}
+                </nav>
+              )}
               {user && (
                 <>
                   <button
@@ -587,7 +587,6 @@ export default function App() {
                     </button>
                     {showUserMenu && (
                       <div className="absolute right-0 top-full mt-1 w-56 bg-[#111827] border border-[#1f2d40] rounded-xl shadow-2xl py-1 z-50">
-                        {/* ヘッダー（メール + プラン） */}
                         <div className="px-4 py-2.5 border-b border-[#1f2d40]">
                           <div className="text-xs text-slate-400 truncate">{user.email}</div>
                           {plan === 'pro'
@@ -619,41 +618,6 @@ export default function App() {
                   </div>
                 </>
               )}
-              {hasData && (
-                <>
-                  <nav className="hidden sm:flex gap-1 bg-[#111827] border border-[#1f2d40] rounded-lg p-1">
-                    {TABS.map(t => (
-                      <button key={t.id} onClick={() => setTab(t.id)}
-                        className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all
-                          ${tab === t.id ? 'bg-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>
-                        {t.label}
-                      </button>
-                    ))}
-                  </nav>
-                  <button onClick={clearAll} className="hidden sm:inline text-xs text-slate-600 hover:text-red-400 transition-colors px-2 py-1">
-                    クリア
-                  </button>
-                </>
-              )}
-              {/* モバイル用メニュー（⋮ボタン + ドロップダウン） */}
-              {hasData && (
-                <div className="relative sm:hidden" ref={mobileMenuRef}>
-                  <button
-                    onClick={() => setShowMobileMenu(v => !v)}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-200 hover:bg-[#1a2235] transition-colors text-base">
-                    ⋮
-                  </button>
-                  {showMobileMenu && (
-                    <div className="absolute right-0 top-full mt-1 w-44 bg-[#111827] border border-[#1f2d40] rounded-xl shadow-2xl py-1 z-50">
-                      <button
-                        onClick={() => { clearAll(); setShowMobileMenu(false) }}
-                        className="w-full text-left px-4 py-2.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-[#1a2235] transition-colors">
-                        データをクリア
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           </div>
           {hasData && (
@@ -665,6 +629,10 @@ export default function App() {
                   {t.label}
                 </button>
               ))}
+              <button onClick={clearAll}
+                className="flex-shrink-0 px-2.5 py-1.5 text-xs rounded-md font-medium bg-[#111827] border border-[#1f2d40] text-slate-600 hover:text-red-400 transition-colors">
+                クリア
+              </button>
             </div>
           )}
         </div>
@@ -809,13 +777,13 @@ export default function App() {
           <>
             {/* ツールバー */}
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-xs text-slate-600">
+              <div className="flex items-center gap-3 text-xs text-slate-600">
                 {lastUpdated && (
-                  <span>最終更新: {fmtTime(lastUpdated)} <span className="text-slate-700">JST</span></span>
+                  <span>最終更新: {fmtTime(lastUpdated)}</span>
                 )}
-                {secondsLeft != null && (
-                  <span className="text-slate-700">次回 {fmtCountdown(secondsLeft)}</span>
-                )}
+                <button onClick={clearAll} className="hidden sm:inline hover:text-red-400 transition-colors">
+                  クリア
+                </button>
               </div>
               <label className="cursor-pointer text-xs text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg">
                 <input type="file" accept=".htm,.html,.json" multiple className="hidden"

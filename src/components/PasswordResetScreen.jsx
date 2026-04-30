@@ -29,15 +29,25 @@ export default function PasswordResetScreen({ onDone }) {
   if (done) {
     return (
       <div className="min-h-screen bg-[#0a0e17] flex items-center justify-center px-4">
-        <div className="w-full max-w-sm text-center space-y-4">
-          <div className="text-4xl">✅</div>
-          <h2 className="text-slate-200 font-semibold">パスワードを変更しました</h2>
-          <button
-            onClick={onDone}
-            className="text-blue-400 hover:text-blue-300 text-sm"
-          >
-            ダッシュボードへ戻る
-          </button>
+        <div className="w-full max-w-sm space-y-4">
+          <div className="text-center space-y-2">
+            <div className="text-4xl">✅</div>
+            <h2 className="text-slate-200 font-semibold">パスワードを変更しました</h2>
+          </div>
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg px-4 py-3 space-y-1">
+            <div className="text-amber-400 text-xs font-semibold">自動同期の再セットアップが必要です</div>
+            <div className="text-amber-300/70 text-xs leading-relaxed">
+              MT4/MT5の自動同期（run-sync.vbs）にはパスワードが埋め込まれています。ダッシュボードから <span className="font-semibold">run-sync.vbs を再ダウンロード</span> し、タスクスケジューラーのファイルを差し替えてください。
+            </div>
+          </div>
+          <div className="text-center">
+            <button
+              onClick={onDone}
+              className="text-blue-400 hover:text-blue-300 text-sm"
+            >
+              ダッシュボードへ戻る
+            </button>
+          </div>
         </div>
       </div>
     )

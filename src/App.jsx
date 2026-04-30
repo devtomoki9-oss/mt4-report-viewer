@@ -31,12 +31,13 @@ function generateRunSyncVbs(url, anonKey, email, password) {
 }
 import {
   supabase, signOut, getSession, fetchReports, deleteAccount,
-  fetchAliases, saveAliases, fetchPlan,
+  fetchAliases, saveAliases, fetchPlan, updatePassword,
 } from './lib/supabaseClient'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import DeleteAccountModal from './components/DeleteAccountModal'
 import FeedbackModal from './components/FeedbackModal'
 import ManualModal from './components/ManualModal'
+import HelpModal from './components/HelpModal'
 import TermsModal from './components/TermsModal'
 import UploadZone from './components/UploadZone'
 import StatCard from './components/StatCard'
@@ -50,6 +51,7 @@ import TradeCalendar from './components/TradeCalendar'
 import InsightPanel from './components/InsightPanel'
 import LoginScreen from './components/LoginScreen'
 import LandingPage from './components/LandingPage'
+import PasswordResetScreen from './components/PasswordResetScreen'
 
 const TABS = [
   { id: 'overview',  label: 'サマリー'   },
@@ -127,8 +129,9 @@ export default function App() {
     })
   }, [])
 
-  const [showLp,      setShowLp]      = useState(true)
-  const [lpMode,      setLpMode]      = useState('login')
+  const [showLp,           setShowLp]           = useState(true)
+  const [lpMode,           setLpMode]           = useState('login')
+  const [showPasswordReset, setShowPasswordReset] = useState(false)
   const [user,        setUser]        = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [refreshing,   setRefreshing]  = useState(false)
@@ -140,9 +143,12 @@ export default function App() {
   const [vbsPass,           setVbsPass]           = useState('')
   const [showFeedback,      setShowFeedback]      = useState(false)
   const [showManual,        setShowManual]        = useState(false)
+  const [showHelp,          setShowHelp]          = useState(false)
   const [showTerms,         setShowTerms]         = useState(false)
   const [showMobileMenu,    setShowMobileMenu]    = useState(false)
   const mobileMenuRef = useRef(null)
+  const [showUserMenu,      setShowUserMenu]      = useState(false)
+  const userMenuRef = useRef(null)
   const [plan, setPlan] = useState('free')
 
   const hasData = accounts.length > 0
@@ -305,8 +311,12 @@ export default function App() {
       .then(session => setUser(session?.user ?? null))
       .catch(() => setUser(null))
       .finally(() => setAuthLoading(false))
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setShowPasswordReset(true)
+      } else {
+        setUser(session?.user ?? null)
+      }
     })
     return () => subscription.unsubscribe()
   }, [])
@@ -369,6 +379,17 @@ export default function App() {
     document.addEventListener('mousedown', close)
     return () => document.removeEventListener('mousedown', close)
   }, [showMobileMenu])
+
+  // ── ユーザーメニューの外側クリックで閉じる ───────────
+  useEffect(() => {
+    if (!showUserMenu) return
+    const close = (e) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target))
+        setShowUserMenu(false)
+    }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [showUserMenu])
 
   // ── 各 ref を常に最新に保つ ──────────────────────────
   const syncFromSupabaseRef = useRef(null)
@@ -516,6 +537,10 @@ export default function App() {
     )
   }
 
+  if (showPasswordReset) {
+    return <PasswordResetScreen onDone={() => setShowPasswordReset(false)} />
+  }
+
   if (!user) {
     return showLp
       ? <LandingPage
@@ -542,37 +567,56 @@ export default function App() {
             <div className="flex items-center gap-1.5 sm:gap-2">
               {user && (
                 <>
-                  <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#111827] border border-[#1f2d40]">
-                    <span className="text-xs text-slate-500 max-w-[140px] truncate">{user.email}</span>
-                    {plan === 'pro'
-                      ? <span className="text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1.5 py-0.5 rounded font-semibold">Pro</span>
-                      : <span className="text-[10px] bg-slate-700/50 text-slate-500 border border-slate-700 px-1.5 py-0.5 rounded font-semibold">Free</span>
-                    }
-                  </div>
                   <button
                     onClick={requestRefresh}
                     disabled={refreshing}
                     className="text-xs text-blue-400 hover:text-blue-300 disabled:opacity-50 transition-colors bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg">
                     {refreshing ? '…' : '↻ 更新'}
                   </button>
-                  {plan === 'pro' && (
+                  {/* アカウントメニュー */}
+                  <div className="relative" ref={userMenuRef}>
                     <button
-                      onClick={handleManagePlan}
-                      className="hidden sm:inline text-xs text-slate-500 hover:text-slate-300 transition-colors px-2 py-1.5">
-                      サブスクリプション管理
+                      onClick={() => setShowUserMenu(v => !v)}
+                      className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#111827] border border-[#1f2d40] hover:border-slate-600 transition-colors">
+                      <span className="text-xs text-slate-400 max-w-[120px] truncate hidden sm:inline">{user.email}</span>
+                      {plan === 'pro'
+                        ? <span className="text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1.5 py-0.5 rounded font-semibold">Pro</span>
+                        : <span className="text-[10px] bg-slate-700/50 text-slate-500 border border-slate-700 px-1.5 py-0.5 rounded font-semibold">Free</span>
+                      }
+                      <span className="text-slate-600 text-[10px]">▾</span>
                     </button>
-                  )}
-                  <button
-                    onClick={async () => { await signOut(); setAccounts([]); setUser(null) }}
-                    className="text-slate-600 hover:text-slate-300 transition-colors px-2 py-1.5 text-xs">
-                    ログアウト
-                  </button>
-                  <button
-                    onClick={() => setShowDeleteAccount(true)}
-                    className="hidden sm:inline text-slate-700 hover:text-red-400 transition-colors px-2 py-1.5 text-xs"
-                    title="アカウント削除">
-                    アカウント削除
-                  </button>
+                    {showUserMenu && (
+                      <div className="absolute right-0 top-full mt-1 w-56 bg-[#111827] border border-[#1f2d40] rounded-xl shadow-2xl py-1 z-50">
+                        {/* ヘッダー（メール + プラン） */}
+                        <div className="px-4 py-2.5 border-b border-[#1f2d40]">
+                          <div className="text-xs text-slate-400 truncate">{user.email}</div>
+                          {plan === 'pro'
+                            ? <div className="text-[10px] text-blue-400 mt-0.5">Pro プラン</div>
+                            : <div className="text-[10px] text-slate-600 mt-0.5">Free プラン</div>
+                          }
+                        </div>
+                        {plan === 'pro' && (
+                          <button
+                            onClick={() => { handleManagePlan(); setShowUserMenu(false) }}
+                            className="w-full text-left px-4 py-2.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-[#1a2235] transition-colors">
+                            サブスクリプション管理
+                          </button>
+                        )}
+                        <button
+                          onClick={async () => { setShowUserMenu(false); await signOut(); setAccounts([]); setUser(null) }}
+                          className="w-full text-left px-4 py-2.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-[#1a2235] transition-colors">
+                          ログアウト
+                        </button>
+                        <div className="border-t border-[#1f2d40] mt-1 pt-1">
+                          <button
+                            onClick={() => { setShowDeleteAccount(true); setShowUserMenu(false) }}
+                            className="w-full text-left px-4 py-2.5 text-xs text-red-400/60 hover:text-red-400 hover:bg-[#1a2235] transition-colors">
+                            アカウント削除
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </>
               )}
               {hasData && (
@@ -592,31 +636,24 @@ export default function App() {
                 </>
               )}
               {/* モバイル用メニュー（⋮ボタン + ドロップダウン） */}
-              <div className="relative sm:hidden" ref={mobileMenuRef}>
-                <button
-                  onClick={() => setShowMobileMenu(v => !v)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-200 hover:bg-[#1a2235] transition-colors text-base">
-                  ⋮
-                </button>
-                {showMobileMenu && (
-                  <div className="absolute right-0 top-full mt-1 w-44 bg-[#111827] border border-[#1f2d40] rounded-xl shadow-2xl py-1 z-50">
-                    {hasData && (
+              {hasData && (
+                <div className="relative sm:hidden" ref={mobileMenuRef}>
+                  <button
+                    onClick={() => setShowMobileMenu(v => !v)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-200 hover:bg-[#1a2235] transition-colors text-base">
+                    ⋮
+                  </button>
+                  {showMobileMenu && (
+                    <div className="absolute right-0 top-full mt-1 w-44 bg-[#111827] border border-[#1f2d40] rounded-xl shadow-2xl py-1 z-50">
                       <button
                         onClick={() => { clearAll(); setShowMobileMenu(false) }}
                         className="w-full text-left px-4 py-2.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-[#1a2235] transition-colors">
                         データをクリア
                       </button>
-                    )}
-                    {user && (
-                      <button
-                        onClick={() => { setShowDeleteAccount(true); setShowMobileMenu(false) }}
-                        className="w-full text-left px-4 py-2.5 text-xs text-red-400/70 hover:text-red-400 hover:bg-[#1a2235] transition-colors">
-                        アカウント削除
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           {hasData && (
@@ -890,22 +927,19 @@ export default function App() {
       </main>
 
       {/* フッター */}
-      <footer className="text-center py-4 text-xs text-slate-700 space-x-4">
-        <button onClick={() => setShowManual(true)} className="hover:text-slate-400 underline">
-          操作マニュアル
-        </button>
-        <button onClick={() => setShowTerms(true)} className="hover:text-slate-400 underline">
-          利用規約
-        </button>
-        <button onClick={() => setShowPrivacy(true)} className="hover:text-slate-400 underline">
-          プライバシーポリシー
-        </button>
-        <button onClick={() => setShowFeedback(true)} className="hover:text-slate-400 underline">
-          お問い合わせ
-        </button>
+      <footer className="text-center py-4 text-xs text-slate-700 space-y-2">
+        <div className="flex items-center justify-center gap-4 flex-wrap">
+          <button onClick={() => setShowManual(true)} className="hover:text-slate-400 underline">操作マニュアル</button>
+          <button onClick={() => setShowHelp(true)} className="hover:text-slate-400 underline">ヘルプ</button>
+          <button onClick={() => setShowTerms(true)} className="hover:text-slate-400 underline">利用規約</button>
+          <button onClick={() => setShowPrivacy(true)} className="hover:text-slate-400 underline">プライバシーポリシー</button>
+          <button onClick={() => setShowFeedback(true)} className="hover:text-slate-400 underline">お問い合わせ</button>
+        </div>
+        <div>© {new Date().getFullYear()} MT Report Viewer</div>
       </footer>
 
       {showManual   && <ManualModal     onClose={() => setShowManual(false)} />}
+      {showHelp     && <HelpModal       onClose={() => setShowHelp(false)} />}
       {showTerms    && <TermsModal      onClose={() => setShowTerms(false)} />}
       {showPrivacy  && <PrivacyPolicy   onClose={() => setShowPrivacy(false)} />}
       {showFeedback && <FeedbackModal   onClose={() => setShowFeedback(false)} />}
@@ -983,6 +1017,7 @@ export default function App() {
                 }
               }
               await deleteAccount()
+              await signOut()
               setUser(null)
               setAccounts([])
               setShowDeleteAccount(false)

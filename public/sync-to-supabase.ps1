@@ -104,8 +104,10 @@ function Get-TradingStates($jwt) {
         Write-Host "[AutoTrading] ea_controls loaded: $($states.Count) row(s)"
     }
     catch {
-        Write-Host "[AutoTrading] ERROR: $($_.Exception.Message)" -ForegroundColor Red
-        Add-Content "$env:TEMP\sync_debug.log" "[$(Get-Date -Format 'HH:mm:ss')] $($_.Exception.Message)"
+        $errType = $_.Exception.GetType().FullName
+        $errMsg  = $_.Exception.Message
+        Write-Warning "[AutoTrading] ERROR ($errType): $errMsg"
+        Add-Content "$env:TEMP\sync_debug.log" "[$(Get-Date -Format 'HH:mm:ss')] $errType : $errMsg"
         return $null
     }
     return $states

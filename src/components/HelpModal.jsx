@@ -85,6 +85,26 @@ function ReportSection() {
         <p>Windows のセキュリティ設定により、ダウンロードした PowerShell スクリプトが実行をブロックされる場合があります。PowerShell で以下を実行してください。</p>
         <Code>{'Unblock-File "$env:USERPROFILE\\Downloads\\sync-to-supabase.ps1"'}</Code>
       </CheckItem>
+
+      <CheckItem n="Q" title="データの更新間隔を変更したい">
+        <p>EA のパラメーター <strong className="text-slate-300">RealtimeSec</strong> で、ティック発生時の最小エクスポート間隔（秒）を変更できます。</p>
+        <div className="mt-2 space-y-1">
+          <div className="bg-[#111827] border border-[#1f2d40] rounded px-3 py-2 space-y-1">
+            {[
+              ['5秒', '最短（下限）'],
+              ['10秒', 'デフォルト・推奨'],
+              ['30秒', '負荷を抑えたい場合'],
+              ['60秒', '最低限の更新頻度'],
+            ].map(([v, desc]) => (
+              <div key={v} className="flex gap-3">
+                <span className="text-slate-300 font-mono w-12 flex-shrink-0">{v}</span>
+                <span className="text-slate-500">{desc}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <p className="mt-2"><strong className="text-slate-300">変更手順：</strong>MT4/MT5 でEAのプロパティを開き（チャート上のEAをダブルクリック）、「入力パラメーター」タブの <strong className="text-slate-300">RealtimeSec</strong> を変更して OK を押してください。5秒未満を設定しても内部的に5秒として動作します。</p>
+      </CheckItem>
     </div>
   )
 }

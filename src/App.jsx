@@ -31,7 +31,7 @@ function generateRunSyncVbs(url, anonKey, email, password) {
 }
 import {
   supabase, signOut, getSession, fetchReports, deleteAccount,
-  fetchAliases, saveAliases, fetchPlan,
+  fetchAliases, saveAliases, fetchPlan, updatePassword,
 } from './lib/supabaseClient'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import DeleteAccountModal from './components/DeleteAccountModal'
@@ -50,6 +50,7 @@ import TradeCalendar from './components/TradeCalendar'
 import InsightPanel from './components/InsightPanel'
 import LoginScreen from './components/LoginScreen'
 import LandingPage from './components/LandingPage'
+import PasswordResetScreen from './components/PasswordResetScreen'
 
 const TABS = [
   { id: 'overview',  label: 'サマリー'   },
@@ -127,8 +128,9 @@ export default function App() {
     })
   }, [])
 
-  const [showLp,      setShowLp]      = useState(true)
-  const [lpMode,      setLpMode]      = useState('login')
+  const [showLp,           setShowLp]           = useState(true)
+  const [lpMode,           setLpMode]           = useState('login')
+  const [showPasswordReset, setShowPasswordReset] = useState(false)
   const [user,        setUser]        = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [refreshing,   setRefreshing]  = useState(false)
@@ -305,8 +307,12 @@ export default function App() {
       .then(session => setUser(session?.user ?? null))
       .catch(() => setUser(null))
       .finally(() => setAuthLoading(false))
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setShowPasswordReset(true)
+      } else {
+        setUser(session?.user ?? null)
+      }
     })
     return () => subscription.unsubscribe()
   }, [])
@@ -514,6 +520,10 @@ export default function App() {
         <div className="text-slate-500 text-sm">読み込み中…</div>
       </div>
     )
+  }
+
+  if (showPasswordReset) {
+    return <PasswordResetScreen onDone={() => setShowPasswordReset(false)} />
   }
 
   if (!user) {

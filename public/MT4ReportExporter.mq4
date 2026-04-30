@@ -64,7 +64,8 @@ void OnDeinit(const int reason) { EventKillTimer(); }
 void OnTick()
 {
    datetime now = TimeCurrent();
-   if (now - g_LastRealtimeExport >= RealtimeSec)
+   int sec = MathMax(RealtimeSec, 5);
+   if (now - g_LastRealtimeExport >= sec)
    {
       g_LastRealtimeExport = now;
       g_ExportTick = 0; // 定期タイマーもリセット（二重エクスポート防止）

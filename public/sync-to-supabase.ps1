@@ -103,6 +103,16 @@ function Get-TradingStates($headers) {
     }
 }
 
+function Get-ActualTradingState($accountNumber) {
+    $jsonPath = Join-Path $Folder "mt4_report_$accountNumber.json"
+    if (-not (Test-Path $jsonPath)) { return $null }
+    try {
+        $data = [IO.File]::ReadAllText($jsonPath, [Text.Encoding]::UTF8) | ConvertFrom-Json
+        if ($data.PSObject.Properties.Name -contains 'autoTrading') { return [bool]$data.autoTrading }
+        return $null  # 旧バージョンEA（autoTradingフィールドなし）
+    } catch { return $null }
+}
+
 function Send-AutoTradingToggle($accountNumber) {
     $allMt = @(Get-Process | Where-Object {
         $_.MainWindowHandle -ne [IntPtr]::Zero -and
@@ -158,10 +168,8 @@ try {
         New-Item -ItemType Directory -Path $Folder -Force | Out-Null
     }
 
-    # ── Read initial AutoTrading states (track without applying) ─
-    $lastTradingStates = Get-TradingStates $headers
-    if ($lastTradingStates -eq $null) { $lastTradingStates = @{} }
-    Write-Host "[AutoTrading] Initial states: $($lastTradingStates.Count) account(s)"
+    # ── Ctrl+E 送信後のクールダウン（EA が JSON を更新するまで待つ） ──
+    $ctrlECooldown = @{}  # { accountNumber: datetime }
 
     # ── FileSystemWatcher ─────────────────────────────────────────
     $watcher = New-Object System.IO.FileSystemWatcher
@@ -189,17 +197,22 @@ try {
             }
         }
 
-        # AutoTrading states poll (every ~5s via WaitForChanged timeout)
+        # AutoTrading 状態同期（希望値 vs JSON実際値）
         $desired = Get-TradingStates $headers
         if ($desired -ne $null) {
             foreach ($acct in $desired.Keys) {
-                $prev = $lastTradingStates[$acct]
-                if ($prev -eq $null) {
-                    $lastTradingStates[$acct] = $desired[$acct]  # 初回: 記録のみ
-                } elseif ($desired[$acct] -ne $prev) {
-                    Write-Host "[AutoTrading] Account $acct state: $prev -> $($desired[$acct])"
+                $desiredState = $desired[$acct]
+                $actualState  = Get-ActualTradingState $acct
+                if ($actualState -eq $null) { continue }  # JSON に autoTrading フィールドなし
+
+                if ($actualState -ne $desiredState) {
+                    # クールダウン中はスキップ（Ctrl+E 送信後 EA が JSON 更新するまで待つ）
+                    $lastSent = $ctrlECooldown[$acct]
+                    if ($lastSent -ne $null -and ((Get-Date) - $lastSent).TotalSeconds -lt 15) { continue }
+
+                    Write-Host "[AutoTrading] Account $acct: actual=$actualState desired=$desiredState -> Ctrl+E"
                     Send-AutoTradingToggle $acct
-                    $lastTradingStates[$acct] = $desired[$acct]
+                    $ctrlECooldown[$acct] = Get-Date
                 }
             }
         }

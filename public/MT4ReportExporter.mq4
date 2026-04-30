@@ -157,6 +157,7 @@ void ExportTrades()
    json += "  \"credit\": "      + DoubleToString(AccountCredit(),  2)  + ",\n";
    json += "  \"leverage\": "    + IntegerToString(AccountLeverage())   + ",\n";
    json += "  \"exportTime\": \""+ TimeToISO(TimeCurrent())             + "\",\n";
+   json += "  \"autoTrading\": " + ((bool)TerminalInfoInteger(TERMINAL_TRADE_ALLOWED) ? "true" : "false") + ",\n";
    json += "  \"trades\": [\n";
 
    int total = OrdersHistoryTotal();

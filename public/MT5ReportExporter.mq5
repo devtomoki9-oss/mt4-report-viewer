@@ -172,6 +172,7 @@ void ExportTrades()
    json += "  \"credit\": "       + DoubleToString(AccountInfoDouble(ACCOUNT_CREDIT),  2)  + ",\n";
    json += "  \"leverage\": "     + IntegerToString(AccountInfoInteger(ACCOUNT_LEVERAGE))  + ",\n";
    json += "  \"exportTime\": \"" + TimeToISO(TimeCurrent())                              + "\",\n";
+   json += "  \"autoTrading\": " + ((bool)TerminalInfoInteger(TERMINAL_TRADE_ALLOWED) ? "true" : "false") + ",\n";
    json += "  \"trades\": [\n";
 
    bool first = true;

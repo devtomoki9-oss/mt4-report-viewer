@@ -86,17 +86,19 @@ export async function saveAliases(aliases) {
   if (error) throw error
 }
 
-export async function fetchEaControls() {
+export async function fetchTradingEnabled() {
   const { data, error } = await supabase
     .from('ea_controls')
-    .select('account_number, enabled')
-  if (error) throw error
-  return Object.fromEntries((data || []).map(r => [String(r.account_number), r.enabled]))
+    .select('enabled')
+    .eq('account_number', 0)
+    .maybeSingle()
+  if (error) return null
+  return data?.enabled ?? null
 }
 
-export async function setEaControl(accountNumber, enabled) {
+export async function setTradingEnabled(enabled) {
   const { error } = await supabase.rpc('upsert_ea_control', {
-    p_account_number: Number(accountNumber),
+    p_account_number: 0,
     p_enabled: enabled,
   })
   if (error) throw error

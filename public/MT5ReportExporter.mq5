@@ -55,7 +55,6 @@ void OnDeinit(const int reason) { EventKillTimer(); }
 
 void OnTick()
 {
-   if (IsStoppedByControl()) return;
    datetime now = TimeCurrent();
    int sec = MathMax(RealtimeSec, 5);
    if (now - g_LastRealtimeExport >= sec)
@@ -68,8 +67,6 @@ void OnTick()
 
 void OnTimer()
 {
-   if (IsStoppedByControl()) { g_ExportTick = 0; return; }
-
    bool triggered = CheckTrigger();
    g_ExportTick++;
    if (triggered || g_ExportTick >= (RefreshMinutes * 60 / TIMER_SEC))
@@ -77,20 +74,6 @@ void OnTimer()
       g_ExportTick = 0;
       ExportTrades();
    }
-}
-
-//+------------------------------------------------------------------+
-//|  停止シグナルファイルが存在するか確認する                        |
-//+------------------------------------------------------------------+
-bool IsStoppedByControl()
-{
-   string stopPath = GetExportDir() + "\\stop_" + IntegerToString(AccountInfoInteger(ACCOUNT_LOGIN)) + ".cmd";
-   long h = CreateFileW(stopPath, GENERIC_READ, FILE_SHARE_READ, 0,
-                        OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-   if (h == -1) return false;
-   CloseHandle(h);
-   Print("[MTExporter] 停止中 (stop_" + IntegerToString(AccountInfoInteger(ACCOUNT_LOGIN)) + ".cmd)");
-   return true;
 }
 
 //+------------------------------------------------------------------+

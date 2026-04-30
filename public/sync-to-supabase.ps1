@@ -5,6 +5,9 @@
 # Uses a mutex so only one instance runs at a time.
 # Task scheduler can keep calling every minute - extras exit instantly.
 #
+# Also polls Supabase for AutoTrading toggle commands (ea_controls where account_number=0)
+# and sends Ctrl+E to all running MetaTrader windows when the state changes.
+#
 # Usage A (direct):
 #   .\sync-to-supabase.ps1 -Url "https://xxxx.supabase.co" -AnonKey "eyJ..." -Email "you@example.com" -Password "pass"
 #
@@ -35,6 +38,21 @@ if (-not $mutex.WaitOne(0)) {
     exit 0
 }
 
+# ── Win32 API for AutoTrading toggle (Ctrl+E) ─────────────────────
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class Win32 {
+    [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
+    [DllImport("user32.dll")] public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, int dwExtraInfo);
+    [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+    public const uint KEYEVENTF_KEYUP = 0x0002;
+    public const byte VK_CONTROL = 0x11;
+    public const byte VK_E = 0x45;
+}
+"@
+
 # ── Auth helpers ──────────────────────────────────────────────────
 function Get-Auth {
     $body = @{ email = $Email; password = $Password } | ConvertTo-Json
@@ -54,27 +72,6 @@ function New-Headers($jwt) {
     }
 }
 
-# ── EA コントロールファイル同期 ──────────────────────────────────
-# ea_controls テーブルを読み、enabled=false のアカウントに stop_<num>.cmd を作成する
-function Sync-Controls($headers) {
-    try {
-        $getHeaders = @{ "apikey" = $AnonKey; "Authorization" = $headers["Authorization"] }
-        $controls = Invoke-RestMethod "$Url/rest/v1/ea_controls?select=account_number,enabled" `
-            -Method Get -Headers $getHeaders -ErrorAction Stop
-        foreach ($ctrl in $controls) {
-            $stopFile = Join-Path $Folder "stop_$($ctrl.account_number).cmd"
-            if ($ctrl.enabled) {
-                if (Test-Path $stopFile) { Remove-Item $stopFile -Force }
-            } else {
-                if (-not (Test-Path $stopFile)) { [IO.File]::WriteAllText($stopFile, '') }
-            }
-        }
-        Write-Host "[Control] Synced $($controls.Count) EA control(s)"
-    } catch {
-        Write-Warning "[Control] Sync failed: $($_.Exception.Message)"
-    }
-}
-
 # ── Upload single file ────────────────────────────────────────────
 function Send-Report($filePath, $headers) {
     $text   = [IO.File]::ReadAllText($filePath, [Text.Encoding]::UTF8)
@@ -91,6 +88,45 @@ function Send-Report($filePath, $headers) {
     Write-Host "[OK] $filename (account: $accountNumber)"
 }
 
+# ── AutoTrading toggle helpers ────────────────────────────────────
+function Get-TradingEnabled($headers) {
+    try {
+        $getHeaders = @{ "apikey" = $AnonKey; "Authorization" = $headers["Authorization"] }
+        $data = Invoke-RestMethod "$Url/rest/v1/ea_controls?account_number=eq.0&select=enabled&limit=1" `
+            -Method Get -Headers $getHeaders -ErrorAction Stop
+        if ($data.Count -gt 0) { return [bool]$data[0].enabled }
+        return $null
+    } catch {
+        Write-Warning "[AutoTrading] Failed to read state: $($_.Exception.Message)"
+        return $null
+    }
+}
+
+function Send-AutoTradingToggle {
+    $mtProcesses = @(Get-Process | Where-Object {
+        $_.MainWindowHandle -ne [IntPtr]::Zero -and
+        ($_.ProcessName -match '^terminal' -or $_.MainWindowTitle -match 'MetaTrader')
+    })
+    if ($mtProcesses.Count -eq 0) {
+        Write-Warning "[AutoTrading] No MetaTrader windows found"
+        return
+    }
+    $prev = [Win32]::GetForegroundWindow()
+    foreach ($proc in $mtProcesses) {
+        $hwnd = $proc.MainWindowHandle
+        [Win32]::ShowWindow($hwnd, 1)  | Out-Null
+        [Win32]::SetForegroundWindow($hwnd) | Out-Null
+        Start-Sleep -Milliseconds 150
+        [Win32]::keybd_event([Win32]::VK_CONTROL, 0, 0, 0)
+        [Win32]::keybd_event([Win32]::VK_E, 0, 0, 0)
+        [Win32]::keybd_event([Win32]::VK_E, 0, [Win32]::KEYEVENTF_KEYUP, 0)
+        [Win32]::keybd_event([Win32]::VK_CONTROL, 0, [Win32]::KEYEVENTF_KEYUP, 0)
+        Start-Sleep -Milliseconds 150
+    }
+    if ($prev -ne [IntPtr]::Zero) { [Win32]::SetForegroundWindow($prev) | Out-Null }
+    Write-Host "[AutoTrading] Ctrl+E sent to $($mtProcesses.Count) MetaTrader window(s)"
+}
+
 try {
     # ── Initial sign-in ───────────────────────────────────────────
     $auth        = Get-Auth
@@ -98,9 +134,6 @@ try {
     $tokenExpiry = (Get-Date).AddSeconds($auth.expires_in - 300)
     $headers     = New-Headers $jwt
     Write-Host "[Auth] Signed in as $Email"
-
-    # ── EA コントロール初期同期 ───────────────────────────────────
-    Sync-Controls $headers
 
     # ── Initial upload of all existing files ─────────────────────
     if (Test-Path $Folder) {
@@ -113,6 +146,10 @@ try {
         New-Item -ItemType Directory -Path $Folder -Force | Out-Null
     }
 
+    # ── Read initial AutoTrading state (track without applying) ──
+    $lastTradingEnabled = Get-TradingEnabled $headers
+    Write-Host "[AutoTrading] Initial state from Supabase: $lastTradingEnabled"
+
     # ── FileSystemWatcher ─────────────────────────────────────────
     $watcher = New-Object System.IO.FileSystemWatcher
     $watcher.Path   = $Folder
@@ -122,7 +159,6 @@ try {
 
     # Debounce: track last upload time per file (avoid double-fire)
     $lastUpload = @{}
-    $controlSyncTick = 0
 
     Write-Host "[Watch] Monitoring $Folder ..."
 
@@ -140,11 +176,12 @@ try {
             }
         }
 
-        # EA コントロール定期同期（約60秒ごと）
-        $controlSyncTick++
-        if ($controlSyncTick -ge 12) {
-            $controlSyncTick = 0
-            Sync-Controls $headers
+        # AutoTrading state poll (every ~5s via WaitForChanged timeout)
+        $desired = Get-TradingEnabled $headers
+        if ($desired -ne $null -and $desired -ne $lastTradingEnabled) {
+            Write-Host "[AutoTrading] State changed: $lastTradingEnabled -> $desired"
+            Send-AutoTradingToggle
+            $lastTradingEnabled = $desired
         }
 
         # Wait up to 5 seconds for a file change

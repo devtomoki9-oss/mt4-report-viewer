@@ -127,9 +127,9 @@ function Send-AutoTradingToggle($accountNumber) {
     if ($targets.Count -eq 0) {
         if ($allMt.Count -eq 1) {
             $targets = $allMt
-            Write-Host "[AutoTrading] Account $accountNumber: title match failed, using only MT window"
+            Write-Host "[AutoTrading] Account ${accountNumber}: title match failed, using only MT window"
         } else {
-            Write-Warning "[AutoTrading] Cannot identify window for account $accountNumber (${$allMt.Count} windows open)"
+            Write-Warning "[AutoTrading] Cannot identify window for account ${accountNumber} ($($allMt.Count) windows open)"
             return
         }
     }
@@ -210,7 +210,7 @@ try {
                     $lastSent = $ctrlECooldown[$acct]
                     if ($lastSent -ne $null -and ((Get-Date) - $lastSent).TotalSeconds -lt 15) { continue }
 
-                    Write-Host "[AutoTrading] Account $acct: actual=$actualState desired=$desiredState -> Ctrl+E"
+                    Write-Host "[AutoTrading] Account ${acct}: actual=$actualState desired=$desiredState -> Ctrl+E"
                     Send-AutoTradingToggle $acct
                     $ctrlECooldown[$acct] = Get-Date
                 }

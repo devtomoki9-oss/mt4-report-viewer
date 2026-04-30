@@ -111,6 +111,22 @@ function Get-TradingStates($jwt) {
     return $states
 }
 
+function Set-TradingState($accountNumber, $enabled, $jwt) {
+    $body = @{
+        p_account_number = [long]$accountNumber
+        p_enabled        = [bool]$enabled
+    } | ConvertTo-Json -Compress
+    try {
+        Invoke-RestMethod "$Url/rest/v1/rpc/upsert_ea_control" `
+            -Method Post `
+            -Headers @{ "apikey" = $AnonKey; "Authorization" = "Bearer $jwt"; "Content-Type" = "application/json" } `
+            -Body $body -ErrorAction Stop | Out-Null
+        Write-Host "[AutoTrading] Synced ea_controls: account=$accountNumber enabled=$enabled"
+    } catch {
+        Write-Warning "[AutoTrading] Set-TradingState error: $_"
+    }
+}
+
 function Get-ActualTradingState($accountNumber) {
     $jsonPath = Join-Path $Folder "mt4_report_$accountNumber.json"
     if (-not (Test-Path $jsonPath)) { return $null }
@@ -182,7 +198,9 @@ try {
     }
 
     # ── Ctrl+E 送信後のクールダウン（EA が JSON を更新するまで待つ） ──
-    $ctrlECooldown = @{}  # { accountNumber: datetime }
+    $ctrlECooldown     = @{}  # { accountNumber: datetime }
+    $prevDesiredStates = @{}  # 前回ループ時の desired 状態
+    $prevActualStates  = @{}  # 前回ループ時の actual 状態
 
     # ── FileSystemWatcher ─────────────────────────────────────────
     $watcher = New-Object System.IO.FileSystemWatcher
@@ -220,18 +238,28 @@ try {
             foreach ($acct in $desired.Keys) {
                 $desiredState = $desired[$acct]
                 $actualState  = Get-ActualTradingState $acct
+                $prevDesired  = $prevDesiredStates[$acct]
+                $prevActual   = $prevActualStates[$acct]
+                $prevDesiredStates[$acct] = $desiredState
+                $prevActualStates[$acct]  = $actualState
                 Write-Host "[AutoTrading] Account ${acct}: desired=$desiredState actual=$actualState"
                 if ($actualState -eq $null) { continue }
+                if ($actualState -eq $desiredState) { continue }
 
-                if ($actualState -ne $desiredState) {
-                    $lastSent = $ctrlECooldown[$acct]
-                    if ($lastSent -ne $null -and ((Get-Date) - $lastSent).TotalSeconds -lt 15) {
-                        Write-Host "[AutoTrading] Account ${acct}: cooldown, skipping"
-                        continue
-                    }
-                    Write-Host "[AutoTrading] Account ${acct}: mismatch -> Ctrl+E"
+                $lastSent = $ctrlECooldown[$acct]
+                if ($lastSent -ne $null -and ((Get-Date) - $lastSent).TotalSeconds -lt 15) {
+                    Write-Host "[AutoTrading] Account ${acct}: cooldown, skipping"
+                    continue
+                }
+
+                $desiredChanged = $prevDesired -ne $null -and $prevDesired -ne $desiredState
+                if ($desiredChanged) {
+                    Write-Host "[AutoTrading] Account ${acct}: web command -> Ctrl+E"
                     Send-AutoTradingToggle $acct
                     $ctrlECooldown[$acct] = Get-Date
+                } else {
+                    Write-Host "[AutoTrading] Account ${acct}: MT manual change -> syncing ea_controls"
+                    Set-TradingState $acct $actualState $jwt
                 }
             }
         }

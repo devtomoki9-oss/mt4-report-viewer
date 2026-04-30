@@ -102,6 +102,17 @@ export async function setTradingEnabled(accountNumber, enabled) {
   if (error) throw error
 }
 
+export function subscribeToTradingStates(onUpdate) {
+  return supabase
+    .channel('ea-controls-realtime')
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'ea_controls',
+    }, onUpdate)
+    .subscribe()
+}
+
 export function subscribeToReports(onUpdate) {
   return supabase
     .channel('reports-realtime')

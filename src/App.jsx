@@ -32,7 +32,7 @@ function generateRunSyncVbs(url, anonKey, email, password) {
 import {
   supabase, signOut, getSession, fetchReports, deleteAccount,
   fetchAliases, saveAliases, fetchPlan, updatePassword, subscribeToReports,
-  fetchTradingStates, setTradingEnabled,
+  fetchTradingStates, setTradingEnabled, subscribeToTradingStates,
 } from './lib/supabaseClient'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import DeleteAccountModal from './components/DeleteAccountModal'
@@ -444,6 +444,25 @@ export default function App() {
     const channel = subscribeToReports(() => syncFromSupabase())
     return () => { supabase.removeChannel(channel) }
   }, [user, syncFromSupabase])
+
+  // ── ea_controls リアルタイム購読（MT手動変更をWebに反映） ──
+  useEffect(() => {
+    if (!user) return
+    const channel = subscribeToTradingStates((payload) => {
+      const { eventType, new: row, old: oldRow } = payload
+      if ((eventType === 'INSERT' || eventType === 'UPDATE') && row) {
+        setTradingStates(prev => ({ ...(prev ?? {}), [String(row.account_number)]: row.enabled }))
+      } else if (eventType === 'DELETE' && oldRow) {
+        setTradingStates(prev => {
+          if (!prev) return prev
+          const next = { ...prev }
+          delete next[String(oldRow.account_number)]
+          return next
+        })
+      }
+    })
+    return () => { supabase.removeChannel(channel) }
+  }, [user])
 
   // ── 30秒ポーリング（変化検知） ────────────────────
   useEffect(() => {

@@ -213,7 +213,9 @@ try {
         }
 
         # AutoTrading 状態同期（希望値 vs JSON実際値）
+        Write-Warning "[DEBUG] Calling Get-TradingStates..."
         $desired = Get-TradingStates $jwt
+        Write-Warning "[DEBUG] Call returned, type=$(if ($desired -ne $null) { $desired.GetType().Name } else { 'NULL' })"
         if ($desired -eq $null) {
             Write-Warning "[AutoTrading] Get-TradingStates returned null (API error?)"
         } elseif ($desired.Count -eq 0) {

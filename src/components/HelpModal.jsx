@@ -125,17 +125,7 @@ function AuthSection() {
         <p className="mt-1">メールが届かない場合は迷惑メールフォルダを確認してください。</p>
       </CheckItem>
 
-      <CheckItem n="Q" title="パスワードリセットメールにリンクがない">
-        <p>Supabase のメールテンプレートに <code className="font-mono bg-[#1a2235] px-1 rounded">{"{{ .ConfirmationURL }}"}</code> が含まれていない場合に発生します。Supabase 管理画面の Authentication → Email Templates → Reset Password でテンプレートを確認してください。</p>
-      </CheckItem>
-
-      <CheckItem n="Q" title="パスワードリセットのリンクが本番環境に飛ぶ">
-        <p>Supabase 管理画面の Authentication → URL Configuration → Redirect URLs に開発環境の URL が登録されていない場合に発生します。</p>
-        <p className="mt-1"><code className="font-mono bg-[#1a2235] px-1 rounded">https://*.vercel.app/**</code> を追加してください。</p>
-        <p className="mt-1">設定後は <strong className="text-slate-300">新しくメールを送り直す</strong>必要があります（古いリンクは変更前の設定のままです）。</p>
-      </CheckItem>
-
-      <CheckItem n="Q" title="パスワードを変更したら自動同期が止まった">
+<CheckItem n="Q" title="パスワードを変更したら自動同期が止まった">
         <p>run-sync.vbs にはパスワードが埋め込まれているため、変更後は再ダウンロードが必要です。ダッシュボードのセットアップ画面から <strong className="text-slate-300">run-sync.vbs を再ダウンロード</strong> してタスクスケジューラーのファイルを差し替えてください。</p>
       </CheckItem>
 

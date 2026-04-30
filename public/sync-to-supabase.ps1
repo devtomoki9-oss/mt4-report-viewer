@@ -91,19 +91,19 @@ function Send-Report($filePath, $headers) {
 # ── AutoTrading toggle helpers ────────────────────────────────────
 function Get-TradingStates($jwt) {
     $states = @{}
-    Write-Host "[AutoTrading] Fetching ea_controls (jwt len=$($jwt.Length))..."
+    Write-Warning "[DEBUG] Get-TradingStates ENTERED jwt_len=$($jwt.Length)"
     try {
         $resp = Invoke-RestMethod "$Url/rest/v1/ea_controls?select=account_number,enabled" `
             -Method Get `
             -Headers @{ "apikey" = $AnonKey; "Authorization" = "Bearer $jwt" } `
             -ErrorAction Stop
-        Write-Host "[AutoTrading] Response type: $($resp.GetType().Name)"
+        Write-Warning "[DEBUG] Response type=$($resp.GetType().Name)"
         foreach ($row in @($resp)) {
             if ($row -ne $null -and $row.PSObject.Properties['account_number']) {
                 $states[[string]$row.account_number] = [bool]$row.enabled
             }
         }
-        Write-Host "[AutoTrading] ea_controls loaded: $($states.Count) row(s)"
+        Write-Warning "[DEBUG] States count=$($states.Count)"
     }
     catch {
         Write-Warning "[AutoTrading] ERROR: $_"

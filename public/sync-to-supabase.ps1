@@ -89,18 +89,26 @@ function Send-Report($filePath, $headers) {
 }
 
 # ── AutoTrading toggle helpers ────────────────────────────────────
-function Get-TradingStates($headers) {
+function Get-TradingStates($jwt) {
+    $states = @{}
     try {
-        $getHeaders = @{ "apikey" = $AnonKey; "Authorization" = $headers["Authorization"] }
-        $data = Invoke-RestMethod "$Url/rest/v1/ea_controls?select=account_number,enabled" `
-            -Method Get -Headers $getHeaders -ErrorAction Stop
-        $states = @{}
-        foreach ($row in $data) { $states[[string]$row.account_number] = [bool]$row.enabled }
-        return $states
-    } catch {
-        Write-Host "[AutoTrading] ERROR: $_" -ForegroundColor Red
+        $resp = Invoke-RestMethod "$Url/rest/v1/ea_controls?select=account_number,enabled" `
+            -Method Get `
+            -Headers @{ "apikey" = $AnonKey; "Authorization" = "Bearer $jwt" } `
+            -ErrorAction Stop
+        foreach ($row in @($resp)) {
+            if ($row -ne $null -and $row.PSObject.Properties['account_number']) {
+                $states[[string]$row.account_number] = [bool]$row.enabled
+            }
+        }
+        Write-Host "[AutoTrading] ea_controls loaded: $($states.Count) row(s)"
+    }
+    catch {
+        Write-Host "[AutoTrading] ERROR: $($_.Exception.Message)" -ForegroundColor Red
+        Add-Content "$env:TEMP\sync_debug.log" "[$(Get-Date -Format 'HH:mm:ss')] $($_.Exception.Message)"
         return $null
     }
+    return $states
 }
 
 function Get-ActualTradingState($accountNumber) {
@@ -203,7 +211,7 @@ try {
         }
 
         # AutoTrading 状態同期（希望値 vs JSON実際値）
-        $desired = Get-TradingStates $headers
+        $desired = Get-TradingStates $jwt
         if ($desired -eq $null) {
             Write-Warning "[AutoTrading] Get-TradingStates returned null (API error?)"
         } elseif ($desired.Count -eq 0) {

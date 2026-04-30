@@ -927,7 +927,7 @@ export default function App() {
       </main>
 
       {/* フッター */}
-      <footer className="text-center py-4 text-xs text-slate-700 space-x-4">
+      <footer className="text-center py-4 text-xs text-slate-700 space-y-2">
         <button onClick={() => setShowManual(true)} className="hover:text-slate-400 underline">
           操作マニュアル
         </button>
@@ -943,6 +943,7 @@ export default function App() {
         <button onClick={() => setShowFeedback(true)} className="hover:text-slate-400 underline">
           お問い合わせ
         </button>
+        <div>© {new Date().getFullYear()} MT Report Viewer</div>
       </footer>
 
       {showManual   && <ManualModal     onClose={() => setShowManual(false)} />}

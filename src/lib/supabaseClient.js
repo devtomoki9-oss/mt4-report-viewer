@@ -86,6 +86,22 @@ export async function saveAliases(aliases) {
   if (error) throw error
 }
 
+export async function fetchEaControls() {
+  const { data, error } = await supabase
+    .from('ea_controls')
+    .select('account_number, enabled')
+  if (error) throw error
+  return Object.fromEntries((data || []).map(r => [String(r.account_number), r.enabled]))
+}
+
+export async function setEaControl(accountNumber, enabled) {
+  const { error } = await supabase.rpc('upsert_ea_control', {
+    p_account_number: Number(accountNumber),
+    p_enabled: enabled,
+  })
+  if (error) throw error
+}
+
 export function subscribeToReports(onUpdate) {
   return supabase
     .channel('reports-realtime')

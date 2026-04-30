@@ -32,6 +32,7 @@ function generateRunSyncVbs(url, anonKey, email, password) {
 import {
   supabase, signOut, getSession, fetchReports, deleteAccount,
   fetchAliases, saveAliases, fetchPlan, updatePassword, subscribeToReports,
+  fetchEaControls, setEaControl,
 } from './lib/supabaseClient'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import DeleteAccountModal from './components/DeleteAccountModal'
@@ -144,6 +145,7 @@ export default function App() {
   const [showFeedback,      setShowFeedback]      = useState(false)
   const [showManual,        setShowManual]        = useState(false)
   const [showHelp,          setShowHelp]          = useState(false)
+  const [eaControls,        setEaControls]        = useState({})
   const [showTerms,         setShowTerms]         = useState(false)
 
   const [showUserMenu,      setShowUserMenu]      = useState(false)
@@ -350,6 +352,9 @@ export default function App() {
 
     // プランを取得
     fetchPlan().then(setPlan).catch(console.error)
+
+    // EA コントロール状態を取得
+    fetchEaControls().then(setEaControls).catch(console.error)
 
     // Supabase から最新の alias を取得してローカルに反映
     fetchAliases().then(remote => {
@@ -880,7 +885,19 @@ export default function App() {
                       </div>
                       <div className="space-y-2">
                         {sortedFilteredAccStats.map((acc) => (
-                          <AccountCard key={acc.account.name} account={acc} onRemove={() => removeAccount(acc.account.name)} aliases={aliases} setAlias={setAlias} sortKey={accSort.key} />
+                          <AccountCard
+                            key={acc.account.name}
+                            account={acc}
+                            onRemove={() => removeAccount(acc.account.name)}
+                            aliases={aliases}
+                            setAlias={setAlias}
+                            sortKey={accSort.key}
+                            enabled={eaControls[String(acc.account.number)] !== false}
+                            onToggle={async (val) => {
+                              await setEaControl(acc.account.number, val)
+                              setEaControls(prev => ({ ...prev, [String(acc.account.number)]: val }))
+                            }}
+                          />
                         ))}
                       </div>
                     </div>

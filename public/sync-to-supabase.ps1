@@ -54,6 +54,27 @@ function New-Headers($jwt) {
     }
 }
 
+# ── EA コントロールファイル同期 ──────────────────────────────────
+# ea_controls テーブルを読み、enabled=false のアカウントに stop_<num>.cmd を作成する
+function Sync-Controls($headers) {
+    try {
+        $getHeaders = @{ "apikey" = $AnonKey; "Authorization" = $headers["Authorization"] }
+        $controls = Invoke-RestMethod "$Url/rest/v1/ea_controls?select=account_number,enabled" `
+            -Method Get -Headers $getHeaders -ErrorAction Stop
+        foreach ($ctrl in $controls) {
+            $stopFile = Join-Path $Folder "stop_$($ctrl.account_number).cmd"
+            if ($ctrl.enabled) {
+                if (Test-Path $stopFile) { Remove-Item $stopFile -Force }
+            } else {
+                if (-not (Test-Path $stopFile)) { [IO.File]::WriteAllText($stopFile, '') }
+            }
+        }
+        Write-Host "[Control] Synced $($controls.Count) EA control(s)"
+    } catch {
+        Write-Warning "[Control] Sync failed: $($_.Exception.Message)"
+    }
+}
+
 # ── Upload single file ────────────────────────────────────────────
 function Send-Report($filePath, $headers) {
     $text   = [IO.File]::ReadAllText($filePath, [Text.Encoding]::UTF8)
@@ -78,6 +99,9 @@ try {
     $headers     = New-Headers $jwt
     Write-Host "[Auth] Signed in as $Email"
 
+    # ── EA コントロール初期同期 ───────────────────────────────────
+    Sync-Controls $headers
+
     # ── Initial upload of all existing files ─────────────────────
     if (Test-Path $Folder) {
         $files = Get-ChildItem -Path $Folder -Filter "mt4_report_*.json" -ErrorAction SilentlyContinue
@@ -98,6 +122,7 @@ try {
 
     # Debounce: track last upload time per file (avoid double-fire)
     $lastUpload = @{}
+    $controlSyncTick = 0
 
     Write-Host "[Watch] Monitoring $Folder ..."
 
@@ -113,6 +138,13 @@ try {
             } catch {
                 Write-Warning "[Auth] Token refresh failed: $($_.Exception.Message)"
             }
+        }
+
+        # EA コントロール定期同期（約60秒ごと）
+        $controlSyncTick++
+        if ($controlSyncTick -ge 12) {
+            $controlSyncTick = 0
+            Sync-Controls $headers
         }
 
         # Wait up to 5 seconds for a file change

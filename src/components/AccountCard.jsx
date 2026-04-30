@@ -9,7 +9,7 @@ const SORT_VALUE = {
   name:        (s) => ({ label: '純益',   value: (s.totalProfit >= 0 ? '+' : '') + s.totalProfit.toFixed(2), color: s.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400' }),
 }
 
-export default function AccountCard({ account, onRemove, aliases = {}, setAlias, sortKey = 'profit' }) {
+export default function AccountCard({ account, onRemove, aliases = {}, setAlias, sortKey = 'profit', enabled = true, onToggle }) {
   const [expanded, setExpanded] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editValue, setEditValue] = useState('')
@@ -54,7 +54,7 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
         onClick={() => !editing && setExpanded(e => !e)}
       >
         <div className="flex items-center gap-3">
-          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isProfit ? 'bg-emerald-400' : 'bg-red-400'}`} />
+          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${!enabled ? 'bg-slate-600' : isProfit ? 'bg-emerald-400' : 'bg-red-400'}`} />
           <div>
             {editing ? (
               <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
@@ -99,6 +99,19 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
             <div className="text-xs text-slate-500 font-mono hidden sm:block">
               PF {isFinite(stats.profitFactor) ? stats.profitFactor.toFixed(2) : '∞'}
             </div>
+          )}
+          {onToggle && (
+            <button
+              onClick={e => { e.stopPropagation(); onToggle(!enabled) }}
+              title={enabled ? 'EAを停止' : 'EAを稼働'}
+              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border transition-colors
+                ${enabled
+                  ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30'
+                  : 'text-slate-500 border-slate-700 bg-slate-700/20 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/30'
+                }`}
+            >
+              {enabled ? '稼働中' : '停止中'}
+            </button>
           )}
           <button
             onClick={e => { e.stopPropagation(); onRemove() }}

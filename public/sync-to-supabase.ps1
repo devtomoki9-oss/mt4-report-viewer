@@ -91,22 +91,17 @@ function Send-Report($filePath, $headers) {
 # ── AutoTrading toggle helpers ────────────────────────────────────
 function Get-TradingStates($jwt) {
     $states = @{}
-    Write-Warning "[DEBUG] Get-TradingStates ENTERED jwt_len=$($jwt.Length)"
     try {
         $resp = Invoke-RestMethod "$Url/rest/v1/ea_controls?select=account_number,enabled" `
             -Method Get `
             -Headers @{ "apikey" = $AnonKey; "Authorization" = "Bearer $jwt" } `
             -ErrorAction Stop
-        Write-Warning "[DEBUG] Response type=$($resp.GetType().Name) count=$(@($resp).Count)"
-        if (@($resp).Count -gt 0) {
-            Write-Warning "[DEBUG] First row: $(@($resp)[0] | ConvertTo-Json -Compress)"
-        }
         foreach ($row in @($resp)) {
             if ($row -ne $null -and $row.PSObject.Properties['account_number']) {
                 $states[[string]$row.account_number] = [bool]$row.enabled
             }
         }
-        Write-Warning "[DEBUG] States count=$($states.Count)"
+        Write-Host "[AutoTrading] ea_controls loaded: $($states.Count) row(s)"
     }
     catch {
         Write-Warning "[AutoTrading] ERROR: $_"
@@ -216,9 +211,7 @@ try {
         }
 
         # AutoTrading 状態同期（希望値 vs JSON実際値）
-        Write-Warning "[DEBUG] Calling Get-TradingStates..."
         $desired = Get-TradingStates $jwt
-        Write-Warning "[DEBUG] Call returned, type=$(if ($desired -ne $null) { $desired.GetType().Name } else { 'NULL' })"
         if ($desired -eq $null) {
             Write-Warning "[AutoTrading] Get-TradingStates returned null (API error?)"
         } elseif ($desired.Count -eq 0) {

@@ -911,7 +911,11 @@ export default function App() {
                             aliases={aliases}
                             setAlias={setAlias}
                             sortKey={accSort.key}
-                            tradingEnabled={tradingStates ? (tradingStates[String(acc.account.number)] ?? true) : true}
+                            tradingEnabled={
+                              tradingStates !== null
+                                ? (tradingStates[String(acc.account.number)] ?? acc.account.autoTrading ?? true)
+                                : (acc.account.autoTrading ?? true)
+                            }
                             onTradingToggle={tradingStates !== null && acc.account.number ? async (val) => {
                               setTradingStates(prev => ({ ...prev, [String(acc.account.number)]: val }))
                               await setTradingEnabled(acc.account.number, val).catch(console.error)

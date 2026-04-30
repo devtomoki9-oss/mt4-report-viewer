@@ -97,7 +97,10 @@ function Get-TradingStates($jwt) {
             -Method Get `
             -Headers @{ "apikey" = $AnonKey; "Authorization" = "Bearer $jwt" } `
             -ErrorAction Stop
-        Write-Warning "[DEBUG] Response type=$($resp.GetType().Name)"
+        Write-Warning "[DEBUG] Response type=$($resp.GetType().Name) count=$(@($resp).Count)"
+        if (@($resp).Count -gt 0) {
+            Write-Warning "[DEBUG] First row: $(@($resp)[0] | ConvertTo-Json -Compress)"
+        }
         foreach ($row in @($resp)) {
             if ($row -ne $null -and $row.PSObject.Properties['account_number']) {
                 $states[[string]$row.account_number] = [bool]$row.enabled

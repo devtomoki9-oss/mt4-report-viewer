@@ -1018,6 +1018,7 @@ export default function App() {
                 }
               }
               await deleteAccount()
+              await signOut()
               setUser(null)
               setAccounts([])
               setShowDeleteAccount(false)

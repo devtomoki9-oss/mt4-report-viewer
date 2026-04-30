@@ -25,15 +25,26 @@ export default function LoginScreen({ onLogin }) {
   const [mode,          setMode]          = useState('login')
   const [email,         setEmail]         = useState('')
   const [password,      setPassword]      = useState('')
+  const [confirm,       setConfirm]       = useState('')
   const [error,         setError]         = useState('')
   const [loading,       setLoading]       = useState(false)
   const [done,          setDone]          = useState(false)
   const [showPrivacy,   setShowPrivacy]   = useState(false)
   const [showTerms,     setShowTerms]     = useState(false)
 
+  const switchMode = (next) => {
+    setMode(next)
+    setError('')
+    setConfirm('')
+  }
+
   const submit = async (e) => {
     e.preventDefault()
     setError('')
+    if (mode === 'signup' && password !== confirm) {
+      setError('パスワードが一致しません')
+      return
+    }
     setLoading(true)
     try {
       if (mode === 'login') {
@@ -98,6 +109,20 @@ export default function LoginScreen({ onLogin }) {
             minLength={8}
             className="w-full bg-[#111827] border border-[#1f2d40] rounded-lg px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-blue-500"
           />
+          {mode === 'signup' && (
+            <input
+              type="password"
+              placeholder="パスワード（確認）"
+              value={confirm}
+              onChange={e => setConfirm(e.target.value)}
+              required
+              minLength={8}
+              className={`w-full bg-[#111827] border rounded-lg px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none transition-colors
+                ${confirm && password !== confirm
+                  ? 'border-red-500/50 focus:border-red-500'
+                  : 'border-[#1f2d40] focus:border-blue-500'}`}
+            />
+          )}
 
           {error && (
             <div className="text-red-400 text-xs px-1">{error}</div>
@@ -115,13 +140,13 @@ export default function LoginScreen({ onLogin }) {
         <div className="text-center text-xs text-slate-600">
           {mode === 'login' ? (
             <>アカウントをお持ちでない方は{' '}
-              <button onClick={() => { setMode('signup'); setError('') }} className="text-blue-400 hover:text-blue-300">
+              <button onClick={() => switchMode('signup')} className="text-blue-400 hover:text-blue-300">
                 新規登録
               </button>
             </>
           ) : (
             <>すでにアカウントをお持ちの方は{' '}
-              <button onClick={() => { setMode('login'); setError('') }} className="text-blue-400 hover:text-blue-300">
+              <button onClick={() => switchMode('login')} className="text-blue-400 hover:text-blue-300">
                 ログイン
               </button>
             </>

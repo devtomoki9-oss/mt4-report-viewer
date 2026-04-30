@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export default function DeleteAccountModal({ onConfirm, onClose, loading }) {
+export default function DeleteAccountModal({ onConfirm, onClose, loading, isPro = false }) {
   const [input, setInput] = useState('')
   const confirmed = input === '削除'
 
@@ -21,6 +21,11 @@ export default function DeleteAccountModal({ onConfirm, onClose, loading }) {
           <p className="text-xs text-slate-400 leading-relaxed">
             この操作は取り消せません。すべてのレポートデータおよび認証情報が完全に削除されます。
           </p>
+          {isPro && (
+            <p className="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 leading-relaxed">
+              ⚠ Pro サブスクリプションが有効です。アカウント削除と同時に自動でキャンセルされます。
+            </p>
+          )}
         </div>
 
         <div className="space-y-1.5">

@@ -961,10 +961,23 @@ export default function App() {
       {showDeleteAccount && (
         <DeleteAccountModal
           loading={deletingAccount}
+          isPro={plan === 'pro'}
           onClose={() => setShowDeleteAccount(false)}
           onConfirm={async () => {
             setDeletingAccount(true)
             try {
+              // Pro ユーザーは先に Stripe サブスクリプションをキャンセル
+              if (plan === 'pro' && user?.id) {
+                const res = await fetch('/api/cancel-subscription', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId: user.id }),
+                })
+                if (!res.ok) {
+                  const json = await res.json().catch(() => ({}))
+                  throw new Error(json.error || 'サブスクリプションのキャンセルに失敗しました')
+                }
+              }
               await deleteAccount()
               setUser(null)
               setAccounts([])

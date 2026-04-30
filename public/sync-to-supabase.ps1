@@ -204,18 +204,24 @@ try {
 
         # AutoTrading 状態同期（希望値 vs JSON実際値）
         $desired = Get-TradingStates $headers
-        if ($desired -ne $null) {
+        if ($desired -eq $null) {
+            Write-Warning "[AutoTrading] Get-TradingStates returned null (API error?)"
+        } elseif ($desired.Count -eq 0) {
+            Write-Host "[AutoTrading] ea_controls is empty (no rows)"
+        } else {
             foreach ($acct in $desired.Keys) {
                 $desiredState = $desired[$acct]
                 $actualState  = Get-ActualTradingState $acct
-                if ($actualState -eq $null) { continue }  # JSON に autoTrading フィールドなし
+                Write-Host "[AutoTrading] Account ${acct}: desired=$desiredState actual=$actualState"
+                if ($actualState -eq $null) { continue }
 
                 if ($actualState -ne $desiredState) {
-                    # クールダウン中はスキップ（Ctrl+E 送信後 EA が JSON 更新するまで待つ）
                     $lastSent = $ctrlECooldown[$acct]
-                    if ($lastSent -ne $null -and ((Get-Date) - $lastSent).TotalSeconds -lt 15) { continue }
-
-                    Write-Host "[AutoTrading] Account ${acct}: actual=$actualState desired=$desiredState -> Ctrl+E"
+                    if ($lastSent -ne $null -and ((Get-Date) - $lastSent).TotalSeconds -lt 15) {
+                        Write-Host "[AutoTrading] Account ${acct}: cooldown, skipping"
+                        continue
+                    }
+                    Write-Host "[AutoTrading] Account ${acct}: mismatch -> Ctrl+E"
                     Send-AutoTradingToggle $acct
                     $ctrlECooldown[$acct] = Get-Date
                 }

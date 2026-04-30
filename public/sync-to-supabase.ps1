@@ -91,11 +91,13 @@ function Send-Report($filePath, $headers) {
 # ── AutoTrading toggle helpers ────────────────────────────────────
 function Get-TradingStates($jwt) {
     $states = @{}
+    Write-Host "[AutoTrading] Fetching ea_controls (jwt len=$($jwt.Length))..."
     try {
         $resp = Invoke-RestMethod "$Url/rest/v1/ea_controls?select=account_number,enabled" `
             -Method Get `
             -Headers @{ "apikey" = $AnonKey; "Authorization" = "Bearer $jwt" } `
             -ErrorAction Stop
+        Write-Host "[AutoTrading] Response type: $($resp.GetType().Name)"
         foreach ($row in @($resp)) {
             if ($row -ne $null -and $row.PSObject.Properties['account_number']) {
                 $states[[string]$row.account_number] = [bool]$row.enabled
@@ -104,10 +106,8 @@ function Get-TradingStates($jwt) {
         Write-Host "[AutoTrading] ea_controls loaded: $($states.Count) row(s)"
     }
     catch {
-        $errType = $_.Exception.GetType().FullName
-        $errMsg  = $_.Exception.Message
-        Write-Warning "[AutoTrading] ERROR ($errType): $errMsg"
-        Add-Content "$env:TEMP\sync_debug.log" "[$(Get-Date -Format 'HH:mm:ss')] $errType : $errMsg"
+        Write-Warning "[AutoTrading] ERROR: $_"
+        try { Add-Content "$env:TEMP\sync_debug.log" "[$(Get-Date -Format 'HH:mm:ss')] $_" } catch {}
         return $null
     }
     return $states

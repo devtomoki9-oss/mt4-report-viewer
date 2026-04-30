@@ -928,21 +928,13 @@ export default function App() {
 
       {/* フッター */}
       <footer className="text-center py-4 text-xs text-slate-700 space-y-2">
-        <button onClick={() => setShowManual(true)} className="hover:text-slate-400 underline">
-          操作マニュアル
-        </button>
-        <button onClick={() => setShowHelp(true)} className="hover:text-slate-400 underline">
-          ヘルプ
-        </button>
-        <button onClick={() => setShowTerms(true)} className="hover:text-slate-400 underline">
-          利用規約
-        </button>
-        <button onClick={() => setShowPrivacy(true)} className="hover:text-slate-400 underline">
-          プライバシーポリシー
-        </button>
-        <button onClick={() => setShowFeedback(true)} className="hover:text-slate-400 underline">
-          お問い合わせ
-        </button>
+        <div className="flex items-center justify-center gap-4 flex-wrap">
+          <button onClick={() => setShowManual(true)} className="hover:text-slate-400 underline">操作マニュアル</button>
+          <button onClick={() => setShowHelp(true)} className="hover:text-slate-400 underline">ヘルプ</button>
+          <button onClick={() => setShowTerms(true)} className="hover:text-slate-400 underline">利用規約</button>
+          <button onClick={() => setShowPrivacy(true)} className="hover:text-slate-400 underline">プライバシーポリシー</button>
+          <button onClick={() => setShowFeedback(true)} className="hover:text-slate-400 underline">お問い合わせ</button>
+        </div>
         <div>© {new Date().getFullYear()} MT Report Viewer</div>
       </footer>
 

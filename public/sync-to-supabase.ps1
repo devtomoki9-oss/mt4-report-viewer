@@ -47,6 +47,10 @@ public class Win32 {
     [DllImport("user32.dll")] public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, int dwExtraInfo);
     [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+    [DllImport("user32.dll")] public static extern bool BringWindowToTop(IntPtr hWnd);
+    [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+    [DllImport("user32.dll")] public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+    [DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId();
     public const uint KEYEVENTF_KEYUP = 0x0002;
     public const byte VK_CONTROL = 0x11;
     public const byte VK_E = 0x45;
@@ -162,19 +166,30 @@ function Send-AutoTradingToggle($accountNumber) {
             return
         }
     }
-    $prev = [Win32]::GetForegroundWindow()
+    # AttachThreadInput でバックグラウンドからでも SetForegroundWindow を成功させる
+    $fgHwnd   = [Win32]::GetForegroundWindow()
+    $dummy    = [uint32]0
+    $fgThread = if ($fgHwnd -ne [IntPtr]::Zero) { [Win32]::GetWindowThreadProcessId($fgHwnd, [ref]$dummy) } else { 0 }
+    $myThread = [Win32]::GetCurrentThreadId()
+
     foreach ($proc in $targets) {
         $hwnd = $proc.MainWindowHandle
-        [Win32]::ShowWindow($hwnd, 1) | Out-Null
+        if ($fgThread -ne 0 -and $fgThread -ne $myThread) {
+            [Win32]::AttachThreadInput($myThread, $fgThread, $true) | Out-Null
+        }
+        [Win32]::ShowWindow($hwnd, 9) | Out-Null   # SW_RESTORE
         [Win32]::SetForegroundWindow($hwnd) | Out-Null
-        Start-Sleep -Milliseconds 150
+        [Win32]::BringWindowToTop($hwnd) | Out-Null
+        if ($fgThread -ne 0 -and $fgThread -ne $myThread) {
+            [Win32]::AttachThreadInput($myThread, $fgThread, $false) | Out-Null
+        }
+        Start-Sleep -Milliseconds 300
         [Win32]::keybd_event([Win32]::VK_CONTROL, 0, 0, 0)
         [Win32]::keybd_event([Win32]::VK_E, 0, 0, 0)
         [Win32]::keybd_event([Win32]::VK_E, 0, [Win32]::KEYEVENTF_KEYUP, 0)
         [Win32]::keybd_event([Win32]::VK_CONTROL, 0, [Win32]::KEYEVENTF_KEYUP, 0)
-        Start-Sleep -Milliseconds 150
+        Start-Sleep -Milliseconds 300
     }
-    if ($prev -ne [IntPtr]::Zero) { [Win32]::SetForegroundWindow($prev) | Out-Null }
     Write-Host "[AutoTrading] Ctrl+E sent to account $accountNumber ($($targets.Count) window(s))"
 }
 

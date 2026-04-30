@@ -128,6 +128,7 @@ export default function App() {
   }, [])
 
   const [showLp,      setShowLp]      = useState(true)
+  const [lpMode,      setLpMode]      = useState('login')
   const [user,        setUser]        = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [refreshing,   setRefreshing]  = useState(false)
@@ -517,8 +518,11 @@ export default function App() {
 
   if (!user) {
     return showLp
-      ? <LandingPage onStart={() => setShowLp(false)} />
-      : <LoginScreen onLogin={setUser} />
+      ? <LandingPage
+          onStart={() => { setLpMode('signup'); setShowLp(false) }}
+          onLogin={() => { setLpMode('login');  setShowLp(false) }}
+        />
+      : <LoginScreen onLogin={setUser} initialMode={lpMode} />
   }
 
   return (

@@ -66,7 +66,7 @@ const STATS = [
 
 const DISCLAIMER = `MT Report Viewer Pro は、MT4/MT5 から出力された取引履歴データの整理・集計・可視化のみを目的としたデータ分析ツールです。本サービスは投資助言・投資推奨・売買シグナルの提供を一切行いません。表示されるすべての統計・グラフはユーザーがアップロードした過去の取引履歴データに基づく記録的な情報であり、将来の運用成果を保証するものではありません。取引に関するすべての判断はユーザー自身の責任において行ってください。本サービスは金融商品取引業者ではなく、金融商品取引法に基づく登録・届出を要する業務は行っておりません。`
 
-export default function LandingPage({ onStart }) {
+export default function LandingPage({ onStart, onLogin }) {
   return (
     <div className="min-h-screen bg-[#0a0e17] text-slate-200 overflow-x-hidden">
 
@@ -81,11 +81,12 @@ export default function LandingPage({ onStart }) {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={onStart}
+              onClick={onLogin}
               className="text-xs text-slate-400 hover:text-slate-200 px-3 py-2 transition-colors"
             >
               ログイン
             </button>
+
             <button
               onClick={onStart}
               className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-medium transition-colors"
@@ -121,7 +122,7 @@ export default function LandingPage({ onStart }) {
             無料で始める
           </button>
           <button
-            onClick={onStart}
+            onClick={onLogin}
             className="bg-[#111827] border border-[#1f2d40] text-slate-300 hover:text-slate-100 hover:border-[#2a3d55] font-semibold px-8 py-3 rounded-xl text-sm transition-colors"
           >
             ログイン

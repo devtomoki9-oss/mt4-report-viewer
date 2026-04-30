@@ -21,8 +21,8 @@ function translateAuthError(msg) {
   return msg
 }
 
-export default function LoginScreen({ onLogin }) {
-  const [mode,          setMode]          = useState('login')
+export default function LoginScreen({ onLogin, initialMode = 'login' }) {
+  const [mode,          setMode]          = useState(initialMode)
   const [email,         setEmail]         = useState('')
   const [password,      setPassword]      = useState('')
   const [confirm,       setConfirm]       = useState('')

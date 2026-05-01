@@ -43,15 +43,7 @@ $LogFile = Join-Path $Folder "sync.log"
 function Log($msg) {
     $line = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] $msg"
     Write-Host $line
-    try {
-        Add-Content -Path $LogFile -Value $line -Encoding UTF8
-        # 500行超えたら古い行を削除してローテーション
-        $lines = [IO.File]::ReadAllLines($LogFile)
-        if ($lines.Count -gt 500) {
-            [IO.File]::WriteAllLines($LogFile, ($lines | Select-Object -Last 400))
-        }
-    }
-    catch { }
+    Add-Content -Path $LogFile -Value $line -Encoding UTF8 -ErrorAction SilentlyContinue
 }
 
 # ── Win32 API for AutoTrading toggle (Ctrl+E) ─────────────────────

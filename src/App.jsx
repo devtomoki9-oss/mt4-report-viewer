@@ -8,7 +8,7 @@ import {
   saveHandle, loadHandle, collectReportFiles,
   FOLDER_KEY, supportsFileSystemAccess
 } from './lib/folderStore'
-import { INSTALL_BAT, MQ4_CONTENT, MQ5_CONTENT, SYNC_PS1_CONTENT } from './lib/downloadFiles'
+import { INSTALL_BAT } from './lib/downloadFiles'
 
 const SUPABASE_URL     = import.meta.env.VITE_SUPABASE_URL     ?? ''
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ?? ''
@@ -773,18 +773,18 @@ export default function App() {
                   className="text-xs text-blue-400 hover:text-blue-300 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg transition-colors">
                   ↓ install.bat
                 </button>
-                <button onClick={() => downloadText(MQ4_CONTENT, 'MT4ReportExporter.mq4')}
+                <a href="/MT4ReportExporter.mq4" download="MT4ReportExporter.mq4"
                   className="text-xs text-slate-500 hover:text-slate-300 bg-[#1a2235] border border-[#1f2d40] px-3 py-1.5 rounded-lg transition-colors">
                   ↓ MT4ReportExporter.mq4
-                </button>
-                <button onClick={() => downloadText(MQ5_CONTENT, 'MT5ReportExporter.mq5')}
+                </a>
+                <a href="/MT5ReportExporter.mq5" download="MT5ReportExporter.mq5"
                   className="text-xs text-slate-500 hover:text-slate-300 bg-[#1a2235] border border-[#1f2d40] px-3 py-1.5 rounded-lg transition-colors">
                   ↓ MT5ReportExporter.mq5
-                </button>
-                <button onClick={() => downloadText(SYNC_PS1_CONTENT, 'sync-to-supabase.ps1')}
+                </a>
+                <a href="/sync-to-supabase.ps1" download="sync-to-supabase.ps1"
                   className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition-colors">
                   ↓ sync-to-supabase.ps1
-                </button>
+                </a>
                 <button onClick={() => { setVbsPass(''); setShowVbsModal(true) }}
                   className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition-colors">
                   ↓ run-sync.vbs

@@ -212,7 +212,14 @@ function Send-Report {
             -Method Post -Headers (New-RpcHeaders) -Body $body -ErrorAction Stop | Out-Null
         Log "[Upload] OK: $fname (account: $acctNum)"
     } catch {
-        Log "[Upload] FAILED: $([IO.Path]::GetFileName($filePath)): $($_.Exception.Message)" -level WARN
+        $errBody = ''
+        try {
+            $stream = $_.Exception.Response.GetResponseStream()
+            $reader = New-Object IO.StreamReader($stream)
+            $errBody = $reader.ReadToEnd()
+            $reader.Close()
+        } catch {}
+        Log "[Upload] FAILED: $([IO.Path]::GetFileName($filePath)): $($_.Exception.Message) | $errBody" -level WARN
     }
 }
 

@@ -88,6 +88,12 @@ function SyncSection() {
         <p className="mt-1">それでも動かない場合は、管理者権限の PowerShell で実行ポリシーを変更してください。</p>
         <Code>Set-ExecutionPolicy -Scope CurrentUser RemoteSigned</Code>
       </CheckItem>
+
+      <CheckItem n="Q" title="口座カードを削除したのにまた表示される">
+        <p>口座カード右上の <strong className="text-slate-300">✕ ボタン</strong> を押すと、Supabase 上のレポートデータも削除されます。</p>
+        <p className="mt-1">ただし <strong className="text-slate-300">sync-to-supabase.ps1 が動作中の場合、MT4/MT5 が次にエクスポートしたタイミングで自動的に再アップロードされます。</strong></p>
+        <p className="mt-1">口座を完全に表示しないようにするには、MT4/MT5 側で該当口座の EA（MT4ReportExporter / MT5ReportExporter）を停止してから削除してください。</p>
+      </CheckItem>
     </div>
   )
 }
@@ -144,7 +150,7 @@ function PlanSection() {
   return (
     <div className="space-y-3">
       <CheckItem n="Q" title="支払い後も Free のままになっている">
-        <p>Stripe の Webhook 処理に数秒かかる場合があります。画面右上の <strong className="text-slate-300">↻ 更新</strong> ボタンを押してプランが反映されるか確認してください。</p>
+        <p>Webhook 処理に数秒かかる場合があります。画面右上の <strong className="text-slate-300">↻ 更新</strong> ボタンを押してプランが反映されるか確認してください。</p>
         <p className="mt-1">数分経っても変わらない場合はお問い合わせください。</p>
       </CheckItem>
 
@@ -154,11 +160,11 @@ function PlanSection() {
       </CheckItem>
 
       <CheckItem n="Q" title="アカウントを削除したらサブスクも解約されるか">
-        <p>はい。Pro プランのアカウント削除時は Stripe のサブスクリプションも自動的にキャンセルされます。</p>
+        <p>はい。Pro プランのアカウント削除時は Lemon Squeezy のサブスクリプションも自動的にキャンセルされます。</p>
       </CheckItem>
 
       <CheckItem n="Q" title="領収書・請求書を確認したい">
-        <p>アカウントメニュー → <strong className="text-slate-300">サブスクリプション管理</strong> から Stripe のカスタマーポータルにアクセスすると、過去の請求履歴や領収書を確認・ダウンロードできます。</p>
+        <p>アカウントメニュー → <strong className="text-slate-300">サブスクリプション管理</strong> から Lemon Squeezy のカスタマーポータルにアクセスすると、過去の請求履歴や領収書を確認・ダウンロードできます。</p>
       </CheckItem>
     </div>
   )

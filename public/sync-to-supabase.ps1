@@ -487,5 +487,5 @@ try {
 } finally {
     if ($null -ne $watcher) { try { $watcher.Dispose() } catch {} }
     try { $mutex.ReleaseMutex() } catch {}
-    Log "==== sync-to-supabase.ps1 v14 stopped ===="
+    Log "==== sync-to-supabase.ps1 v15 stopped ===="
 }

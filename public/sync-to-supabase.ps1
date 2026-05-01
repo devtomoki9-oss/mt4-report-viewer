@@ -149,7 +149,7 @@ function Get-ActualTradingState($accountNumber) {
     if (-not (Test-Path $jsonPath)) { return $null }
     try {
         $data = [IO.File]::ReadAllText($jsonPath, [Text.Encoding]::UTF8) | ConvertFrom-Json
-        if ($data.PSObject.Properties.Name -contains 'autoTrading') {
+        if ($null -ne $data.autoTrading) {
             return [bool]$data.autoTrading
         }
         return $null
@@ -210,7 +210,7 @@ if (-not (Test-Path $Folder)) {
     New-Item -ItemType Directory -Path $Folder -Force | Out-Null
 }
 
-Log "==== sync-to-supabase.ps1 v9 started ===="
+Log "==== sync-to-supabase.ps1 v10 started ===="
 Log "Folder: $Folder"
 Log "LogFile: $LogFile"
 
@@ -285,6 +285,7 @@ try {
             Log "[AutoTrading] ERROR line=$($_.InvocationInfo.ScriptLineNumber): $($_.Exception.Message)"
         }
         if ($desired.Count -gt 0) {
+          try {
             foreach ($acct in $desired.Keys) {
                 $desiredState = $desired[$acct]
                 $actualState  = Get-ActualTradingState $acct
@@ -327,6 +328,9 @@ try {
                     $ctrlECooldown[$acct] = Get-Date
                 }
             }
+          } catch {
+            Log "[AutoTrading] SYNC ERROR line=$($_.InvocationInfo.ScriptLineNumber): $($_.Exception.Message)"
+          }
         }
 
         # Wait up to 5 seconds for a file change

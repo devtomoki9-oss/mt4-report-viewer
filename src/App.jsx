@@ -322,7 +322,7 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // ── Stripe 決済完了後のプラン反映（?upgraded=true） ──
+  // ── Lemon Squeezy 決済完了後のプラン反映（?upgraded=true） ──
   useEffect(() => {
     if (!user) return
     const params = new URLSearchParams(window.location.search)
@@ -403,7 +403,7 @@ export default function App() {
     }
   }, [refreshing, syncFromSupabase])
 
-  // ── Stripe カスタマーポータル（解約・管理） ──────────
+  // ── Lemon Squeezy サブスクリプション管理ポータル ──────
   const handleManagePlan = useCallback(async () => {
     try {
       const res = await fetch('/api/create-portal-session', {
@@ -415,12 +415,12 @@ export default function App() {
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`)
       window.location.href = json.url
     } catch (e) {
-      console.error('[Stripe] portal error:', e)
+      console.error('[LemonSqueezy] portal error:', e)
       alert(`エラーが発生しました。\n\n${e.message}`)
     }
   }, [user])
 
-  // ── Stripe アップグレード ─────────────────────────────
+  // ── Lemon Squeezy アップグレード ─────────────────────
   const handleUpgrade = useCallback(async () => {
     try {
       const res = await fetch('/api/create-checkout-session', {
@@ -430,10 +430,10 @@ export default function App() {
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`)
-      if (!json.url) throw new Error('Stripe から URL が返されませんでした')
+      if (!json.url) throw new Error('Lemon Squeezy から URL が返されませんでした')
       window.location.href = json.url
     } catch (e) {
-      console.error('[Stripe] upgrade error:', e)
+      console.error('[LemonSqueezy] upgrade error:', e)
       alert(`アップグレードの処理中にエラーが発生しました。\n\n${e.message}`)
     }
   }, [user])
@@ -1012,7 +1012,7 @@ export default function App() {
           onConfirm={async () => {
             setDeletingAccount(true)
             try {
-              // Pro ユーザーは先に Stripe サブスクリプションをキャンセル
+              // Pro ユーザーは先に Lemon Squeezy サブスクリプションをキャンセル
               if (plan === 'pro' && user?.id) {
                 const res = await fetch('/api/cancel-subscription', {
                   method: 'POST',

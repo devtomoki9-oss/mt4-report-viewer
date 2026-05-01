@@ -70,9 +70,15 @@ export async function deleteAccount() {
 }
 
 export async function fetchPlan() {
-  const { data: { user }, error } = await supabase.auth.getUser()
-  if (error || !user) return 'free'
-  return user.app_metadata?.plan ?? 'free'
+  const { data, error } = await supabase
+    .from('subscriptions')
+    .select('status, current_period_end')
+    .single()
+  if (error || !data) return 'free'
+  const active =
+    (data.status === 'active' || data.status === 'on_trial') &&
+    (!data.current_period_end || new Date(data.current_period_end) > new Date())
+  return active ? 'pro' : 'free'
 }
 
 export async function fetchAliases() {

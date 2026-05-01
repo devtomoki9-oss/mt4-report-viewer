@@ -1,20 +1,26 @@
 /**
- * Stripe カスタマーポータルセッション作成
- * （サブスクリプション管理・解約はポータル上で行う）
+ * Lemon Squeezy サブスクリプション管理ポータル URL 取得
  *
- * 【Stripe ダッシュボード側の事前設定】
- * Settings → Billing → Customer Portal → 「有効化」して保存
+ * LS の GET /v1/subscriptions/{id} レスポンスに含まれる
+ * attributes.urls.customer_portal を返す。
+ * サブスク未登録の場合は LS のマイオーダーページへ誘導する。
+ *
+ * 【Vercel 環境変数】
+ *   LEMONSQUEEZY_API_KEY    : LS APIキー
+ *   SUPABASE_URL            : Supabase プロジェクト URL
+ *   SUPABASE_SERVICE_ROLE_KEY: サービスロールキー
  */
 
-import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
+
+const LS_MY_ORDERS_URL = 'https://app.lemonsqueezy.com/my-orders'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { userId, returnUrl } = req.body
+  const { userId } = req.body
   if (!userId) {
     return res.status(400).json({ error: 'userId is required' })
   }
@@ -24,44 +30,38 @@ export default async function handler(req, res) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
 
-  const { data: { user }, error } = await supabaseAdmin.auth.admin.getUserById(userId)
-  if (error || !user) {
-    return res.status(404).json({ error: 'User not found' })
+  const { data: sub, error } = await supabaseAdmin
+    .from('subscriptions')
+    .select('lemon_subscription_id')
+    .eq('user_id', userId)
+    .single()
+
+  if (error || !sub?.lemon_subscription_id) {
+    // サブスク未登録 → LS マイオーダーページへ
+    return res.status(200).json({ url: LS_MY_ORDERS_URL })
   }
 
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
-
   try {
-    // app_metadata に customer_id があればそのまま使う
-    let customerId = user.app_metadata?.stripe_customer_id
-
-    // なければメールアドレスで Stripe を検索
-    if (!customerId) {
-      const customers = await stripe.customers.list({ email: user.email, limit: 5 })
-      console.log(`[portal] searching Stripe by email: ${user.email}, found: ${customers.data.length}`)
-      if (customers.data.length > 0) {
-        customerId = customers.data[0].id
-        // 次回以降のために app_metadata に保存
-        await supabaseAdmin.auth.admin.updateUserById(userId, {
-          app_metadata: { stripe_customer_id: customerId },
-        })
+    const response = await fetch(
+      `https://api.lemonsqueezy.com/v1/subscriptions/${sub.lemon_subscription_id}`,
+      {
+        headers: {
+          Accept:        'application/vnd.api+json',
+          Authorization: `Bearer ${process.env.LEMONSQUEEZY_API_KEY}`,
+        },
       }
+    )
+
+    if (!response.ok) {
+      return res.status(200).json({ url: LS_MY_ORDERS_URL })
     }
 
-    if (!customerId) {
-      console.error(`[portal] customer not found for user: ${userId}, email: ${user.email}`)
-      return res.status(400).json({
-        error: `Stripe customer not found (email: ${user.email}). Please contact support.`,
-      })
-    }
+    const json = await response.json()
+    const portalUrl = json.data?.attributes?.urls?.customer_portal
 
-    const session = await stripe.billingPortal.sessions.create({
-      customer: customerId,
-      return_url: returnUrl ?? process.env.VITE_APP_URL,
-    })
-    return res.status(200).json({ url: session.url })
+    return res.status(200).json({ url: portalUrl ?? LS_MY_ORDERS_URL })
   } catch (err) {
-    console.error('Stripe portal error:', err)
-    return res.status(500).json({ error: err.message })
+    console.error('create-portal-session error:', err)
+    return res.status(200).json({ url: LS_MY_ORDERS_URL })
   }
 }

@@ -148,9 +148,9 @@ function Get-ActualTradingState($accountNumber) {
     $jsonPath = Join-Path $Folder "mt4_report_$accountNumber.json"
     if (-not (Test-Path $jsonPath)) { return $null }
     try {
-        $data = [IO.File]::ReadAllText($jsonPath, [Text.Encoding]::UTF8) | ConvertFrom-Json
-        if ($null -ne $data.autoTrading) {
-            return [bool]$data.autoTrading
+        $text = [IO.File]::ReadAllText($jsonPath, [Text.Encoding]::UTF8)
+        if ($text -match '"autoTrading"\s*:\s*(true|false)') {
+            return [bool]($Matches[1] -eq 'true')
         }
         return $null
     }
@@ -210,7 +210,7 @@ if (-not (Test-Path $Folder)) {
     New-Item -ItemType Directory -Path $Folder -Force | Out-Null
 }
 
-Log "==== sync-to-supabase.ps1 v10 started ===="
+Log "==== sync-to-supabase.ps1 v11 started ===="
 Log "Folder: $Folder"
 Log "LogFile: $LogFile"
 

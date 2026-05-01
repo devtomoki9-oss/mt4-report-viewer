@@ -130,6 +130,14 @@ export function subscribeToReports(onUpdate) {
     .subscribe()
 }
 
+export async function deleteReport(accountNumber) {
+  const { error } = await supabase
+    .from('reports')
+    .delete()
+    .eq('account_number', accountNumber)
+  if (error) throw error
+}
+
 export async function upsertReport(accountNumber, filename, jsonData) {
   const { error } = await supabase
     .from('reports')

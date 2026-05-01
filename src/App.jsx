@@ -30,7 +30,7 @@ function generateRunSyncVbs(url, anonKey, email, password) {
   )
 }
 import {
-  supabase, signOut, getSession, fetchReports, deleteAccount,
+  supabase, signOut, getSession, fetchReports, deleteAccount, deleteReport,
   fetchAliases, saveAliases, fetchPlan, updatePassword, subscribeToReports,
   fetchTradingStates, setTradingEnabled, subscribeToTradingStates,
 } from './lib/supabaseClient'
@@ -494,7 +494,13 @@ export default function App() {
     return () => { clearInterval(id); setSecondsLeft(null) }
   }, [nextExportAt])
 
-  const removeAccount = (name) => setAccounts(prev => prev.filter(a => a.account.name !== name))
+  const removeAccount = useCallback(async (name) => {
+    const target = accounts.find(a => a.account.name === name)
+    setAccounts(prev => prev.filter(a => a.account.name !== name))
+    if (target?.account.number) {
+      await deleteReport(target.account.number).catch(console.error)
+    }
+  }, [accounts])
   const clearAll = () => {
     setAccounts([])
     setManualCleared(true)

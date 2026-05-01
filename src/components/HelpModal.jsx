@@ -1,14 +1,14 @@
 import { useState } from 'react'
 
 const TOPICS = [
-  { id: 'report', label: 'レポートが更新されない' },
-  { id: 'sync',   label: '自動同期が動かない' },
-  { id: 'auth',   label: 'ログイン・パスワード' },
-  { id: 'plan',   label: 'プラン・支払い' },
+  { id: 'sync',  label: 'データ・同期' },
+  { id: 'ea',    label: 'EA・更新設定' },
+  { id: 'auth',  label: 'ログイン・パスワード' },
+  { id: 'plan',  label: 'プラン・支払い' },
 ]
 
 export default function HelpModal({ onClose }) {
-  const [active, setActive] = useState('report')
+  const [active, setActive] = useState('sync')
 
   return (
     <div className="fixed inset-0 bg-[#0a0e17]/90 backdrop-blur flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
@@ -37,20 +37,20 @@ export default function HelpModal({ onClose }) {
         </div>
 
         <div className="overflow-y-auto px-5 py-4 space-y-3 text-xs text-slate-400 leading-relaxed">
-          {active === 'report' && <ReportSection />}
-          {active === 'sync'   && <SyncSection />}
-          {active === 'auth'   && <AuthSection />}
-          {active === 'plan'   && <PlanSection />}
+          {active === 'sync' && <SyncSection />}
+          {active === 'ea'   && <EaSection />}
+          {active === 'auth' && <AuthSection />}
+          {active === 'plan' && <PlanSection />}
         </div>
       </div>
     </div>
   )
 }
 
-function ReportSection() {
+function SyncSection() {
   return (
     <div className="space-y-3">
-      <p className="text-slate-500">ダッシュボードのデータが古い・更新されない場合、以下の順に確認してください。</p>
+      <p className="text-slate-500">データが表示されない・更新されない場合、以下の順に確認してください。</p>
 
       <CheckItem n="1" title="↻ 更新ボタンを押す">
         <p>画面右上の <strong className="text-slate-300">↻ 更新</strong> ボタンを押すと、Supabase から最新データを即時取得します。まずこれを試してください。</p>
@@ -73,7 +73,8 @@ function ReportSection() {
           <li>「状態」が <strong className="text-slate-300">準備完了</strong> になっているか</li>
           <li>「前回の実行結果」が <strong className="text-slate-300">操作が正常に完了しました。(0x0)</strong> になっているか</li>
         </ul>
-        <p className="mt-1">タスクが存在しない場合は、セットアップ画面からコマンドを再実行してください。</p>
+        <p className="mt-1">タスクが存在しない場合は以下のコマンドで再登録してください。</p>
+        <Code>{'schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"'}</Code>
       </CheckItem>
 
       <CheckItem n="5" title="パスワードを最近変更したか">
@@ -81,37 +82,44 @@ function ReportSection() {
         <p className="mt-1">ダッシュボードのセットアップ画面から <strong className="text-slate-300">run-sync.vbs を再ダウンロード</strong> し、タスクスケジューラーで登録しているファイルを差し替えてください。</p>
       </CheckItem>
 
-      <CheckItem n="6" title="PS1 ファイルのブロックが解除されているか">
+      <CheckItem n="6" title="PowerShell スクリプトのブロックを解除する">
         <p>Windows のセキュリティ設定により、ダウンロードした PowerShell スクリプトが実行をブロックされる場合があります。PowerShell で以下を実行してください。</p>
         <Code>{'Unblock-File "$env:USERPROFILE\\Downloads\\sync-to-supabase.ps1"'}</Code>
+        <p className="mt-1">それでも動かない場合は、管理者権限の PowerShell で実行ポリシーを変更してください。</p>
+        <Code>Set-ExecutionPolicy -Scope CurrentUser RemoteSigned</Code>
       </CheckItem>
     </div>
   )
 }
 
-function SyncSection() {
+function EaSection() {
   return (
     <div className="space-y-3">
-      <p className="text-slate-500">タスクスケジューラーへの登録や同期スクリプトに関するトラブルです。</p>
+      <p className="text-slate-500">EA の動作設定に関する項目です。</p>
 
-      <CheckItem n="1" title="タスクを手動で再登録する">
-        <p>タスクが見つからない・エラーになる場合は、以下のコマンドで再登録できます。</p>
-        <Code>{'schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"'}</Code>
-        <p className="mt-1">run-sync.vbs のパスは実際に保存した場所に合わせて変更してください。</p>
+      <CheckItem n="Q" title="データの更新間隔を変更したい">
+        <p>EA のパラメーター <strong className="text-slate-300">RealtimeSec</strong> で、ティック発生時の最小エクスポート間隔（秒）を変更できます。</p>
+        <div className="mt-2">
+          <div className="bg-[#111827] border border-[#1f2d40] rounded px-3 py-2 space-y-1">
+            {[
+              ['5秒',  '最短（下限）'],
+              ['10秒', 'デフォルト・推奨'],
+              ['30秒', '負荷を抑えたい場合'],
+              ['60秒', '最低限の更新頻度'],
+            ].map(([v, desc]) => (
+              <div key={v} className="flex gap-3">
+                <span className="text-slate-300 font-mono w-12 flex-shrink-0">{v}</span>
+                <span className="text-slate-500">{desc}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <p className="mt-2"><strong className="text-slate-300">変更手順：</strong>MT4/MT5 でチャート上の EA をダブルクリック → 「入力パラメーター」タブ → <strong className="text-slate-300">RealtimeSec</strong> を変更して OK。5秒未満を設定しても内部的に5秒として動作します。</p>
       </CheckItem>
 
-      <CheckItem n="2" title="タスクを手動で実行してみる">
-        <p>タスク スケジューラーで <strong className="text-slate-300">MTExportSync</strong> を右クリック → 「実行」で手動実行できます。「前回の実行結果」にエラーコードが表示される場合は内容をお問い合わせください。</p>
-      </CheckItem>
-
-      <CheckItem n="3" title="PowerShell の実行ポリシーを確認">
-        <p>PowerShell でスクリプトの実行が禁止されている場合があります。管理者権限の PowerShell で以下を実行してください。</p>
-        <Code>Set-ExecutionPolicy -Scope CurrentUser RemoteSigned</Code>
-      </CheckItem>
-
-      <CheckItem n="4" title="MTExport フォルダのパスを確認">
-        <p>sync-to-supabase.ps1 は <code className="font-mono bg-[#1a2235] px-1 rounded">%USERPROFILE%\MTExport\</code> フォルダを監視しています。このフォルダに JSON ファイルが存在するか確認してください。</p>
-        <p className="mt-1">MT4/MT5 の「Files」フォルダ内に JSON が書き出されている場合は、EA の設定で出力先が異なる可能性があります。</p>
+      <CheckItem n="Q" title="定期エクスポートの間隔を変更したい">
+        <p>ティックが発生しない時間帯でも、<strong className="text-slate-300">RefreshMinutes</strong> の間隔で定期エクスポートが実行されます。デフォルトは1分です。</p>
+        <p className="mt-1"><strong className="text-slate-300">変更手順：</strong>チャート上の EA をダブルクリック → 「入力パラメーター」タブ → <strong className="text-slate-300">RefreshMinutes</strong> を変更して OK。</p>
       </CheckItem>
     </div>
   )
@@ -123,10 +131,6 @@ function AuthSection() {
       <CheckItem n="Q" title="パスワードを忘れた">
         <p>ログイン画面の <strong className="text-slate-300">「パスワードをお忘れですか？」</strong> からメールアドレスを入力するとリセットメールが届きます。</p>
         <p className="mt-1">メールが届かない場合は迷惑メールフォルダを確認してください。</p>
-      </CheckItem>
-
-<CheckItem n="Q" title="パスワードを変更したら自動同期が止まった">
-        <p>run-sync.vbs にはパスワードが埋め込まれているため、変更後は再ダウンロードが必要です。ダッシュボードのセットアップ画面から <strong className="text-slate-300">run-sync.vbs を再ダウンロード</strong> してタスクスケジューラーのファイルを差し替えてください。</p>
       </CheckItem>
 
       <CheckItem n="Q" title="確認メールが届かない">

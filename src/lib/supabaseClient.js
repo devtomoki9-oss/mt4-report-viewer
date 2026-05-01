@@ -70,9 +70,15 @@ export async function deleteAccount() {
 }
 
 export async function fetchPlan() {
-  const { data: { user }, error } = await supabase.auth.getUser()
-  if (error || !user) return 'free'
-  return user.app_metadata?.plan ?? 'free'
+  const { data, error } = await supabase
+    .from('subscriptions')
+    .select('status, current_period_end')
+    .single()
+  if (error || !data) return 'free'
+  const active =
+    (data.status === 'active' || data.status === 'on_trial') &&
+    (!data.current_period_end || new Date(data.current_period_end) > new Date())
+  return active ? 'pro' : 'free'
 }
 
 export async function fetchAliases() {
@@ -84,6 +90,44 @@ export async function fetchAliases() {
 export async function saveAliases(aliases) {
   const { error } = await supabase.auth.updateUser({ data: { aliases } })
   if (error) throw error
+}
+
+export async function fetchTradingStates() {
+  const { data, error } = await supabase
+    .from('ea_controls')
+    .select('account_number, enabled')
+  if (error) return {}
+  return Object.fromEntries((data || []).map(r => [String(r.account_number), r.enabled]))
+}
+
+export async function setTradingEnabled(accountNumber, enabled) {
+  const { error } = await supabase.rpc('upsert_ea_control', {
+    p_account_number: Number(accountNumber),
+    p_enabled: enabled,
+  })
+  if (error) throw error
+}
+
+export function subscribeToTradingStates(onUpdate) {
+  return supabase
+    .channel('ea-controls-realtime')
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'ea_controls',
+    }, onUpdate)
+    .subscribe()
+}
+
+export function subscribeToReports(onUpdate) {
+  return supabase
+    .channel('reports-realtime')
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'reports',
+    }, onUpdate)
+    .subscribe()
 }
 
 export async function upsertReport(accountNumber, filename, jsonData) {

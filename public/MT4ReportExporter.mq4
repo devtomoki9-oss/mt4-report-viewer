@@ -41,7 +41,7 @@
 #define FILE_SHARE_READ       1
 
 input int    RefreshMinutes  = 1;            // 定期エクスポート間隔（分）
-input int    RealtimeSec     = 30;           // Tick 発生時の最小エクスポート間隔（秒）
+input int    RealtimeSec     = 10;           // Tick 発生時の最小エクスポート間隔（秒）
 input string ExportSubFolder = "MTExport";  // USERPROFILE 直下のサブフォルダ名
 
 // タイマー間隔（秒）: トリガーファイルをこの間隔でチェックする
@@ -64,7 +64,8 @@ void OnDeinit(const int reason) { EventKillTimer(); }
 void OnTick()
 {
    datetime now = TimeCurrent();
-   if (now - g_LastRealtimeExport >= RealtimeSec)
+   int sec = MathMax(RealtimeSec, 5);
+   if (now - g_LastRealtimeExport >= sec)
    {
       g_LastRealtimeExport = now;
       g_ExportTick = 0; // 定期タイマーもリセット（二重エクスポート防止）
@@ -156,6 +157,7 @@ void ExportTrades()
    json += "  \"credit\": "      + DoubleToString(AccountCredit(),  2)  + ",\n";
    json += "  \"leverage\": "    + IntegerToString(AccountLeverage())   + ",\n";
    json += "  \"exportTime\": \""+ TimeToISO(TimeCurrent())             + "\",\n";
+   json += "  \"autoTrading\": " + ((bool)TerminalInfoInteger(TERMINAL_TRADE_ALLOWED) ? "true" : "false") + ",\n";
    json += "  \"trades\": [\n";
 
    int total = OrdersHistoryTotal();

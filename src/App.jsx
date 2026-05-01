@@ -8,7 +8,7 @@ import {
   saveHandle, loadHandle, collectReportFiles,
   FOLDER_KEY, supportsFileSystemAccess
 } from './lib/folderStore'
-import { INSTALL_BAT, MQ4_CONTENT, MQ5_CONTENT, SYNC_PS1_CONTENT } from './lib/downloadFiles'
+import { INSTALL_BAT } from './lib/downloadFiles'
 
 const SUPABASE_URL     = import.meta.env.VITE_SUPABASE_URL     ?? ''
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ?? ''
@@ -31,7 +31,8 @@ function generateRunSyncVbs(url, anonKey, email, password) {
 }
 import {
   supabase, signOut, getSession, fetchReports, deleteAccount,
-  fetchAliases, saveAliases, fetchPlan, updatePassword,
+  fetchAliases, saveAliases, fetchPlan, updatePassword, subscribeToReports,
+  fetchTradingStates, setTradingEnabled, subscribeToTradingStates,
 } from './lib/supabaseClient'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import DeleteAccountModal from './components/DeleteAccountModal'
@@ -144,9 +145,9 @@ export default function App() {
   const [showFeedback,      setShowFeedback]      = useState(false)
   const [showManual,        setShowManual]        = useState(false)
   const [showHelp,          setShowHelp]          = useState(false)
+  const [tradingStates,     setTradingStates]       = useState(null)
   const [showTerms,         setShowTerms]         = useState(false)
-  const [showMobileMenu,    setShowMobileMenu]    = useState(false)
-  const mobileMenuRef = useRef(null)
+
   const [showUserMenu,      setShowUserMenu]      = useState(false)
   const userMenuRef = useRef(null)
   const [plan, setPlan] = useState('free')
@@ -321,7 +322,7 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // ── Stripe 決済完了後のプラン反映（?upgraded=true） ──
+  // ── Lemon Squeezy 決済完了後のプラン反映（?upgraded=true） ──
   useEffect(() => {
     if (!user) return
     const params = new URLSearchParams(window.location.search)
@@ -352,6 +353,9 @@ export default function App() {
     // プランを取得
     fetchPlan().then(setPlan).catch(console.error)
 
+    // 自動取引状態を取得
+    fetchTradingStates().then(setTradingStates).catch(console.error)
+
     // Supabase から最新の alias を取得してローカルに反映
     fetchAliases().then(remote => {
       if (Object.keys(remote).length > 0) {
@@ -369,16 +373,6 @@ export default function App() {
     syncFromSupabase()
   }, [user, syncFromSupabase])
 
-  // ── モバイルメニューの外側クリックで閉じる ──────────
-  useEffect(() => {
-    if (!showMobileMenu) return
-    const close = (e) => {
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target))
-        setShowMobileMenu(false)
-    }
-    document.addEventListener('mousedown', close)
-    return () => document.removeEventListener('mousedown', close)
-  }, [showMobileMenu])
 
   // ── ユーザーメニューの外側クリックで閉じる ───────────
   useEffect(() => {
@@ -409,7 +403,7 @@ export default function App() {
     }
   }, [refreshing, syncFromSupabase])
 
-  // ── Stripe カスタマーポータル（解約・管理） ──────────
+  // ── Lemon Squeezy サブスクリプション管理ポータル ──────
   const handleManagePlan = useCallback(async () => {
     try {
       const res = await fetch('/api/create-portal-session', {
@@ -421,12 +415,12 @@ export default function App() {
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`)
       window.location.href = json.url
     } catch (e) {
-      console.error('[Stripe] portal error:', e)
+      console.error('[LemonSqueezy] portal error:', e)
       alert(`エラーが発生しました。\n\n${e.message}`)
     }
   }, [user])
 
-  // ── Stripe アップグレード ─────────────────────────────
+  // ── Lemon Squeezy アップグレード ─────────────────────
   const handleUpgrade = useCallback(async () => {
     try {
       const res = await fetch('/api/create-checkout-session', {
@@ -436,20 +430,39 @@ export default function App() {
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`)
-      if (!json.url) throw new Error('Stripe から URL が返されませんでした')
+      if (!json.url) throw new Error('Lemon Squeezy から URL が返されませんでした')
       window.location.href = json.url
     } catch (e) {
-      console.error('[Stripe] upgrade error:', e)
+      console.error('[LemonSqueezy] upgrade error:', e)
       alert(`アップグレードの処理中にエラーが発生しました。\n\n${e.message}`)
     }
   }, [user])
 
-  // ── Supabase 自動更新（1分ごと・メイン画面のみ） ────
+  // ── Supabase Realtime 購読（reports テーブル変更を即時検知） ──
   useEffect(() => {
-    if (!user || !hasData) return
-    const id = setInterval(() => syncFromSupabase(), SUPABASE_INTERVAL_MS)
-    return () => clearInterval(id)
-  }, [user, hasData, syncFromSupabase])
+    if (!user) return
+    const channel = subscribeToReports(() => syncFromSupabase())
+    return () => { supabase.removeChannel(channel) }
+  }, [user, syncFromSupabase])
+
+  // ── ea_controls リアルタイム購読（MT手動変更をWebに反映） ──
+  useEffect(() => {
+    if (!user) return
+    const channel = subscribeToTradingStates((payload) => {
+      const { eventType, new: row, old: oldRow } = payload
+      if ((eventType === 'INSERT' || eventType === 'UPDATE') && row) {
+        setTradingStates(prev => ({ ...(prev ?? {}), [String(row.account_number)]: row.enabled }))
+      } else if (eventType === 'DELETE' && oldRow) {
+        setTradingStates(prev => {
+          if (!prev) return prev
+          const next = { ...prev }
+          delete next[String(oldRow.account_number)]
+          return next
+        })
+      }
+    })
+    return () => { supabase.removeChannel(channel) }
+  }, [user])
 
   // ── 30秒ポーリング（変化検知） ────────────────────
   useEffect(() => {
@@ -565,6 +578,17 @@ export default function App() {
               {hasData && <span className="text-xs text-slate-600 ml-1 hidden sm:inline">{accounts.length} 口座</span>}
             </div>
             <div className="flex items-center gap-1.5 sm:gap-2">
+              {hasData && (
+                <nav className="hidden sm:flex gap-1 bg-[#111827] border border-[#1f2d40] rounded-lg p-1">
+                  {TABS.map(t => (
+                    <button key={t.id} onClick={() => setTab(t.id)}
+                      className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all
+                        ${tab === t.id ? 'bg-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>
+                      {t.label}
+                    </button>
+                  ))}
+                </nav>
+              )}
               {user && (
                 <>
                   <button
@@ -587,7 +611,6 @@ export default function App() {
                     </button>
                     {showUserMenu && (
                       <div className="absolute right-0 top-full mt-1 w-56 bg-[#111827] border border-[#1f2d40] rounded-xl shadow-2xl py-1 z-50">
-                        {/* ヘッダー（メール + プラン） */}
                         <div className="px-4 py-2.5 border-b border-[#1f2d40]">
                           <div className="text-xs text-slate-400 truncate">{user.email}</div>
                           {plan === 'pro'
@@ -619,41 +642,6 @@ export default function App() {
                   </div>
                 </>
               )}
-              {hasData && (
-                <>
-                  <nav className="hidden sm:flex gap-1 bg-[#111827] border border-[#1f2d40] rounded-lg p-1">
-                    {TABS.map(t => (
-                      <button key={t.id} onClick={() => setTab(t.id)}
-                        className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all
-                          ${tab === t.id ? 'bg-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>
-                        {t.label}
-                      </button>
-                    ))}
-                  </nav>
-                  <button onClick={clearAll} className="hidden sm:inline text-xs text-slate-600 hover:text-red-400 transition-colors px-2 py-1">
-                    クリア
-                  </button>
-                </>
-              )}
-              {/* モバイル用メニュー（⋮ボタン + ドロップダウン） */}
-              {hasData && (
-                <div className="relative sm:hidden" ref={mobileMenuRef}>
-                  <button
-                    onClick={() => setShowMobileMenu(v => !v)}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-200 hover:bg-[#1a2235] transition-colors text-base">
-                    ⋮
-                  </button>
-                  {showMobileMenu && (
-                    <div className="absolute right-0 top-full mt-1 w-44 bg-[#111827] border border-[#1f2d40] rounded-xl shadow-2xl py-1 z-50">
-                      <button
-                        onClick={() => { clearAll(); setShowMobileMenu(false) }}
-                        className="w-full text-left px-4 py-2.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-[#1a2235] transition-colors">
-                        データをクリア
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           </div>
           {hasData && (
@@ -665,6 +653,10 @@ export default function App() {
                   {t.label}
                 </button>
               ))}
+              <button onClick={clearAll}
+                className="flex-shrink-0 px-2.5 py-1.5 text-xs rounded-md font-medium bg-[#111827] border border-[#1f2d40] text-slate-600 hover:text-red-400 transition-colors">
+                クリア
+              </button>
             </div>
           )}
         </div>
@@ -752,7 +744,7 @@ export default function App() {
                 },
                 {
                   step: '7',
-                  text: 'PowerShell で タスクスケジューラに登録（1分ごとに自動アップロード）',
+                  text: 'PowerShell で タスクスケジューラに登録（ファイル変更を検知してリアルタイム同期）',
                   sub: 'ダウンロード先が異なる場合はパスを変更してください',
                   code: 'schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"',
                 },
@@ -781,18 +773,18 @@ export default function App() {
                   className="text-xs text-blue-400 hover:text-blue-300 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg transition-colors">
                   ↓ install.bat
                 </button>
-                <button onClick={() => downloadText(MQ4_CONTENT, 'MT4ReportExporter.mq4')}
+                <a href="/MT4ReportExporter.mq4" download="MT4ReportExporter.mq4"
                   className="text-xs text-slate-500 hover:text-slate-300 bg-[#1a2235] border border-[#1f2d40] px-3 py-1.5 rounded-lg transition-colors">
                   ↓ MT4ReportExporter.mq4
-                </button>
-                <button onClick={() => downloadText(MQ5_CONTENT, 'MT5ReportExporter.mq5')}
+                </a>
+                <a href="/MT5ReportExporter.mq5" download="MT5ReportExporter.mq5"
                   className="text-xs text-slate-500 hover:text-slate-300 bg-[#1a2235] border border-[#1f2d40] px-3 py-1.5 rounded-lg transition-colors">
                   ↓ MT5ReportExporter.mq5
-                </button>
-                <button onClick={() => downloadText(SYNC_PS1_CONTENT, 'sync-to-supabase.ps1')}
+                </a>
+                <a href="/sync-to-supabase.ps1" download="sync-to-supabase.ps1"
                   className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition-colors">
                   ↓ sync-to-supabase.ps1
-                </button>
+                </a>
                 <button onClick={() => { setVbsPass(''); setShowVbsModal(true) }}
                   className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition-colors">
                   ↓ run-sync.vbs
@@ -809,13 +801,13 @@ export default function App() {
           <>
             {/* ツールバー */}
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-xs text-slate-600">
+              <div className="flex items-center gap-3 text-xs text-slate-600">
                 {lastUpdated && (
-                  <span>最終更新: {fmtTime(lastUpdated)} <span className="text-slate-700">JST</span></span>
+                  <span>最終更新: {fmtTime(lastUpdated)}</span>
                 )}
-                {secondsLeft != null && (
-                  <span className="text-slate-700">次回 {fmtCountdown(secondsLeft)}</span>
-                )}
+                <button onClick={clearAll} className="hidden sm:inline hover:text-red-400 transition-colors">
+                  クリア
+                </button>
               </div>
               <label className="cursor-pointer text-xs text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg">
                 <input type="file" accept=".htm,.html,.json" multiple className="hidden"
@@ -912,7 +904,23 @@ export default function App() {
                       </div>
                       <div className="space-y-2">
                         {sortedFilteredAccStats.map((acc) => (
-                          <AccountCard key={acc.account.name} account={acc} onRemove={() => removeAccount(acc.account.name)} aliases={aliases} setAlias={setAlias} sortKey={accSort.key} />
+                          <AccountCard
+                            key={acc.account.name}
+                            account={acc}
+                            onRemove={() => removeAccount(acc.account.name)}
+                            aliases={aliases}
+                            setAlias={setAlias}
+                            sortKey={accSort.key}
+                            tradingEnabled={
+                              tradingStates !== null
+                                ? (tradingStates[String(acc.account.number)] ?? acc.account.autoTrading ?? true)
+                                : (acc.account.autoTrading ?? true)
+                            }
+                            onTradingToggle={tradingStates !== null && acc.account.number ? async (val) => {
+                              setTradingStates(prev => ({ ...prev, [String(acc.account.number)]: val }))
+                              await setTradingEnabled(acc.account.number, val).catch(console.error)
+                            } : undefined}
+                          />
                         ))}
                       </div>
                     </div>
@@ -1004,7 +1012,7 @@ export default function App() {
           onConfirm={async () => {
             setDeletingAccount(true)
             try {
-              // Pro ユーザーは先に Stripe サブスクリプションをキャンセル
+              // Pro ユーザーは先に Lemon Squeezy サブスクリプションをキャンセル
               if (plan === 'pro' && user?.id) {
                 const res = await fetch('/api/cancel-subscription', {
                   method: 'POST',

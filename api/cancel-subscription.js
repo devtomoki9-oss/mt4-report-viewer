@@ -1,9 +1,13 @@
 /**
- * Stripe サブスクリプションをキャンセル
+ * Lemon Squeezy サブスクリプションをキャンセル
  * アカウント削除前に呼び出す
+ *
+ * 【Vercel 環境変数】
+ *   LEMONSQUEEZY_API_KEY     : LS APIキー
+ *   SUPABASE_URL             : Supabase プロジェクト URL
+ *   SUPABASE_SERVICE_ROLE_KEY: サービスロールキー
  */
 
-import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 
 export default async function handler(req, res) {
@@ -16,37 +20,50 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'userId is required' })
   }
 
-  try {
-    if (!process.env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY が設定されていません')
+  const supabaseAdmin = createClient(
+    process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
 
-    const supabaseAdmin = createClient(
-      process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
+  const { data: sub, error } = await supabaseAdmin
+    .from('subscriptions')
+    .select('lemon_subscription_id, status')
+    .eq('user_id', userId)
+    .single()
+
+  if (error || !sub?.lemon_subscription_id) {
+    // サブスク未登録（Free プラン）はスキップ
+    return res.status(200).json({ cancelled: false, reason: 'no subscription' })
+  }
+
+  if (sub.status === 'cancelled' || sub.status === 'expired') {
+    return res.status(200).json({ cancelled: false, reason: 'already cancelled' })
+  }
+
+  if (!process.env.LEMONSQUEEZY_API_KEY) {
+    return res.status(500).json({ error: 'LEMONSQUEEZY_API_KEY is not set' })
+  }
+
+  try {
+    // LS の DELETE /v1/subscriptions/{id} でキャンセル
+    const response = await fetch(
+      `https://api.lemonsqueezy.com/v1/subscriptions/${sub.lemon_subscription_id}`,
+      {
+        method: 'DELETE',
+        headers: {
+          Accept:        'application/vnd.api+json',
+          Authorization: `Bearer ${process.env.LEMONSQUEEZY_API_KEY}`,
+        },
+      }
     )
 
-    const { data: { user }, error } = await supabaseAdmin.auth.admin.getUserById(userId)
-    if (error || !user) return res.status(404).json({ error: 'User not found' })
-
-    const customerId = user.app_metadata?.stripe_customer_id
-    if (!customerId) {
-      // Stripe 未登録（Free プラン）はスキップ
-      return res.status(200).json({ cancelled: false, reason: 'no subscription' })
+    if (!response.ok) {
+      const err = await response.text()
+      console.error('LS cancel error:', err)
+      return res.status(500).json({ error: 'Cancellation failed' })
     }
 
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
-
-    // 有効なサブスクリプションを取得してキャンセル
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      status: 'active',
-      limit: 10,
-    })
-
-    for (const sub of subscriptions.data) {
-      await stripe.subscriptions.cancel(sub.id)
-    }
-
-    return res.status(200).json({ cancelled: true, count: subscriptions.data.length })
+    return res.status(200).json({ cancelled: true })
   } catch (err) {
     console.error('cancel-subscription error:', err)
     return res.status(500).json({ error: err.message })

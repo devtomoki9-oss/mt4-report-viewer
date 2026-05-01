@@ -115,7 +115,7 @@ function New-Headers {
     }
 }
 
-# RPC呼び出し専用ヘッダー（Preferを除外してPostgREST 409干渉を防ぐ）
+# RPC-only headers (no Prefer header to avoid PostgREST 409 conflict)
 function New-RpcHeaders {
     return @{
         "apikey"        = $AnonKey

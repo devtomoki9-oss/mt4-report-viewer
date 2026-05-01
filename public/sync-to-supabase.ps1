@@ -154,12 +154,12 @@ function Get-DesiredStates {
         $wc.Headers.Add("apikey",        $AnonKey)
         $wc.Headers.Add("Authorization", "Bearer $script:jwt")
         $wc.Headers.Add("Accept",        "application/json")
-        $rows = $wc.DownloadString("$Url/rest/v1/ea_controls?select=account_number,desired_enabled") | ConvertFrom-Json
+        $rows = $wc.DownloadString("$Url/rest/v1/ea_controls?select=account_number,enabled") | ConvertFrom-Json
         $result = @{}
         foreach ($row in $rows) {
             if ($null -eq $row) { continue }
             $n = [string]($row.account_number)
-            if ($n) { $result[$n] = [bool]($row.desired_enabled) }
+            if ($n) { $result[$n] = [bool]($row.enabled) }
         }
         Log "[DB] ea_controls loaded: $($result.Count) row(s)"
         return $result
@@ -174,9 +174,8 @@ function Sync-ActualToDb {
     param([string]$acct, [bool]$actualState)
     try {
         $body = @{
-            p_account_number       = [long]$acct
-            p_desired_enabled      = $actualState
-            p_last_applied_enabled = $actualState
+            p_account_number = [long]$acct
+            p_enabled        = $actualState
         } | ConvertTo-Json -Compress
         Invoke-RestMethod "$Url/rest/v1/rpc/upsert_ea_control" `
             -Method Post -Headers (New-Headers) -Body $body -ErrorAction Stop | Out-Null

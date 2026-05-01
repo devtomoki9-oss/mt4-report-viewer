@@ -116,7 +116,9 @@ function Get-TradingStates($jwt) {
         Log "[AutoTrading] ea_controls loaded: $($states.Count) row(s)"
     }
     catch {
-        Log "[AutoTrading] ERROR in Get-TradingStates: $_"
+        $errMsg = $_.Exception.Message
+        Write-Warning "[AutoTrading] ERROR in Get-TradingStates: $errMsg"
+        Log "[AutoTrading] ERROR in Get-TradingStates: $errMsg"
         return $null
     }
     return $states

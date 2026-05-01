@@ -1,4 +1,4 @@
-# sync-to-supabase.ps1 v21
+# sync-to-supabase.ps1 v22
 # Full fault-tolerant edition - MT4/MT5 -> Supabase sync + AutoTrading control
 #
 # Usage A (direct):
@@ -33,12 +33,13 @@ catch  [System.Threading.AbandonedMutexException] { $acquired = $true }
 if (-not $acquired) { exit 0 }
 
 # -- Constants ----------------------------------------------------------------
-$LOOP_WAIT_MS        = 2000
-$CTRL_E_MAX_RETRY    = 3
-$FILE_LOCK_RETRY     = 3
-$FILE_STABILITY_MS   = 200
-$SCAN_INTERVAL_SEC   = 5
-$TOKEN_REFRESH_SEC   = 300
+$LOOP_WAIT_MS              = 2000
+$CTRL_E_MAX_RETRY          = 3
+$CTRL_E_PENDING_TIMEOUT_SEC = 8  # if MT4 does not update JSON within this time, retry Ctrl+E
+$FILE_LOCK_RETRY           = 3
+$FILE_STABILITY_MS         = 200
+$SCAN_INTERVAL_SEC         = 5
+$TOKEN_REFRESH_SEC         = 300
 
 # -- Logging ------------------------------------------------------------------
 if (-not (Test-Path $Folder)) {
@@ -403,10 +404,15 @@ function Invoke-AutoTradingSync {
                 $jsonUpdated = $null -ne $st.jsonModAtCmd -and $modTime -gt $st.jsonModAtCmd
                 if (-not $jsonUpdated) {
                     $elapsed = if ($st.lastCmdTime) { [int]((Get-Date) - $st.lastCmdTime).TotalSeconds } else { 0 }
-                    Log "[State] account=${acct}: waiting for JSON update (${elapsed}s)"
-                    $st.prevDesired = $desired
-                    $st.prevActual  = $actual
-                    continue
+                    if ($elapsed -lt $CTRL_E_PENDING_TIMEOUT_SEC) {
+                        Log "[State] account=${acct}: waiting for JSON update (${elapsed}s)"
+                        $st.prevDesired = $desired
+                        $st.prevActual  = $actual
+                        continue
+                    }
+                    # EA did not write JSON within timeout - clear pending and retry Ctrl+E
+                    Log "[State] account=${acct}: JSON not updated after ${elapsed}s, retrying Ctrl+E" -level WARN
+                    $st.cmdPending = $false
                 }
             }
 
@@ -469,7 +475,7 @@ function Invoke-FileScan {
 }
 
 # -- Main ---------------------------------------------------------------------
-Log "==== sync-to-supabase.ps1 v21 started ===="
+Log "==== sync-to-supabase.ps1 v22 started ===="
 Log "Folder: $Folder"
 
 Invoke-Auth | Out-Null
@@ -527,5 +533,5 @@ try {
 } finally {
     if ($null -ne $watcher) { try { $watcher.Dispose() } catch {} }
     try { $mutex.ReleaseMutex() } catch {}
-    Log "==== sync-to-supabase.ps1 v21 stopped ===="
+    Log "==== sync-to-supabase.ps1 v22 stopped ===="
 }

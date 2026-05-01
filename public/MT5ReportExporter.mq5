@@ -42,11 +42,13 @@ input string ExportSubFolder = "MTExport"; // USERPROFILE 直下のサブフォ�
 int      g_ExportTick         = 0;
 datetime g_LastTriggerExport  = 0;
 datetime g_LastRealtimeExport = 0;
+bool     g_LastAutoTrading    = false; // AutoTrading 状態変化を検知して即時エクスポートするために使用
 
 //+------------------------------------------------------------------+
 int OnInit()
 {
    EventSetTimer(TIMER_SEC);
+   g_LastAutoTrading = (bool)TerminalInfoInteger(TERMINAL_TRADE_ALLOWED);
    ExportTrades();
    return INIT_SUCCEEDED;
 }
@@ -68,8 +70,14 @@ void OnTick()
 void OnTimer()
 {
    bool triggered = CheckTrigger();
+
+   // AutoTrading 状態が変化した場合は即時エクスポート（Ctrl+E 後 5 秒以内に反映）
+   bool currentAT = (bool)TerminalInfoInteger(TERMINAL_TRADE_ALLOWED);
+   bool atChanged  = (currentAT != g_LastAutoTrading);
+   g_LastAutoTrading = currentAT;
+
    g_ExportTick++;
-   if (triggered || g_ExportTick >= (RefreshMinutes * 60 / TIMER_SEC))
+   if (triggered || atChanged || g_ExportTick >= (RefreshMinutes * 60 / TIMER_SEC))
    {
       g_ExportTick = 0;
       ExportTrades();

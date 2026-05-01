@@ -47,14 +47,16 @@ input string ExportSubFolder = "MTExport";  // USERPROFILE 直下のサブフォ
 // タイマー間隔（秒）: トリガーファイルをこの間隔でチェックする
 #define TIMER_SEC 5
 
-int      g_ExportTick        = 0; // TIMER_SEC 単位のカウンター
-datetime g_LastTriggerExport = 0; // 直近のトリガー発火時刻（二重発火防止）
-datetime g_LastRealtimeExport = 0; // 直近の Tick エクスポート時刻
+int      g_ExportTick         = 0;
+datetime g_LastTriggerExport  = 0;
+datetime g_LastRealtimeExport = 0;
+bool     g_LastAutoTrading    = false; // AutoTrading 状態変化を検知して即時エクスポートするために使用
 
 //+------------------------------------------------------------------+
 int OnInit()
 {
    EventSetTimer(TIMER_SEC);
+   g_LastAutoTrading = (bool)TerminalInfoInteger(TERMINAL_TRADE_ALLOWED);
    ExportTrades();
    return INIT_SUCCEEDED;
 }
@@ -78,9 +80,13 @@ void OnTimer()
    // ブラウザからの即時エクスポート要求をチェック
    bool triggered = CheckTrigger();
 
+   // AutoTrading 状態が変化した場合は即時エクスポート（Ctrl+E 後 5 秒以内に反映）
+   bool currentAT = (bool)TerminalInfoInteger(TERMINAL_TRADE_ALLOWED);
+   bool atChanged  = (currentAT != g_LastAutoTrading);
+   g_LastAutoTrading = currentAT;
+
    g_ExportTick++;
-   // triggered の場合、または定期インターバルに達した場合にエクスポート
-   if (triggered || g_ExportTick >= (RefreshMinutes * 60 / TIMER_SEC))
+   if (triggered || atChanged || g_ExportTick >= (RefreshMinutes * 60 / TIMER_SEC))
    {
       g_ExportTick = 0;
       ExportTrades();
@@ -201,7 +207,7 @@ void ExportTrades()
    int openTotal = OrdersTotal();
    bool firstPos = true;
    for (int i = 0; i < openTotal; i++)
-   {
+　   {
       if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
       if (OrderType() > OP_SELL) continue;
 

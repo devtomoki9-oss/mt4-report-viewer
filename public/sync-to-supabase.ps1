@@ -210,7 +210,7 @@ if (-not (Test-Path $Folder)) {
     New-Item -ItemType Directory -Path $Folder -Force | Out-Null
 }
 
-Log "==== sync-to-supabase.ps1 started ===="
+Log "==== sync-to-supabase.ps1 v9 started ===="
 Log "Folder: $Folder"
 Log "LogFile: $LogFile"
 
@@ -265,17 +265,20 @@ try {
         }
 
         # AutoTrading 状態同期（希望値 vs JSON実際値）
+        # Invoke-RestMethod の PS5.1 内部オブジェクト問題を避けるため
+        # WebClient で生 JSON を取得し ConvertFrom-Json でパースする
         $desired = @{}
         try {
-            $eaResp = Invoke-RestMethod "$Url/rest/v1/ea_controls?select=account_number,enabled" `
-                -Method Get `
-                -Headers @{ "apikey" = $AnonKey; "Authorization" = "Bearer $jwt" } `
-                -ErrorAction Stop
-            # foreach は null(0回)/PSCustomObject(1回)/Array(N回) を安全に処理する
-            foreach ($row in $eaResp) {
+            $wc = New-Object System.Net.WebClient
+            $wc.Headers.Add("apikey",         $AnonKey)
+            $wc.Headers.Add("Authorization",  "Bearer $jwt")
+            $wc.Headers.Add("Accept",         "application/json")
+            $eaJson = $wc.DownloadString("$Url/rest/v1/ea_controls?select=account_number,enabled")
+            $eaRows = $eaJson | ConvertFrom-Json
+            foreach ($row in $eaRows) {
                 if ($null -eq $row) { continue }
-                $n = "$($row.account_number)"
-                if ($n) { $desired[$n] = [bool]$row.enabled }
+                $n = [string]($row.account_number)
+                if ($n) { $desired[$n] = [bool]($row.enabled) }
             }
             Log "[AutoTrading] ea_controls loaded: $($desired.Count) row(s)"
         } catch {

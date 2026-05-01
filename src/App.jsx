@@ -690,135 +690,98 @@ export default function App() {
             </button>
           </div>
         ) : !hasData ? (
-          /* ── ウェルカム画面 ── */
-          <div className="flex flex-col items-center justify-center min-h-[55vh] gap-6">
-            <div className="text-center mb-2">
-              <h1 className="text-2xl font-bold text-slate-100 mb-2">MT4/MT5 取引レポートビューア</h1>
-              <p className="text-slate-500 text-sm">複数口座のレポートを集約し、成績を分析します</p>
+          /* ── セットアップ画面 ── */
+          <div className="flex flex-col items-center justify-center min-h-[55vh] gap-5 py-4">
+            <div className="text-center">
+              <h1 className="text-xl font-bold text-slate-100 mb-1.5">はじめに</h1>
+              <p className="text-slate-500 text-sm">MT4/MT5 の取引データをクラウドに同期する初回設定</p>
             </div>
 
             {syncDone && (
-              <div className="w-full max-w-2xl bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 flex items-start gap-3 text-xs text-amber-400">
-                <span className="text-base flex-shrink-0">⚠</span>
-                <div className="space-y-1">
+              <div className="w-full max-w-lg bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 flex items-start gap-3 text-xs text-amber-400">
+                <span className="flex-shrink-0 mt-0.5">⚠</span>
+                <div>
                   <div className="font-semibold">Supabase にレポートデータが見つかりません</div>
-                  <div className="text-amber-500/80">MT4/MT5 が起動しているか、<code className="font-mono bg-amber-500/10 px-1 rounded">sync-to-supabase.ps1</code> のタスクスケジューラが動作しているか確認してください。</div>
+                  <div className="text-amber-500/80 mt-0.5">MT4/MT5 が起動しているか、タスクスケジューラが動作しているか確認してください。</div>
                 </div>
               </div>
             )}
 
-            <div className="w-full max-w-2xl bg-[#111827] border border-[#1f2d40] rounded-xl p-5 space-y-3">
-              <div className="text-xs font-semibold text-blue-400 uppercase tracking-wide">セットアップ（初回のみ）</div>
-              {[
-                {
-                  step: '1',
-                  text: '下のボタンから install.bat・MT4ReportExporter.mq4・MT5ReportExporter.mq5 を同じフォルダにダウンロード',
-                  sub: null, code: null,
-                },
-                {
-                  step: '2',
-                  text: 'PowerShell で下のコマンドを実行（Downloads フォルダにダウンロードした場合）',
-                  sub: 'ダウンロード先が異なる場合はパスを変更してください',
-                  code: 'Unblock-File "$env:USERPROFILE\\Downloads\\install.bat"; & "$env:USERPROFILE\\Downloads\\install.bat"',
-                },
-                {
-                  step: '3',
-                  text: '開いた MT4/MT5 ウィンドウそれぞれで一回セットアップを行う',
-                  sub: null,
-                  subContent: (
-                    <div className="space-y-2 mt-1">
-                      <div>
-                        <div className="text-slate-400 font-medium mb-0.5">MT4 の場合</div>
-                        <ol className="list-decimal list-inside space-y-0.5 ml-1 text-slate-500">
-                          <li>ファイル → 新規チャート → 任意のチャートを選択</li>
-                          <li>ナビゲーター → Experts から <span className="text-slate-300">MT4ReportExporter</span> をチャートにドラッグ → OK</li>
-                          <li>ファイル → チャートの組表示 → 名前を付けて保存 → <span className="text-slate-300">MTExporter</span> → OK</li>
-                          <li>ファイル → 終了</li>
-                        </ol>
-                      </div>
-                      <div>
-                        <div className="text-slate-400 font-medium mb-0.5">MT5 の場合</div>
-                        <ol className="list-decimal list-inside space-y-0.5 ml-1 text-slate-500">
-                          <li>ファイル → 新規チャート → 任意のチャートを選択</li>
-                          <li>ナビゲーター → Experts から <span className="text-slate-300">MT5ReportExporter</span> をチャートにドラッグ → OK</li>
-                          <li>ファイル → チャートのプロファイル → 保存 → <span className="text-slate-300">MTExporter</span> → OK</li>
-                          <li>ファイル → 終了</li>
-                        </ol>
-                      </div>
-                    </div>
-                  ),
-                  code: null,
-                },
-                {
-                  step: '4',
-                  text: '以後はデスクトップの MT_Exporter.bat で MT4/MT5 を起動（EA が自動ロード）',
-                  sub: '通常の MT4/MT5 ショートカットの代わりに使用してください',
-                  code: null,
-                },
-                {
-                  step: '5',
-                  text: '下のボタンから sync-to-supabase.ps1 と run-sync.vbs を同じフォルダにダウンロード',
-                  sub: 'run-sync.vbs はログイン情報が自動で埋め込まれます。パスワード入力ダイアログが表示されます',
-                  code: null,
-                },
-                {
-                  step: '6',
-                  text: 'PowerShell で PS1 ファイルのブロックを解除する',
-                  sub: 'ダウンロード先が異なる場合はパスを変更してください',
-                  code: 'Unblock-File "$env:USERPROFILE\\Downloads\\sync-to-supabase.ps1"',
-                },
-                {
-                  step: '7',
-                  text: 'PowerShell で タスクスケジューラに登録（ファイル変更を検知してリアルタイム同期）',
-                  sub: 'ダウンロード先が異なる場合はパスを変更してください',
-                  code: 'schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"',
-                },
-              ].map(s => (
-                <div key={s.step} className="flex items-start gap-3 text-xs">
-                  <span className="w-5 h-5 rounded-full bg-blue-600/30 text-blue-400 flex items-center justify-center flex-shrink-0 font-bold mt-0.5">{s.step}</span>
-                  <div className="min-w-0">
-                    <div className="text-slate-300">{s.text}</div>
-                    {s.sub && <div className="text-slate-500 mt-0.5">{s.sub}</div>}
-                    {s.subContent && <div className="mt-0.5">{s.subContent}</div>}
-                    {s.code && (
-                      <div className="mt-1.5 flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded px-2.5 py-1.5 overflow-x-auto">
-                        <code className="text-green-400 font-mono flex-1 select-all whitespace-nowrap text-[11px] sm:text-xs">{s.code}</code>
-                        <button
-                          onClick={() => navigator.clipboard.writeText(s.code)}
-                          className="text-slate-600 hover:text-slate-300 transition-colors flex-shrink-0"
-                          title="コピー"
-                        >⎘</button>
-                      </div>
-                    )}
-                  </div>
+            <div className="w-full max-w-lg space-y-3">
+              {/* ステップ 1 */}
+              <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4 space-y-2.5">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-6 h-6 rounded-full bg-blue-600/30 text-blue-400 flex items-center justify-center flex-shrink-0 font-bold text-xs">1</span>
+                  <span className="text-sm font-semibold text-slate-200">EA のインストール</span>
                 </div>
-              ))}
-              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#1f2d40]">
-                <button onClick={() => downloadText(INSTALL_BAT, 'install.bat')}
-                  className="text-xs text-blue-400 hover:text-blue-300 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg transition-colors">
-                  ↓ install.bat
-                </button>
-                <a href="/MT4ReportExporter.mq4" download="MT4ReportExporter.mq4"
-                  className="text-xs text-slate-500 hover:text-slate-300 bg-[#1a2235] border border-[#1f2d40] px-3 py-1.5 rounded-lg transition-colors">
-                  ↓ MT4ReportExporter.mq4
-                </a>
-                <a href="/MT5ReportExporter.mq5" download="MT5ReportExporter.mq5"
-                  className="text-xs text-slate-500 hover:text-slate-300 bg-[#1a2235] border border-[#1f2d40] px-3 py-1.5 rounded-lg transition-colors">
-                  ↓ MT5ReportExporter.mq5
-                </a>
-                <a href="/sync-to-supabase.ps1" download="sync-to-supabase.ps1"
-                  className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition-colors">
-                  ↓ sync-to-supabase.ps1
-                </a>
-                <button onClick={() => { setVbsPass(''); setShowVbsModal(true) }}
-                  className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition-colors">
-                  ↓ run-sync.vbs
-                </button>
+                <p className="text-xs text-slate-500 ml-[34px]">3つのファイルをダウンロードして同じフォルダに保存し、<code className="font-mono bg-[#1a2235] px-1 rounded">install.bat</code> を実行します。</p>
+                <div className="flex flex-wrap gap-2 ml-[34px]">
+                  <button onClick={() => downloadText(INSTALL_BAT, 'install.bat')}
+                    className="text-xs text-blue-400 hover:text-blue-300 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg transition-colors">
+                    ↓ install.bat
+                  </button>
+                  <a href="/MT4ReportExporter.mq4" download="MT4ReportExporter.mq4"
+                    className="text-xs text-slate-400 hover:text-slate-200 bg-[#1a2235] border border-[#1f2d40] px-3 py-1.5 rounded-lg transition-colors">
+                    ↓ MT4ReportExporter.mq4
+                  </a>
+                  <a href="/MT5ReportExporter.mq5" download="MT5ReportExporter.mq5"
+                    className="text-xs text-slate-400 hover:text-slate-200 bg-[#1a2235] border border-[#1f2d40] px-3 py-1.5 rounded-lg transition-colors">
+                    ↓ MT5ReportExporter.mq5
+                  </a>
+                </div>
+                <div className="ml-[34px] flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded px-2.5 py-1.5 overflow-x-auto">
+                  <code className="text-green-400 font-mono text-[11px] whitespace-nowrap flex-1 select-all">{'Unblock-File "$env:USERPROFILE\\Downloads\\install.bat"; & "$env:USERPROFILE\\Downloads\\install.bat"'}</code>
+                  <button onClick={() => navigator.clipboard.writeText('Unblock-File "$env:USERPROFILE\\Downloads\\install.bat"; & "$env:USERPROFILE\\Downloads\\install.bat"')}
+                    className="text-slate-600 hover:text-slate-300 flex-shrink-0 transition-colors" title="コピー">⎘</button>
+                </div>
+              </div>
+
+              {/* ステップ 2 */}
+              <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4 space-y-2.5">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-6 h-6 rounded-full bg-blue-600/30 text-blue-400 flex items-center justify-center flex-shrink-0 font-bold text-xs">2</span>
+                  <span className="text-sm font-semibold text-slate-200">同期スクリプトの設定</span>
+                </div>
+                <p className="text-xs text-slate-500 ml-[34px]">2つのファイルを EA と同じフォルダにダウンロードし、ブロックを解除します。</p>
+                <div className="flex flex-wrap gap-2 ml-[34px]">
+                  <a href="/sync-to-supabase.ps1" download="sync-to-supabase.ps1"
+                    className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition-colors">
+                    ↓ sync-to-supabase.ps1
+                  </a>
+                  <button onClick={() => { setVbsPass(''); setShowVbsModal(true) }}
+                    className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition-colors">
+                    ↓ run-sync.vbs
+                  </button>
+                </div>
+                <div className="ml-[34px] flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded px-2.5 py-1.5 overflow-x-auto">
+                  <code className="text-green-400 font-mono text-[11px] whitespace-nowrap flex-1 select-all">{'Unblock-File "$env:USERPROFILE\\Downloads\\sync-to-supabase.ps1"'}</code>
+                  <button onClick={() => navigator.clipboard.writeText('Unblock-File "$env:USERPROFILE\\Downloads\\sync-to-supabase.ps1"')}
+                    className="text-slate-600 hover:text-slate-300 flex-shrink-0 transition-colors" title="コピー">⎘</button>
+                </div>
+              </div>
+
+              {/* ステップ 3 */}
+              <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4 space-y-2.5">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-6 h-6 rounded-full bg-blue-600/30 text-blue-400 flex items-center justify-center flex-shrink-0 font-bold text-xs">3</span>
+                  <span className="text-sm font-semibold text-slate-200">タスクスケジューラへの登録</span>
+                </div>
+                <p className="text-xs text-slate-500 ml-[34px]">ファイル変更を検知してリアルタイムでアップロードします。PowerShell で実行してください。</p>
+                <div className="ml-[34px] flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded px-2.5 py-1.5 overflow-x-auto">
+                  <code className="text-green-400 font-mono text-[11px] whitespace-nowrap flex-1 select-all">{'schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"'}</code>
+                  <button onClick={() => navigator.clipboard.writeText('schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"')}
+                    className="text-slate-600 hover:text-slate-300 flex-shrink-0 transition-colors" title="コピー">⎘</button>
+                </div>
               </div>
             </div>
 
-            <div className="w-full max-w-2xl">
-              <div className="text-xs text-slate-600 text-center mb-3">または HTML / JSON レポートを手動でアップロード</div>
+            <button onClick={() => setShowManual(true)}
+              className="text-xs text-slate-600 hover:text-slate-400 transition-colors underline">
+              詳細な手順（MT4/MT5 の設定含む）はマニュアルを参照
+            </button>
+
+            <div className="w-full max-w-lg">
+              <div className="text-xs text-slate-600 text-center mb-2">または HTML / JSON レポートを手動でアップロード</div>
               <UploadZone onFiles={handleFiles} />
             </div>
           </div>
@@ -827,11 +790,14 @@ export default function App() {
           <>
             {/* ツールバー */}
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-3 text-xs text-slate-600">
+              <div className="flex items-center gap-3 text-xs text-slate-500">
                 {lastUpdated && (
-                  <span>最終更新: {fmtTime(lastUpdated)}</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 flex-shrink-0" />
+                    {fmtTime(lastUpdated)}
+                  </span>
                 )}
-                <button onClick={clearAll} className="hidden sm:inline hover:text-red-400 transition-colors">
+                <button onClick={clearAll} className="hidden sm:inline text-slate-600 hover:text-red-400 transition-colors">
                   クリア
                 </button>
               </div>
@@ -961,15 +927,15 @@ export default function App() {
       </main>
 
       {/* フッター */}
-      <footer className="text-center py-4 text-xs text-slate-700 space-y-2">
+      <footer className="text-center py-6 text-xs text-slate-600 space-y-2">
         <div className="flex items-center justify-center gap-4 flex-wrap">
-          <button onClick={() => setShowManual(true)} className="hover:text-slate-400 underline">操作マニュアル</button>
-          <button onClick={() => setShowHelp(true)} className="hover:text-slate-400 underline">ヘルプ</button>
-          <button onClick={() => setShowTerms(true)} className="hover:text-slate-400 underline">利用規約</button>
-          <button onClick={() => setShowPrivacy(true)} className="hover:text-slate-400 underline">プライバシーポリシー</button>
-          <button onClick={() => setShowFeedback(true)} className="hover:text-slate-400 underline">お問い合わせ</button>
+          <button onClick={() => setShowManual(true)} className="hover:text-slate-300 transition-colors">操作マニュアル</button>
+          <button onClick={() => setShowHelp(true)} className="hover:text-slate-300 transition-colors">ヘルプ</button>
+          <button onClick={() => setShowTerms(true)} className="hover:text-slate-300 transition-colors">利用規約</button>
+          <button onClick={() => setShowPrivacy(true)} className="hover:text-slate-300 transition-colors">プライバシーポリシー</button>
+          <button onClick={() => setShowFeedback(true)} className="hover:text-slate-300 transition-colors">お問い合わせ</button>
         </div>
-        <div>© {new Date().getFullYear()} MT Report Viewer</div>
+        <div className="text-slate-700">© {new Date().getFullYear()} MT Report Viewer</div>
       </footer>
 
       {showManual   && <ManualModal     onClose={() => setShowManual(false)} onDownloadVbs={() => { setShowManual(false); setVbsPass(''); setShowVbsModal(true) }} />}

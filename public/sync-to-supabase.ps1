@@ -34,7 +34,13 @@ if (-not $Url -or -not $AnonKey -or -not $Email -or -not $Password) {
 
 # ── Single-instance guard ─────────────────────────────────────────
 $mutex = New-Object System.Threading.Mutex($false, "Global\MTExportSyncMutex")
-if (-not $mutex.WaitOne(0)) {
+$acquired = $false
+try {
+    $acquired = $mutex.WaitOne(0)
+} catch [System.Threading.AbandonedMutexException] {
+    $acquired = $true  # 前回プロセスが異常終了 → 放棄済みmutexを引き継ぐ
+}
+if (-not $acquired) {
     exit 0
 }
 
@@ -116,9 +122,7 @@ function Get-TradingStates($jwt) {
         Log "[AutoTrading] ea_controls loaded: $($states.Count) row(s)"
     }
     catch {
-        $errMsg = $_.Exception.Message
-        Write-Warning "[AutoTrading] ERROR in Get-TradingStates: $errMsg"
-        Log "[AutoTrading] ERROR in Get-TradingStates: $errMsg"
+        Log "[AutoTrading] ERROR in Get-TradingStates: $($_.Exception.Message)"
         return $null
     }
     return $states
@@ -262,11 +266,10 @@ try {
 
         # AutoTrading 状態同期（希望値 vs JSON実際値）
         $desired = Get-TradingStates $jwt
-        if ($desired -eq $null) {
-            Log "[AutoTrading] Get-TradingStates returned null (API error?)"
-        } elseif ($desired.Count -eq 0) {
-            Log "[AutoTrading] ea_controls is empty (no rows)"
-        } else {
+        if ($null -ne $desired -and $desired.Count -gt 0) {
+            if ($null -eq $prevDesiredStates) { $prevDesiredStates = @{} }
+            if ($null -eq $prevActualStates)  { $prevActualStates  = @{} }
+            if ($null -eq $ctrlECooldown)     { $ctrlECooldown     = @{} }
             foreach ($acct in $desired.Keys) {
                 $desiredState = $desired[$acct]
                 $actualState  = Get-ActualTradingState $acct
@@ -275,16 +278,16 @@ try {
                 $prevDesiredStates[$acct] = $desiredState
                 $prevActualStates[$acct]  = $actualState
                 Log "[AutoTrading] Account ${acct}: desired=$desiredState actual=$actualState"
-                if ($actualState -eq $null) { continue }
+                if ($null -eq $actualState) { continue }
                 if ($actualState -eq $desiredState) { continue }
 
                 $lastSent = $ctrlECooldown[$acct]
-                if ($lastSent -ne $null -and ((Get-Date) - $lastSent).TotalSeconds -lt 15) {
+                if ($null -ne $lastSent -and ((Get-Date) - $lastSent).TotalSeconds -lt 15) {
                     Log "[AutoTrading] Account ${acct}: cooldown, skipping"
                     continue
                 }
 
-                if ($prevDesired -eq $null -or $prevDesired -ne $desiredState) {
+                if ($null -eq $prevDesired -or $prevDesired -ne $desiredState) {
                     # 初回起動 or Web が desired を変更 → Ctrl+E で MT に適用
                     Log "[AutoTrading] Account ${acct}: applying desired=$desiredState -> Ctrl+E"
                     Send-AutoTradingToggle $acct

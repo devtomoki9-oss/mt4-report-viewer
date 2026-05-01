@@ -92,7 +92,16 @@ function Invoke-Auth {
             return $true
         } catch {
             $wait = [math]::Pow(2, $i) * 5
-            Log "[Auth] Attempt $($i+1)/$maxRetry failed: $($_.Exception.Message). Retry in ${wait}s" -level WARN
+            $errBody = ''
+            try {
+                $resp = $_.Exception.Response
+                if ($resp) {
+                    $reader = New-Object System.IO.StreamReader($resp.GetResponseStream())
+                    $errBody = $reader.ReadToEnd()
+                    $reader.Close()
+                }
+            } catch {}
+            Log "[Auth] Attempt $($i+1)/$maxRetry failed: $($_.Exception.Message) | $errBody. Retry in ${wait}s" -level WARN
             if ($i -lt ($maxRetry - 1)) { Start-Sleep -Seconds ([int]$wait) }
         }
     }

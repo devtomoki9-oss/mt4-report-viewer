@@ -38,6 +38,21 @@ if (-not $mutex.WaitOne(0)) {
     exit 0
 }
 
+# ── ログ出力（コンソール + ファイル） ────────────────────────────
+$LogFile = Join-Path $Folder "sync.log"
+function Log($msg) {
+    $line = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] $msg"
+    Write-Host $line
+    try {
+        Add-Content -Path $LogFile -Value $line -Encoding UTF8
+        # 500行超えたら古い行を削除してローテーション
+        $lines = [IO.File]::ReadAllLines($LogFile)
+        if ($lines.Count -gt 500) {
+            [IO.File]::WriteAllLines($LogFile, ($lines | Select-Object -Last 400))
+        }
+    } catch {}
+}
+
 # ── Win32 API for AutoTrading toggle (Ctrl+E) ─────────────────────
 Add-Type @"
 using System;
@@ -89,7 +104,7 @@ function Send-Report($filePath, $headers) {
     } | ConvertTo-Json -Depth 20 -Compress
     Invoke-RestMethod "$Url/rest/v1/rpc/upsert_report" `
         -Method Post -Headers $headers -Body $body -ErrorAction Stop | Out-Null
-    Write-Host "[OK] $filename (account: $accountNumber)"
+    Log "[OK] $filename (account: $accountNumber)"
 }
 
 # ── AutoTrading toggle helpers ────────────────────────────────────
@@ -105,11 +120,10 @@ function Get-TradingStates($jwt) {
                 $states[[string]$row.account_number] = [bool]$row.enabled
             }
         }
-        Write-Host "[AutoTrading] ea_controls loaded: $($states.Count) row(s)"
+        Log "[AutoTrading] ea_controls loaded: $($states.Count) row(s)"
     }
     catch {
-        Write-Warning "[AutoTrading] ERROR: $_"
-        try { Add-Content "$env:TEMP\sync_debug.log" "[$(Get-Date -Format 'HH:mm:ss')] $_" } catch {}
+        Log "[AutoTrading] ERROR in Get-TradingStates: $_"
         return $null
     }
     return $states
@@ -125,9 +139,9 @@ function Set-TradingState($accountNumber, $enabled, $jwt) {
             -Method Post `
             -Headers @{ "apikey" = $AnonKey; "Authorization" = "Bearer $jwt"; "Content-Type" = "application/json" } `
             -Body $body -ErrorAction Stop | Out-Null
-        Write-Host "[AutoTrading] Synced ea_controls: account=$accountNumber enabled=$enabled"
+        Log "[AutoTrading] Synced ea_controls: account=$accountNumber enabled=$enabled"
     } catch {
-        Write-Warning "[AutoTrading] Set-TradingState error: $_"
+        Log "[AutoTrading] Set-TradingState error: $_"
     }
 }
 
@@ -152,7 +166,7 @@ function Send-AutoTradingToggle($accountNumber) {
         $_.ProcessName -match '^terminal'
     })
     if ($allMt.Count -eq 0) {
-        Write-Warning "[AutoTrading] No MetaTrader windows found"
+        Log "[AutoTrading] No MetaTrader windows found"
         return
     }
     # 口座番号でウィンドウタイトルを検索、見つからなければフォールバック
@@ -160,9 +174,9 @@ function Send-AutoTradingToggle($accountNumber) {
     if ($targets.Count -eq 0) {
         if ($allMt.Count -eq 1) {
             $targets = $allMt
-            Write-Host "[AutoTrading] Account ${accountNumber}: title match failed, using only MT window"
+            Log "[AutoTrading] Account ${accountNumber}: title match failed, using only MT window"
         } else {
-            Write-Warning "[AutoTrading] Cannot identify window for account ${accountNumber} ($($allMt.Count) windows open)"
+            Log "[AutoTrading] Cannot identify window for account ${accountNumber} ($($allMt.Count) windows open)"
             return
         }
     }
@@ -190,26 +204,31 @@ function Send-AutoTradingToggle($accountNumber) {
         [Win32]::keybd_event([Win32]::VK_CONTROL, 0, [Win32]::KEYEVENTF_KEYUP, 0)
         Start-Sleep -Milliseconds 300
     }
-    Write-Host "[AutoTrading] Ctrl+E sent to account $accountNumber ($($targets.Count) window(s))"
+    Log "[AutoTrading] Ctrl+E sent to account $accountNumber ($($targets.Count) window(s))"
 }
 
 try {
+    # MTExportフォルダがなければ作成（LogFileパスを確保）
+    if (-not (Test-Path $Folder)) {
+        New-Item -ItemType Directory -Path $Folder -Force | Out-Null
+    }
+
+    Log "==== sync-to-supabase.ps1 started ===="
+    Log "Folder: $Folder"
+    Log "LogFile: $LogFile"
+
     # ── Initial sign-in ───────────────────────────────────────────
     $auth        = Get-Auth
     $jwt         = $auth.access_token
     $tokenExpiry = (Get-Date).AddSeconds($auth.expires_in - 300)
     $headers     = New-Headers $jwt
-    Write-Host "[Auth] Signed in as $Email"
+    Log "[Auth] Signed in as $Email"
 
     # ── Initial upload of all existing files ─────────────────────
-    if (Test-Path $Folder) {
-        $files = Get-ChildItem -Path $Folder -Filter "mt4_report_*.json" -ErrorAction SilentlyContinue
-        foreach ($file in $files) {
-            try   { Send-Report $file.FullName $headers }
-            catch { Write-Warning "[NG] $($file.Name): $($_.Exception.Message)" }
-        }
-    } else {
-        New-Item -ItemType Directory -Path $Folder -Force | Out-Null
+    $files = Get-ChildItem -Path $Folder -Filter "mt4_report_*.json" -ErrorAction SilentlyContinue
+    foreach ($file in $files) {
+        try   { Send-Report $file.FullName $headers }
+        catch { Log "[NG] $($file.Name): $($_.Exception.Message)" }
     }
 
     # ── Ctrl+E 送信後のクールダウン（EA が JSON を更新するまで待つ） ──
@@ -227,7 +246,7 @@ try {
     # Debounce: track last upload time per file (avoid double-fire)
     $lastUpload = @{}
 
-    Write-Host "[Watch] Monitoring $Folder ..."
+    Log "[Watch] Monitoring $Folder ..."
 
     while ($true) {
         # Token refresh (5 min before expiry)
@@ -237,18 +256,18 @@ try {
                 $jwt         = $auth.access_token
                 $tokenExpiry = (Get-Date).AddSeconds($auth.expires_in - 300)
                 $headers     = New-Headers $jwt
-                Write-Host "[Auth] Token refreshed"
+                Log "[Auth] Token refreshed"
             } catch {
-                Write-Warning "[Auth] Token refresh failed: $($_.Exception.Message)"
+                Log "[Auth] Token refresh failed: $($_.Exception.Message)"
             }
         }
 
         # AutoTrading 状態同期（希望値 vs JSON実際値）
         $desired = Get-TradingStates $jwt
         if ($desired -eq $null) {
-            Write-Warning "[AutoTrading] Get-TradingStates returned null (API error?)"
+            Log "[AutoTrading] Get-TradingStates returned null (API error?)"
         } elseif ($desired.Count -eq 0) {
-            Write-Host "[AutoTrading] ea_controls is empty (no rows)"
+            Log "[AutoTrading] ea_controls is empty (no rows)"
         } else {
             foreach ($acct in $desired.Keys) {
                 $desiredState = $desired[$acct]
@@ -257,24 +276,24 @@ try {
                 $prevActual   = $prevActualStates[$acct]
                 $prevDesiredStates[$acct] = $desiredState
                 $prevActualStates[$acct]  = $actualState
-                Write-Host "[AutoTrading] Account ${acct}: desired=$desiredState actual=$actualState"
+                Log "[AutoTrading] Account ${acct}: desired=$desiredState actual=$actualState"
                 if ($actualState -eq $null) { continue }
                 if ($actualState -eq $desiredState) { continue }
 
                 $lastSent = $ctrlECooldown[$acct]
                 if ($lastSent -ne $null -and ((Get-Date) - $lastSent).TotalSeconds -lt 15) {
-                    Write-Host "[AutoTrading] Account ${acct}: cooldown, skipping"
+                    Log "[AutoTrading] Account ${acct}: cooldown, skipping"
                     continue
                 }
 
                 if ($prevDesired -eq $null -or $prevDesired -ne $desiredState) {
                     # 初回起動 or Web が desired を変更 → Ctrl+E で MT に適用
-                    Write-Host "[AutoTrading] Account ${acct}: applying desired=$desiredState -> Ctrl+E"
+                    Log "[AutoTrading] Account ${acct}: applying desired=$desiredState -> Ctrl+E"
                     Send-AutoTradingToggle $acct
                     $ctrlECooldown[$acct] = Get-Date
                 } else {
                     # desired 変化なし、actual が変化 → MT 手動変更 → ea_controls を同期
-                    Write-Host "[AutoTrading] Account ${acct}: MT manual change -> syncing ea_controls"
+                    Log "[AutoTrading] Account ${acct}: MT manual change -> syncing ea_controls"
                     Set-TradingState $acct $actualState $jwt
                 }
             }
@@ -296,9 +315,12 @@ try {
 
         $filePath = Join-Path $Folder $name
         try   { Send-Report $filePath $headers }
-        catch { Write-Warning "[NG] $name : $($_.Exception.Message)" }
+        catch { Log "[NG] $name : $($_.Exception.Message)" }
     }
+} catch {
+    Log "[FATAL] $_"
 } finally {
     if ($watcher) { $watcher.Dispose() }
     $mutex.ReleaseMutex()
+    Log "==== sync-to-supabase.ps1 stopped ===="
 }

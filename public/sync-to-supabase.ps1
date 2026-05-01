@@ -265,11 +265,22 @@ try {
         }
 
         # AutoTrading 状態同期（希望値 vs JSON実際値）
-        $desired = Get-TradingStates $jwt
-        if ($null -ne $desired -and $desired.Count -gt 0) {
-            if ($null -eq $prevDesiredStates) { $prevDesiredStates = @{} }
-            if ($null -eq $prevActualStates)  { $prevActualStates  = @{} }
-            if ($null -eq $ctrlECooldown)     { $ctrlECooldown     = @{} }
+        $desired = @{}
+        try {
+            $eaResp = Invoke-RestMethod "$Url/rest/v1/ea_controls?select=account_number,enabled" `
+                -Method Get `
+                -Headers @{ "apikey" = $AnonKey; "Authorization" = "Bearer $jwt" } `
+                -ErrorAction Stop
+            foreach ($row in @($eaResp)) {
+                if ($row -ne $null -and $row.PSObject.Properties['account_number']) {
+                    $desired[[string]$row.account_number] = [bool]$row.enabled
+                }
+            }
+            Log "[AutoTrading] ea_controls loaded: $($desired.Count) row(s)"
+        } catch {
+            Log "[AutoTrading] ERROR: $($_.Exception.Message)"
+        }
+        if ($desired.Count -gt 0) {
             foreach ($acct in $desired.Keys) {
                 $desiredState = $desired[$acct]
                 $actualState  = Get-ActualTradingState $acct
@@ -277,6 +288,7 @@ try {
                 $prevActual   = $prevActualStates[$acct]
                 $prevDesiredStates[$acct] = $desiredState
                 $prevActualStates[$acct]  = $actualState
+
                 Log "[AutoTrading] Account ${acct}: desired=$desiredState actual=$actualState"
                 if ($null -eq $actualState) { continue }
                 if ($actualState -eq $desiredState) { continue }
@@ -287,15 +299,28 @@ try {
                     continue
                 }
 
-                if ($null -eq $prevDesired -or $prevDesired -ne $desiredState) {
-                    # 初回起動 or Web が desired を変更 → Ctrl+E で MT に適用
-                    Log "[AutoTrading] Account ${acct}: applying desired=$desiredState -> Ctrl+E"
+                $desiredChanged = ($null -ne $prevDesired -and $prevDesired -ne $desiredState)
+                $actualChanged  = ($null -ne $prevActual  -and $prevActual  -ne $actualState)
+
+                if ($null -eq $prevDesired) {
+                    # 初回起動: desired を MT に適用
+                    Log "[AutoTrading] Account ${acct}: initial -> Ctrl+E (desired=$desiredState)"
                     Send-AutoTradingToggle $acct
                     $ctrlECooldown[$acct] = Get-Date
-                } else {
-                    # desired 変化なし、actual が変化 → MT 手動変更 → ea_controls を同期
-                    Log "[AutoTrading] Account ${acct}: MT manual change -> syncing ea_controls"
+                } elseif ($desiredChanged -and -not $actualChanged) {
+                    # Web が desired を変更 → Ctrl+E で MT に適用
+                    Log "[AutoTrading] Account ${acct}: web change -> Ctrl+E (desired=$desiredState)"
+                    Send-AutoTradingToggle $acct
+                    $ctrlECooldown[$acct] = Get-Date
+                } elseif ($actualChanged -and -not $desiredChanged) {
+                    # MT が手動変更 → ea_controls を同期
+                    Log "[AutoTrading] Account ${acct}: MT manual change -> syncing DB (actual=$actualState)"
                     Set-TradingState $acct $actualState $jwt
+                } else {
+                    # 持続的な不一致 (Ctrl+E 未応答) → 再送
+                    Log "[AutoTrading] Account ${acct}: persistent mismatch, retrying Ctrl+E"
+                    Send-AutoTradingToggle $acct
+                    $ctrlECooldown[$acct] = Get-Date
                 }
             }
         }

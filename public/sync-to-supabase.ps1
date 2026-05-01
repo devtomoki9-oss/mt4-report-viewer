@@ -1,4 +1,4 @@
-# sync-to-supabase.ps1 v17
+# sync-to-supabase.ps1 v18
 # Full fault-tolerant edition - MT4/MT5 -> Supabase sync + AutoTrading control
 #
 # Usage A (direct):
@@ -36,6 +36,7 @@ if (-not $acquired) { exit 0 }
 $LOOP_WAIT_MS        = 2000
 $CTRL_E_COOLDOWN_SEC = 20
 $CTRL_E_MAX_RETRY    = 3
+$CTRL_E_GRACE_SEC    = 45
 $FILE_LOCK_RETRY     = 3
 $FILE_STABILITY_MS   = 200
 $SCAN_INTERVAL_SEC   = 5
@@ -351,7 +352,7 @@ function Invoke-AutoTradingSync {
                     Log "[State] account=${acct}: CONFIRMED (retry=$($st.retryCount) succeeded)"
                 }
                 $st.retryCount  = 0
-                $st.lastCmdTime = $null
+                # lastCmdTime kept intentionally for grace period tracking
                 $st.cmdPending  = $false
                 $st.prevDesired = $desired
                 $st.prevActual  = $actual
@@ -359,12 +360,17 @@ function Invoke-AutoTradingSync {
             }
 
             if ($actualChanged -and -not $desiredChanged -and $null -ne $prevDesired) {
-                # actual changed but desired did not - treat as transient MT4 state change, always retry
-                # never write back to DB here: the web app toggle is the authoritative desired state
-                Log "[State] account=${acct}: actual changed unexpectedly (actual=$actual desired=$desired), resetting for retry"
-                $st.retryCount  = 0
-                $st.lastCmdTime = $null
-                $st.cmdPending  = $false
+                $gracePeriodActive = $null -ne $st.lastCmdTime -and ((Get-Date) - $st.lastCmdTime).TotalSeconds -lt $CTRL_E_GRACE_SEC
+                if ($gracePeriodActive) {
+                    Log "[State] account=${acct}: actual changed within grace period ($CTRL_E_GRACE_SEC s), retrying"
+                    $st.retryCount  = 0
+                } else {
+                    Log "[State] account=${acct}: reason=manual_change actual=$actual -> DB sync"
+                    Sync-ActualToDb $acct $actual
+                    $st.retryCount  = 0
+                    $st.lastCmdTime = $null
+                    $st.cmdPending  = $false
+                }
                 $st.prevDesired = $desired
                 $st.prevActual  = $actual
                 continue
@@ -435,7 +441,7 @@ function Invoke-FileScan {
 }
 
 # -- Main ---------------------------------------------------------------------
-Log "==== sync-to-supabase.ps1 v17 started ===="
+Log "==== sync-to-supabase.ps1 v18 started ===="
 Log "Folder: $Folder"
 
 Invoke-Auth | Out-Null
@@ -493,5 +499,5 @@ try {
 } finally {
     if ($null -ne $watcher) { try { $watcher.Dispose() } catch {} }
     try { $mutex.ReleaseMutex() } catch {}
-    Log "==== sync-to-supabase.ps1 v17 stopped ===="
+    Log "==== sync-to-supabase.ps1 v18 stopped ===="
 }

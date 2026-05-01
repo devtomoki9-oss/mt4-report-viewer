@@ -1,4 +1,4 @@
-# sync-to-supabase.ps1 v14
+# sync-to-supabase.ps1 v15
 # Full fault-tolerant edition - MT4/MT5 -> Supabase sync + AutoTrading control
 #
 # Usage A (direct):
@@ -208,27 +208,41 @@ function Send-Report {
     param([string]$filePath)
     $text = Read-FileWithRetry $filePath
     if ($null -eq $text) { return }
-    try {
-        $parsed  = $text | ConvertFrom-Json
-        $acctNum = [long]$parsed.account
-        $fname   = [IO.Path]::GetFileName($filePath)
-        $body = @{
-            p_account_number = $acctNum
-            p_filename       = $fname
-            p_data           = $parsed
-        } | ConvertTo-Json -Depth 20 -Compress
-        Invoke-RestMethod "$Url/rest/v1/rpc/upsert_report" `
-            -Method Post -Headers (New-RpcHeaders) -Body $body -ErrorAction Stop | Out-Null
-        Log "[Upload] OK: $fname (account: $acctNum)"
-    } catch {
-        $errBody = ''
+    $parsed  = $null
+    try { $parsed = $text | ConvertFrom-Json } catch { return }
+    $acctNum = [long]$parsed.account
+    $fname   = [IO.Path]::GetFileName($filePath)
+    $body = @{
+        p_account_number = $acctNum
+        p_filename       = $fname
+        p_data           = $parsed
+    } | ConvertTo-Json -Depth 20 -Compress
+
+    for ($attempt = 1; $attempt -le 2; $attempt++) {
         try {
-            $stream = $_.Exception.Response.GetResponseStream()
-            $reader = New-Object IO.StreamReader($stream)
-            $errBody = $reader.ReadToEnd()
-            $reader.Close()
-        } catch {}
-        Log "[Upload] FAILED: $([IO.Path]::GetFileName($filePath)): $($_.Exception.Message) | $errBody" -level WARN
+            Invoke-RestMethod "$Url/rest/v1/rpc/upsert_report" `
+                -Method Post -Headers (New-RpcHeaders) -Body $body -ErrorAction Stop | Out-Null
+            Log "[Upload] OK: $fname (account: $acctNum)"
+            return
+        } catch {
+            $statusCode = 0
+            try { $statusCode = [int]$_.Exception.Response.StatusCode } catch {}
+            if (($statusCode -eq 401 -or $statusCode -eq 403) -and $attempt -eq 1) {
+                Log "[Upload] Auth error ($statusCode), forcing re-auth and retry..." -level WARN
+                $script:jwt = $null
+                $script:tokenExpiry = [datetime]::MinValue
+                Ensure-ValidToken
+                continue
+            }
+            $errBody = ''
+            try {
+                $stream = $_.Exception.Response.GetResponseStream()
+                $reader = New-Object IO.StreamReader($stream)
+                $errBody = $reader.ReadToEnd()
+                $reader.Close()
+            } catch {}
+            Log "[Upload] FAILED: $fname: $($_.Exception.Message) | $errBody" -level WARN
+        }
     }
 }
 
@@ -415,7 +429,7 @@ function Invoke-FileScan {
 }
 
 # -- Main ---------------------------------------------------------------------
-Log "==== sync-to-supabase.ps1 v14 started ===="
+Log "==== sync-to-supabase.ps1 v15 started ===="
 Log "Folder: $Folder"
 
 Invoke-Auth | Out-Null

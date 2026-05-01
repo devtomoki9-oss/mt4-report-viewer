@@ -1,4 +1,4 @@
-# sync-to-supabase.ps1 v20
+# sync-to-supabase.ps1 v21
 # Full fault-tolerant edition - MT4/MT5 -> Supabase sync + AutoTrading control
 #
 # Usage A (direct):
@@ -320,12 +320,13 @@ function Get-AccountState {
     param([string]$acct)
     if (-not $accountStates.ContainsKey($acct)) {
         $accountStates[$acct] = @{
-            prevDesired  = $null
-            prevActual   = $null
-            lastCmdTime  = $null
-            retryCount   = 0
-            cmdPending   = $false
-            jsonModAtCmd = $null
+            prevDesired       = $null
+            prevActual        = $null
+            lastCmdTime       = $null
+            retryCount        = 0
+            cmdPending        = $false
+            jsonModAtCmd      = $null
+            stableConfirmedAt = $null
         }
     }
     return $accountStates[$acct]
@@ -360,31 +361,40 @@ function Invoke-AutoTradingSync {
                 if ($st.retryCount -gt 0) {
                     Log "[State] account=${acct}: CONFIRMED (retry=$($st.retryCount) succeeded)"
                 }
-                $st.retryCount   = 0
-                $st.cmdPending   = $false
-                $st.jsonModAtCmd = $null   # clear so next actual change is treated as manual
-                $st.prevDesired  = $desired
-                $st.prevActual   = $actual
+                $st.retryCount        = 0
+                $st.cmdPending        = $false
+                $st.jsonModAtCmd      = $null
+                $st.stableConfirmedAt = Get-Date
+                $st.prevDesired       = $desired
+                $st.prevActual        = $actual
                 continue
             }
 
             # -- MT4 manual change detection -----------------------------------
             # actualChanged + desired unchanged + no pending command = manual MT4 change
             if ($actualChanged -and -not $desiredChanged -and $null -ne $prevDesired) {
-                $fromOurCmd = $null -ne $st.jsonModAtCmd -and $modTime -gt $st.jsonModAtCmd
-                if (-not $fromOurCmd) {
+                $fromOurCmd    = $null -ne $st.jsonModAtCmd -and $modTime -gt $st.jsonModAtCmd
+                # Within 120s of stable confirmation, treat revert as a retry target (not manual)
+                $recentlyStable = $null -ne $st.stableConfirmedAt -and ((Get-Date) - $st.stableConfirmedAt).TotalSeconds -lt 120
+                if (-not $fromOurCmd -and -not $recentlyStable) {
                     Log "[State] account=${acct}: manual MT4 change detected (actual=$actual) -> DB sync"
                     Sync-ActualToDb $acct $actual
-                    $st.retryCount   = 0
-                    $st.cmdPending   = $false
-                    $st.lastCmdTime  = $null
-                    $st.jsonModAtCmd = $null
-                    $st.prevDesired  = $desired
-                    $st.prevActual   = $actual
+                    $st.retryCount        = 0
+                    $st.cmdPending        = $false
+                    $st.lastCmdTime       = $null
+                    $st.jsonModAtCmd      = $null
+                    $st.stableConfirmedAt = $null
+                    $st.prevDesired       = $desired
+                    $st.prevActual        = $actual
                     continue
                 }
+                if ($recentlyStable) {
+                    Log "[State] account=${acct}: actual reverted within stable window, will retry Ctrl+E"
+                }
                 # JSON updated after our Ctrl+E but state is still wrong - fall through to retry
-                Log "[State] account=${acct}: actual changed after our Ctrl+E, state still wrong, will retry"
+                if (-not $recentlyStable) {
+                    Log "[State] account=${acct}: actual changed after our Ctrl+E, state still wrong, will retry"
+                }
                 $st.cmdPending = $false
             }
 
@@ -459,7 +469,7 @@ function Invoke-FileScan {
 }
 
 # -- Main ---------------------------------------------------------------------
-Log "==== sync-to-supabase.ps1 v20 started ===="
+Log "==== sync-to-supabase.ps1 v21 started ===="
 Log "Folder: $Folder"
 
 Invoke-Auth | Out-Null
@@ -517,5 +527,5 @@ try {
 } finally {
     if ($null -ne $watcher) { try { $watcher.Dispose() } catch {} }
     try { $mutex.ReleaseMutex() } catch {}
-    Log "==== sync-to-supabase.ps1 v20 stopped ===="
+    Log "==== sync-to-supabase.ps1 v21 stopped ===="
 }

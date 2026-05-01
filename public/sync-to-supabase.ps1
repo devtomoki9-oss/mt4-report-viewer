@@ -200,16 +200,15 @@ function Send-AutoTradingToggle($accountNumber) {
     Log "[AutoTrading] Ctrl+E sent to account $accountNumber ($($targets.Count) window(s))"
 }
 
+if (-not (Test-Path $Folder)) {
+    New-Item -ItemType Directory -Path $Folder -Force | Out-Null
+}
+
+Log "==== sync-to-supabase.ps1 started ===="
+Log "Folder: $Folder"
+Log "LogFile: $LogFile"
+
 try {
-    # MTExportフォルダがなければ作成（LogFileパスを確保）
-    if (-not (Test-Path $Folder)) {
-        New-Item -ItemType Directory -Path $Folder -Force | Out-Null
-    }
-
-    Log "==== sync-to-supabase.ps1 started ===="
-    Log "Folder: $Folder"
-    Log "LogFile: $LogFile"
-
     # ── Initial sign-in ───────────────────────────────────────────
     $auth        = Get-Auth
     $jwt         = $auth.access_token

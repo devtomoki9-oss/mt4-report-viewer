@@ -1,5 +1,5 @@
 # sync-to-supabase.ps1 v14
-# 完全耐障害版 - MT4/MT5 → Supabase 同期 + AutoTrading 制御
+# Full fault-tolerant edition - MT4/MT5 -> Supabase sync + AutoTrading control
 #
 # Usage A (direct):
 #   .\sync-to-supabase.ps1 -Url "https://xxxx.supabase.co" -AnonKey "eyJ..." -Email "you@example.com" -Password "pass"
@@ -25,23 +25,23 @@ if (-not $Url -or -not $AnonKey -or -not $Email -or -not $Password) {
     exit 1
 }
 
-# ── Single-instance guard ─────────────────────────────────────────
+# -- Single-instance guard ----------------------------------------------------
 $mutex    = New-Object System.Threading.Mutex($false, "Global\MTExportSyncMutex")
 $acquired = $false
 try    { $acquired = $mutex.WaitOne(0) }
 catch  [System.Threading.AbandonedMutexException] { $acquired = $true }
 if (-not $acquired) { exit 0 }
 
-# ── 定数 ─────────────────────────────────────────────────────────
-$LOOP_WAIT_MS        = 2000   # WaitForChanged タイムアウト
-$CTRL_E_COOLDOWN_SEC = 20     # Ctrl+E 送信後の最小待機秒数
-$CTRL_E_MAX_RETRY    = 3      # 最大リトライ回数（超えたらリセット）
-$FILE_LOCK_RETRY     = 3      # ファイル読み込みリトライ回数
-$FILE_STABILITY_MS   = 200    # ファイルサイズ安定確認待機
-$SCAN_INTERVAL_SEC   = 5      # 定期スキャン間隔（FSW補完）
-$TOKEN_REFRESH_SEC   = 300    # トークン有効期限の何秒前に更新するか
+# -- Constants ----------------------------------------------------------------
+$LOOP_WAIT_MS        = 2000
+$CTRL_E_COOLDOWN_SEC = 20
+$CTRL_E_MAX_RETRY    = 3
+$FILE_LOCK_RETRY     = 3
+$FILE_STABILITY_MS   = 200
+$SCAN_INTERVAL_SEC   = 5
+$TOKEN_REFRESH_SEC   = 300
 
-# ── ログ ──────────────────────────────────────────────────────────
+# -- Logging ------------------------------------------------------------------
 if (-not (Test-Path $Folder)) {
     New-Item -ItemType Directory -Path $Folder -Force | Out-Null
 }
@@ -54,7 +54,7 @@ function Log {
     try { Add-Content -Path $LogFile -Value $line -Encoding UTF8 -ErrorAction SilentlyContinue } catch {}
 }
 
-# ── Win32 API (Ctrl+E 送信用) ─────────────────────────────────────
+# -- Win32 API for Ctrl+E -----------------------------------------------------
 Add-Type @"
 using System;
 using System.Runtime.InteropServices;
@@ -73,7 +73,7 @@ public class Win32 {
 }
 "@ -ErrorAction SilentlyContinue
 
-# ── Auth ──────────────────────────────────────────────────────────
+# -- Auth ---------------------------------------------------------------------
 $script:jwt         = $null
 $script:tokenExpiry = [datetime]::MinValue
 
@@ -115,9 +115,7 @@ function New-Headers {
     }
 }
 
-# ── 安全なファイル読み込み ────────────────────────────────────────
-# ・サイズ安定確認（書き込み途中を除外）
-# ・ロック時リトライ
+# -- Safe file read (size stability check + lock retry) -----------------------
 function Read-FileWithRetry {
     param([string]$path)
     if (-not (Test-Path $path)) { return $null }
@@ -130,7 +128,6 @@ function Read-FileWithRetry {
             return $null
         }
     } catch { return $null }
-
     for ($i = 0; $i -lt $FILE_LOCK_RETRY; $i++) {
         try { return [IO.File]::ReadAllText($path, [Text.Encoding]::UTF8) }
         catch { if ($i -lt ($FILE_LOCK_RETRY - 1)) { Start-Sleep -Milliseconds 300 } }
@@ -139,7 +136,7 @@ function Read-FileWithRetry {
     return $null
 }
 
-# ── MT JSON から autoTrading 実際値を取得 ─────────────────────────
+# -- Get autoTrading actual state from MT JSON --------------------------------
 function Get-ActualTradingState {
     param([string]$acct)
     $text = Read-FileWithRetry (Join-Path $Folder "mt4_report_$acct.json")
@@ -150,7 +147,7 @@ function Get-ActualTradingState {
     return $null
 }
 
-# ── Supabase から desired 状態を取得 ─────────────────────────────
+# -- Load desired states from Supabase ----------------------------------------
 function Get-DesiredStates {
     try {
         $wc = New-Object System.Net.WebClient
@@ -172,7 +169,7 @@ function Get-DesiredStates {
     }
 }
 
-# ── MT 手動変更を DB へ反映 ───────────────────────────────────────
+# -- Sync MT manual change back to DB -----------------------------------------
 function Sync-ActualToDb {
     param([string]$acct, [bool]$actualState)
     try {
@@ -183,13 +180,13 @@ function Sync-ActualToDb {
         } | ConvertTo-Json -Compress
         Invoke-RestMethod "$Url/rest/v1/rpc/upsert_ea_control" `
             -Method Post -Headers (New-Headers) -Body $body -ErrorAction Stop | Out-Null
-        Log "[DB] account=$acct synced actual→desired ($actualState)"
+        Log "[DB] account=$acct synced actual->desired ($actualState)"
     } catch {
         Log "[DB] Sync-ActualToDb failed account=$acct : $($_.Exception.Message)" -level WARN
     }
 }
 
-# ── レポートを Supabase にアップロード ───────────────────────────
+# -- Upload report file to Supabase -------------------------------------------
 function Send-Report {
     param([string]$filePath)
     $text = Read-FileWithRetry $filePath
@@ -211,7 +208,7 @@ function Send-Report {
     }
 }
 
-# ── Ctrl+E を MT ウィンドウへ送信 ────────────────────────────────
+# -- Send Ctrl+E to MetaTrader window -----------------------------------------
 function Send-CtrlE {
     param([string]$acct)
     try {
@@ -236,7 +233,6 @@ function Send-CtrlE {
         $dummy    = [uint32]0
         $fgThread = if ($fgHwnd -ne [IntPtr]::Zero) { [Win32]::GetWindowThreadProcessId($fgHwnd, [ref]$dummy) } else { 0 }
         $myThread = [Win32]::GetCurrentThreadId()
-
         foreach ($proc in $targets) {
             $hwnd = $proc.MainWindowHandle
             try {
@@ -267,12 +263,12 @@ function Send-CtrlE {
     }
 }
 
-# ── 状態機械 per account ─────────────────────────────────────────
+# -- State machine per account ------------------------------------------------
 # $accountStates[$acct] = @{
-#   prevDesired = $null|bool   前回ループの desired
-#   prevActual  = $null|bool   前回ループの actual
-#   lastCmdTime = $null|datetime  最後に Ctrl+E を送った時刻
-#   retryCount  = int           現在の連続リトライ数
+#   prevDesired = $null|bool
+#   prevActual  = $null|bool
+#   lastCmdTime = $null|datetime
+#   retryCount  = int
 # }
 $accountStates = @{}
 
@@ -303,7 +299,6 @@ function Invoke-AutoTradingSync {
 
             Log "[State] account=$acct desired=$desired actual=$actual prevDesired=$prevDesired prevActual=$prevActual retry=$($st.retryCount)"
 
-            # actual 不明（JSON未存在または読み込み失敗）→ skip
             if ($null -eq $actual) {
                 $st.prevDesired = $desired
                 continue
@@ -312,7 +307,6 @@ function Invoke-AutoTradingSync {
             $desiredChanged = ($null -ne $prevDesired -and $prevDesired -ne $desired)
             $actualChanged  = ($null -ne $prevActual  -and $prevActual  -ne $actual)
 
-            # ── 同期済み ──────────────────────────────────────────
             if ($actual -eq $desired) {
                 if ($st.retryCount -gt 0) {
                     Log "[State] account=${acct}: CONFIRMED (retry=$($st.retryCount) succeeded)"
@@ -324,9 +318,6 @@ function Invoke-AutoTradingSync {
                 continue
             }
 
-            # ── 不一致 ────────────────────────────────────────────
-
-            # MT 手動変更（desired は変わっておらず actual だけ変わった）→ DB 更新
             if ($actualChanged -and -not $desiredChanged -and $null -ne $prevDesired) {
                 Log "[State] account=${acct}: reason=manual_change actual=$actual -> DB sync"
                 Sync-ActualToDb $acct $actual
@@ -337,7 +328,6 @@ function Invoke-AutoTradingSync {
                 continue
             }
 
-            # クールダウン中
             if ($null -ne $st.lastCmdTime) {
                 $elapsed = ((Get-Date) - $st.lastCmdTime).TotalSeconds
                 if ($elapsed -lt $CTRL_E_COOLDOWN_SEC) {
@@ -348,7 +338,6 @@ function Invoke-AutoTradingSync {
                 }
             }
 
-            # リトライ上限到達 → リセットして次サイクルへ
             if ($st.retryCount -ge $CTRL_E_MAX_RETRY) {
                 Log "[State] account=${acct}: max retries ($CTRL_E_MAX_RETRY) reached, resetting" -level WARN
                 $st.retryCount  = 0
@@ -358,10 +347,13 @@ function Invoke-AutoTradingSync {
                 continue
             }
 
-            # 実行理由
-            $reason = if ($null -eq $prevDesired) { 'initial' }
-                      elseif ($desiredChanged -and -not $actualChanged) { 'web_change' }
-                      else { 'retry' }
+            if ($null -eq $prevDesired) {
+                $reason = 'initial'
+            } elseif ($desiredChanged -and -not $actualChanged) {
+                $reason = 'web_change'
+            } else {
+                $reason = 'retry'
+            }
 
             Log "[State] account=${acct}: reason=$reason -> Ctrl+E (desired=$desired retry=$($st.retryCount+1)/$CTRL_E_MAX_RETRY)"
             $sent = Send-CtrlE $acct
@@ -378,9 +370,9 @@ function Invoke-AutoTradingSync {
     }
 }
 
-# ── 定期スキャン（FSW 取りこぼし補完） ───────────────────────────
+# -- Periodic scan (FSW fallback) ---------------------------------------------
 $lastScanTime = [datetime]::MinValue
-$lastUpload   = @{}  # name → LastWriteTime.Ticks
+$lastUpload   = @{}
 
 function Invoke-FileScan {
     try {
@@ -398,7 +390,7 @@ function Invoke-FileScan {
     }
 }
 
-# ── メイン ────────────────────────────────────────────────────────
+# -- Main ---------------------------------------------------------------------
 Log "==== sync-to-supabase.ps1 v14 started ===="
 Log "Folder: $Folder"
 
@@ -420,16 +412,13 @@ try {
 try {
     while ($true) {
         try {
-            # トークン有効性確保
             Ensure-ValidToken
 
-            # AutoTrading 状態機械
             $desiredMap = Get-DesiredStates
             if ($null -ne $desiredMap -and $desiredMap.Count -gt 0) {
                 Invoke-AutoTradingSync $desiredMap
             }
 
-            # FileSystemWatcher（リアルタイム検知）
             if ($null -ne $watcher) {
                 try {
                     $change = $watcher.WaitForChanged([IO.WatcherChangeTypes]::Changed, $LOOP_WAIT_MS)
@@ -445,7 +434,6 @@ try {
                 Start-Sleep -Milliseconds $LOOP_WAIT_MS
             }
 
-            # 定期スキャン（FSW 補完）
             if (((Get-Date) - $lastScanTime).TotalSeconds -ge $SCAN_INTERVAL_SEC) {
                 $lastScanTime = Get-Date
                 Invoke-FileScan

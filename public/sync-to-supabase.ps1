@@ -115,6 +115,15 @@ function New-Headers {
     }
 }
 
+# RPC呼び出し専用ヘッダー（Preferを除外してPostgREST 409干渉を防ぐ）
+function New-RpcHeaders {
+    return @{
+        "apikey"        = $AnonKey
+        "Authorization" = "Bearer $script:jwt"
+        "Content-Type"  = "application/json"
+    }
+}
+
 # -- Safe file read (size stability check + lock retry) -----------------------
 function Read-FileWithRetry {
     param([string]$path)
@@ -178,7 +187,7 @@ function Sync-ActualToDb {
             p_enabled        = $actualState
         } | ConvertTo-Json -Compress
         Invoke-RestMethod "$Url/rest/v1/rpc/upsert_ea_control" `
-            -Method Post -Headers (New-Headers) -Body $body -ErrorAction Stop | Out-Null
+            -Method Post -Headers (New-RpcHeaders) -Body $body -ErrorAction Stop | Out-Null
         Log "[DB] account=$acct synced actual->desired ($actualState)"
     } catch {
         Log "[DB] Sync-ActualToDb failed account=$acct : $($_.Exception.Message)" -level WARN
@@ -200,7 +209,7 @@ function Send-Report {
             p_data           = $parsed
         } | ConvertTo-Json -Depth 20 -Compress
         Invoke-RestMethod "$Url/rest/v1/rpc/upsert_report" `
-            -Method Post -Headers (New-Headers) -Body $body -ErrorAction Stop | Out-Null
+            -Method Post -Headers (New-RpcHeaders) -Body $body -ErrorAction Stop | Out-Null
         Log "[Upload] OK: $fname (account: $acctNum)"
     } catch {
         Log "[Upload] FAILED: $([IO.Path]::GetFileName($filePath)): $($_.Exception.Message)" -level WARN

@@ -1,4 +1,15 @@
-export default function ManualModal({ onClose }) {
+import { INSTALL_BAT } from '../lib/downloadFiles'
+
+function downloadText(content, filename) {
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = filename
+  document.body.appendChild(a); a.click()
+  document.body.removeChild(a); URL.revokeObjectURL(url)
+}
+
+export default function ManualModal({ onClose, onDownloadVbs }) {
   return (
     <div className="fixed inset-0 bg-[#0a0e17]/90 backdrop-blur flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
       onClick={onClose}>
@@ -48,6 +59,20 @@ export default function ManualModal({ onClose }) {
             <div className="space-y-2">
               <Step n="①" title="EA のインストール">
                 <p><code className="font-mono bg-[#1a2235] px-1 rounded">install.bat</code>・<code className="font-mono bg-[#1a2235] px-1 rounded">MT4ReportExporter.mq4</code>・<code className="font-mono bg-[#1a2235] px-1 rounded">MT5ReportExporter.mq5</code> を同じフォルダにダウンロードし、PowerShell で実行します。</p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  <button onClick={() => downloadText(INSTALL_BAT, 'install.bat')}
+                    className="text-xs text-blue-400 hover:text-blue-300 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg transition-colors">
+                    ↓ install.bat
+                  </button>
+                  <a href="/MT4ReportExporter.mq4" download="MT4ReportExporter.mq4"
+                    className="text-xs text-slate-400 hover:text-slate-200 bg-[#1a2235] border border-[#1f2d40] px-3 py-1.5 rounded-lg transition-colors">
+                    ↓ MT4ReportExporter.mq4
+                  </a>
+                  <a href="/MT5ReportExporter.mq5" download="MT5ReportExporter.mq5"
+                    className="text-xs text-slate-400 hover:text-slate-200 bg-[#1a2235] border border-[#1f2d40] px-3 py-1.5 rounded-lg transition-colors">
+                    ↓ MT5ReportExporter.mq5
+                  </a>
+                </div>
                 <Code>Unblock-File "$env:USERPROFILE\Downloads\install.bat"; & "$env:USERPROFILE\Downloads\install.bat"</Code>
               </Step>
 
@@ -81,6 +106,18 @@ export default function ManualModal({ onClose }) {
               <Step n="③" title="同期スクリプトの設定">
                 <p><code className="font-mono bg-[#1a2235] px-1 rounded">sync-to-supabase.ps1</code> と <code className="font-mono bg-[#1a2235] px-1 rounded">run-sync.vbs</code> を同じフォルダにダウンロードします。</p>
                 <p className="mt-1">run-sync.vbs ダウンロード時はパスワード入力ダイアログが表示されます。ログインパスワードを入力してください（接続情報がファイルに埋め込まれます）。</p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  <a href="/sync-to-supabase.ps1" download="sync-to-supabase.ps1"
+                    className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition-colors">
+                    ↓ sync-to-supabase.ps1
+                  </a>
+                  {onDownloadVbs && (
+                    <button onClick={onDownloadVbs}
+                      className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition-colors">
+                      ↓ run-sync.vbs
+                    </button>
+                  )}
+                </div>
                 <p className="mt-1">次に PS1 ファイルのブロックを解除します。</p>
                 <Code>Unblock-File "$env:USERPROFILE\Downloads\sync-to-supabase.ps1"</Code>
               </Step>

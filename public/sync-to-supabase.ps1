@@ -241,7 +241,7 @@ function Send-Report {
                 $errBody = $reader.ReadToEnd()
                 $reader.Close()
             } catch {}
-            Log "[Upload] FAILED: $fname: $($_.Exception.Message) | $errBody" -level WARN
+            Log "[Upload] FAILED: ${fname}: $($_.Exception.Message) | $errBody" -level WARN
         }
     }
 }

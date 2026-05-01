@@ -267,19 +267,18 @@ try {
         # AutoTrading 状態同期（希望値 vs JSON実際値）
         $desired = @{}
         try {
-            $eaResp = Invoke-RestMethod "$Url/rest/v1/ea_controls?select=account_number,enabled" `
+            $eaWeb  = Invoke-WebRequest "$Url/rest/v1/ea_controls?select=account_number,enabled" `
                 -Method Get `
                 -Headers @{ "apikey" = $AnonKey; "Authorization" = "Bearer $jwt" } `
                 -ErrorAction Stop
-            foreach ($row in @($eaResp)) {
-                if ($null -eq $row) { continue }
-                $acctNum = $row.account_number
-                if ($null -eq $acctNum) { continue }
-                $desired[[string]$acctNum] = [bool]$row.enabled
+            $eaRows = $eaWeb.Content | ConvertFrom-Json
+            foreach ($row in $eaRows) {
+                $n = "$($row.account_number)"
+                if ($n -and $n -ne '') { $desired[$n] = [bool]$row.enabled }
             }
             Log "[AutoTrading] ea_controls loaded: $($desired.Count) row(s)"
         } catch {
-            Log "[AutoTrading] ERROR: $($_.Exception.Message)"
+            Log "[AutoTrading] ERROR line=$($_.InvocationInfo.ScriptLineNumber): $($_.Exception.Message)"
         }
         if ($desired.Count -gt 0) {
             foreach ($acct in $desired.Keys) {

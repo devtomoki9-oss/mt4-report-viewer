@@ -1,4 +1,4 @@
-# sync-to-supabase.ps1 v19
+# sync-to-supabase.ps1 v20
 # Full fault-tolerant edition - MT4/MT5 -> Supabase sync + AutoTrading control
 #
 # Usage A (direct):
@@ -35,7 +35,6 @@ if (-not $acquired) { exit 0 }
 # -- Constants ----------------------------------------------------------------
 $LOOP_WAIT_MS        = 2000
 $CTRL_E_MAX_RETRY    = 3
-$CTRL_E_MAX_WAIT_SEC = 90
 $FILE_LOCK_RETRY     = 3
 $FILE_STABILITY_MS   = 200
 $SCAN_INTERVAL_SEC   = 5
@@ -393,15 +392,11 @@ function Invoke-AutoTradingSync {
             if ($st.cmdPending) {
                 $jsonUpdated = $null -ne $st.jsonModAtCmd -and $modTime -gt $st.jsonModAtCmd
                 if (-not $jsonUpdated) {
-                    $elapsed = if ($st.lastCmdTime) { ((Get-Date) - $st.lastCmdTime).TotalSeconds } else { 9999 }
-                    if ($elapsed -lt $CTRL_E_MAX_WAIT_SEC) {
-                        Log "[State] account=${acct}: waiting for JSON update ($([int]$elapsed)s / ${CTRL_E_MAX_WAIT_SEC}s)"
-                        $st.prevDesired = $desired
-                        $st.prevActual  = $actual
-                        continue
-                    }
-                    Log "[State] account=${acct}: timeout (${CTRL_E_MAX_WAIT_SEC}s) no JSON update, retrying" -level WARN
-                    $st.cmdPending = $false
+                    $elapsed = if ($st.lastCmdTime) { [int]((Get-Date) - $st.lastCmdTime).TotalSeconds } else { 0 }
+                    Log "[State] account=${acct}: waiting for JSON update (${elapsed}s)"
+                    $st.prevDesired = $desired
+                    $st.prevActual  = $actual
+                    continue
                 }
             }
 
@@ -464,7 +459,7 @@ function Invoke-FileScan {
 }
 
 # -- Main ---------------------------------------------------------------------
-Log "==== sync-to-supabase.ps1 v19 started ===="
+Log "==== sync-to-supabase.ps1 v20 started ===="
 Log "Folder: $Folder"
 
 Invoke-Auth | Out-Null
@@ -522,5 +517,5 @@ try {
 } finally {
     if ($null -ne $watcher) { try { $watcher.Dispose() } catch {} }
     try { $mutex.ReleaseMutex() } catch {}
-    Log "==== sync-to-supabase.ps1 v19 stopped ===="
+    Log "==== sync-to-supabase.ps1 v20 stopped ===="
 }

@@ -219,16 +219,16 @@ function Send-CtrlE {
             $_.MainWindowHandle -ne [IntPtr]::Zero -and $_.ProcessName -match '^terminal'
         })
         if ($allMt.Count -eq 0) {
-            Log "[CtrlE] account=$acct: No MetaTrader window found" -level WARN
+            Log "[CtrlE] account=${acct}: No MetaTrader window found" -level WARN
             return $false
         }
         $targets = @($allMt | Where-Object { $_.MainWindowTitle -match "\b$acct\b" })
         if ($targets.Count -eq 0) {
             if ($allMt.Count -eq 1) {
                 $targets = $allMt
-                Log "[CtrlE] account=$acct: title match failed, using only MT window"
+                Log "[CtrlE] account=${acct}: title match failed, using only MT window"
             } else {
-                Log "[CtrlE] account=$acct: cannot identify window ($($allMt.Count) windows open)" -level WARN
+                Log "[CtrlE] account=${acct}: cannot identify window ($($allMt.Count) windows open)" -level WARN
                 return $false
             }
         }
@@ -256,13 +256,13 @@ function Send-CtrlE {
                 [Win32]::keybd_event([Win32]::VK_CONTROL, 0, [Win32]::KEYEVENTF_KEYUP, 0)
                 Start-Sleep -Milliseconds 300
             } catch {
-                Log "[CtrlE] account=$acct: keybd_event error: $($_.Exception.Message)" -level WARN
+                Log "[CtrlE] account=${acct}: keybd_event error: $($_.Exception.Message)" -level WARN
             }
         }
-        Log "[CtrlE] account=$acct: sent to $($targets.Count) window(s)"
+        Log "[CtrlE] account=${acct}: sent to $($targets.Count) window(s)"
         return $true
     } catch {
-        Log "[CtrlE] account=$acct: unexpected error: $($_.Exception.Message)" -level ERROR
+        Log "[CtrlE] account=${acct}: unexpected error: $($_.Exception.Message)" -level ERROR
         return $false
     }
 }
@@ -315,7 +315,7 @@ function Invoke-AutoTradingSync {
             # ── 同期済み ──────────────────────────────────────────
             if ($actual -eq $desired) {
                 if ($st.retryCount -gt 0) {
-                    Log "[State] account=$acct: CONFIRMED (retry=$($st.retryCount) succeeded)"
+                    Log "[State] account=${acct}: CONFIRMED (retry=$($st.retryCount) succeeded)"
                 }
                 $st.retryCount  = 0
                 $st.lastCmdTime = $null
@@ -328,7 +328,7 @@ function Invoke-AutoTradingSync {
 
             # MT 手動変更（desired は変わっておらず actual だけ変わった）→ DB 更新
             if ($actualChanged -and -not $desiredChanged -and $null -ne $prevDesired) {
-                Log "[State] account=$acct: reason=manual_change actual=$actual -> DB sync"
+                Log "[State] account=${acct}: reason=manual_change actual=$actual -> DB sync"
                 Sync-ActualToDb $acct $actual
                 $st.retryCount  = 0
                 $st.lastCmdTime = $null
@@ -341,7 +341,7 @@ function Invoke-AutoTradingSync {
             if ($null -ne $st.lastCmdTime) {
                 $elapsed = ((Get-Date) - $st.lastCmdTime).TotalSeconds
                 if ($elapsed -lt $CTRL_E_COOLDOWN_SEC) {
-                    Log "[State] account=$acct: cooldown ${elapsed}s / ${CTRL_E_COOLDOWN_SEC}s"
+                    Log "[State] account=${acct}: cooldown ${elapsed}s / ${CTRL_E_COOLDOWN_SEC}s"
                     $st.prevDesired = $desired
                     $st.prevActual  = $actual
                     continue
@@ -350,7 +350,7 @@ function Invoke-AutoTradingSync {
 
             # リトライ上限到達 → リセットして次サイクルへ
             if ($st.retryCount -ge $CTRL_E_MAX_RETRY) {
-                Log "[State] account=$acct: max retries ($CTRL_E_MAX_RETRY) reached, resetting" -level WARN
+                Log "[State] account=${acct}: max retries ($CTRL_E_MAX_RETRY) reached, resetting" -level WARN
                 $st.retryCount  = 0
                 $st.lastCmdTime = $null
                 $st.prevDesired = $desired
@@ -363,7 +363,7 @@ function Invoke-AutoTradingSync {
                       elseif ($desiredChanged -and -not $actualChanged) { 'web_change' }
                       else { 'retry' }
 
-            Log "[State] account=$acct: reason=$reason -> Ctrl+E (desired=$desired retry=$($st.retryCount+1)/$CTRL_E_MAX_RETRY)"
+            Log "[State] account=${acct}: reason=$reason -> Ctrl+E (desired=$desired retry=$($st.retryCount+1)/$CTRL_E_MAX_RETRY)"
             $sent = Send-CtrlE $acct
             if ($sent) {
                 $st.retryCount++
@@ -373,7 +373,7 @@ function Invoke-AutoTradingSync {
             $st.prevActual  = $actual
 
         } catch {
-            Log "[State] account=$acct: UNHANDLED: $($_.Exception.Message)" -level ERROR
+            Log "[State] account=${acct}: UNHANDLED: $($_.Exception.Message)" -level ERROR
         }
     }
 }

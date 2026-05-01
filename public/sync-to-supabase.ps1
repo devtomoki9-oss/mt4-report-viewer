@@ -1,4 +1,4 @@
-# sync-to-supabase.ps1 v15
+# sync-to-supabase.ps1 v16
 # Full fault-tolerant edition - MT4/MT5 -> Supabase sync + AutoTrading control
 #
 # Usage A (direct):
@@ -318,6 +318,7 @@ function Get-AccountState {
             prevActual  = $null
             lastCmdTime = $null
             retryCount  = 0
+            cmdPending  = $false
         }
     }
     return $accountStates[$acct]
@@ -351,16 +352,25 @@ function Invoke-AutoTradingSync {
                 }
                 $st.retryCount  = 0
                 $st.lastCmdTime = $null
+                $st.cmdPending  = $false
                 $st.prevDesired = $desired
                 $st.prevActual  = $actual
                 continue
             }
 
             if ($actualChanged -and -not $desiredChanged -and $null -ne $prevDesired) {
-                Log "[State] account=${acct}: reason=manual_change actual=$actual -> DB sync"
-                Sync-ActualToDb $acct $actual
-                $st.retryCount  = 0
-                $st.lastCmdTime = $null
+                if ($st.cmdPending) {
+                    # actual changed while script was trying to reach desired - retry, not manual change
+                    Log "[State] account=${acct}: actual changed during pending command, retrying"
+                    $st.retryCount  = 0
+                    $st.lastCmdTime = $null
+                } else {
+                    Log "[State] account=${acct}: reason=manual_change actual=$actual -> DB sync"
+                    Sync-ActualToDb $acct $actual
+                    $st.retryCount  = 0
+                    $st.lastCmdTime = $null
+                    $st.cmdPending  = $false
+                }
                 $st.prevDesired = $desired
                 $st.prevActual  = $actual
                 continue
@@ -380,6 +390,7 @@ function Invoke-AutoTradingSync {
                 Log "[State] account=${acct}: max retries ($CTRL_E_MAX_RETRY) reached, resetting" -level WARN
                 $st.retryCount  = 0
                 $st.lastCmdTime = $null
+                $st.cmdPending  = $false
                 $st.prevDesired = $desired
                 $st.prevActual  = $actual
                 continue
@@ -398,6 +409,7 @@ function Invoke-AutoTradingSync {
             if ($sent) {
                 $st.retryCount++
                 $st.lastCmdTime = Get-Date
+                $st.cmdPending  = $true
             }
             $st.prevDesired = $desired
             $st.prevActual  = $actual
@@ -429,7 +441,7 @@ function Invoke-FileScan {
 }
 
 # -- Main ---------------------------------------------------------------------
-Log "==== sync-to-supabase.ps1 v15 started ===="
+Log "==== sync-to-supabase.ps1 v16 started ===="
 Log "Folder: $Folder"
 
 Invoke-Auth | Out-Null
@@ -487,5 +499,5 @@ try {
 } finally {
     if ($null -ne $watcher) { try { $watcher.Dispose() } catch {} }
     try { $mutex.ReleaseMutex() } catch {}
-    Log "==== sync-to-supabase.ps1 v15 stopped ===="
+    Log "==== sync-to-supabase.ps1 v16 stopped ===="
 }

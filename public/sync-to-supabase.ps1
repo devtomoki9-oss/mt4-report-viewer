@@ -50,7 +50,8 @@ function Log($msg) {
         if ($lines.Count -gt 500) {
             [IO.File]::WriteAllLines($LogFile, ($lines | Select-Object -Last 400))
         }
-    } catch {}
+    }
+    catch { }
 }
 
 # ── Win32 API for AutoTrading toggle (Ctrl+E) ─────────────────────
@@ -227,8 +228,12 @@ try {
     # ── Initial upload of all existing files ─────────────────────
     $files = Get-ChildItem -Path $Folder -Filter "mt4_report_*.json" -ErrorAction SilentlyContinue
     foreach ($file in $files) {
-        try   { Send-Report $file.FullName $headers }
-        catch { Log "[NG] $($file.Name): $($_.Exception.Message)" }
+        try {
+            Send-Report $file.FullName $headers
+        }
+        catch {
+            Log "[NG] $($file.Name): $($_.Exception.Message)"
+        }
     }
 
     # ── Ctrl+E 送信後のクールダウン（EA が JSON を更新するまで待つ） ──
@@ -314,8 +319,12 @@ try {
         Start-Sleep -Milliseconds 500
 
         $filePath = Join-Path $Folder $name
-        try   { Send-Report $filePath $headers }
-        catch { Log "[NG] $name : $($_.Exception.Message)" }
+        try {
+            Send-Report $filePath $headers
+        }
+        catch {
+            Log "[NG] $name : $($_.Exception.Message)"
+        }
     }
 } catch {
     Log "[FATAL] $_"

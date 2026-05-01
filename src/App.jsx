@@ -153,6 +153,7 @@ export default function App() {
   const [plan, setPlan] = useState('free')
 
   const hasData = accounts.length > 0
+  const [manualCleared, setManualCleared] = useState(false)
 
   const [accSort, setAccSort] = useState({ key: 'profit', dir: 'desc' })
   const onAccSort = useCallback((col) => {
@@ -201,7 +202,10 @@ export default function App() {
         return [...byName.values()]
       })
       setLastUpdated(new Date())
-      if (results.length > 0) setNextExportAt(Date.now() + SUPABASE_INTERVAL_MS)
+      if (results.length > 0) {
+        setNextExportAt(Date.now() + SUPABASE_INTERVAL_MS)
+        setManualCleared(false)
+      }
     } catch (e) {
       console.error('Supabase sync error:', e)
     }
@@ -231,6 +235,7 @@ export default function App() {
   // ── 手動アップロード ──────────────────────────────────
   const handleFiles = async (files) => {
     const results = await parseFiles(files)
+    if (results.length > 0) setManualCleared(false)
     setAccounts(prev => {
       const byName = new Map(prev.map(a => [a.account.name, a]))
       results.forEach(r => byName.set(r.account.name, r))
@@ -492,6 +497,7 @@ export default function App() {
   const removeAccount = (name) => setAccounts(prev => prev.filter(a => a.account.name !== name))
   const clearAll = () => {
     setAccounts([])
+    setManualCleared(true)
     setTab('overview')
     setDateRange({ from: '', to: '' })
     setLastUpdated(null)
@@ -664,7 +670,20 @@ export default function App() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4">
 
-{!hasData ? (
+{!hasData && manualCleared ? (
+          /* ── クリア後の空状態（セットアップ画面へ遷移しない） ── */
+          <div className="flex flex-col items-center justify-center min-h-[55vh] gap-4">
+            <p className="text-slate-500 text-sm">データがクリアされました</p>
+            <div className="w-full max-w-2xl">
+              <UploadZone onFiles={handleFiles} />
+            </div>
+            <button
+              onClick={() => setManualCleared(false)}
+              className="text-xs text-slate-600 hover:text-slate-400 transition-colors underline">
+              セットアップ手順を表示
+            </button>
+          </div>
+        ) : !hasData ? (
           /* ── ウェルカム画面 ── */
           <div className="flex flex-col items-center justify-center min-h-[55vh] gap-6">
             <div className="text-center mb-2">
@@ -798,6 +817,7 @@ export default function App() {
             </div>
           </div>
         ) : (
+          // hasData
           <>
             {/* ツールバー */}
             <div className="flex items-center justify-between gap-2">

@@ -1,4 +1,4 @@
-# sync-to-supabase.ps1 v16
+# sync-to-supabase.ps1 v17
 # Full fault-tolerant edition - MT4/MT5 -> Supabase sync + AutoTrading control
 #
 # Usage A (direct):
@@ -359,18 +359,12 @@ function Invoke-AutoTradingSync {
             }
 
             if ($actualChanged -and -not $desiredChanged -and $null -ne $prevDesired) {
-                if ($st.cmdPending) {
-                    # actual changed while script was trying to reach desired - retry, not manual change
-                    Log "[State] account=${acct}: actual changed during pending command, retrying"
-                    $st.retryCount  = 0
-                    $st.lastCmdTime = $null
-                } else {
-                    Log "[State] account=${acct}: reason=manual_change actual=$actual -> DB sync"
-                    Sync-ActualToDb $acct $actual
-                    $st.retryCount  = 0
-                    $st.lastCmdTime = $null
-                    $st.cmdPending  = $false
-                }
+                # actual changed but desired did not - treat as transient MT4 state change, always retry
+                # never write back to DB here: the web app toggle is the authoritative desired state
+                Log "[State] account=${acct}: actual changed unexpectedly (actual=$actual desired=$desired), resetting for retry"
+                $st.retryCount  = 0
+                $st.lastCmdTime = $null
+                $st.cmdPending  = $false
                 $st.prevDesired = $desired
                 $st.prevActual  = $actual
                 continue
@@ -441,7 +435,7 @@ function Invoke-FileScan {
 }
 
 # -- Main ---------------------------------------------------------------------
-Log "==== sync-to-supabase.ps1 v16 started ===="
+Log "==== sync-to-supabase.ps1 v17 started ===="
 Log "Folder: $Folder"
 
 Invoke-Auth | Out-Null
@@ -499,5 +493,5 @@ try {
 } finally {
     if ($null -ne $watcher) { try { $watcher.Dispose() } catch {} }
     try { $mutex.ReleaseMutex() } catch {}
-    Log "==== sync-to-supabase.ps1 v16 stopped ===="
+    Log "==== sync-to-supabase.ps1 v17 stopped ===="
 }

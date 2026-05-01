@@ -972,7 +972,7 @@ export default function App() {
         <div>© {new Date().getFullYear()} MT Report Viewer</div>
       </footer>
 
-      {showManual   && <ManualModal     onClose={() => setShowManual(false)} />}
+      {showManual   && <ManualModal     onClose={() => setShowManual(false)} onDownloadVbs={() => { setShowManual(false); setVbsPass(''); setShowVbsModal(true) }} />}
       {showHelp     && <HelpModal       onClose={() => setShowHelp(false)} />}
       {showTerms    && <TermsModal      onClose={() => setShowTerms(false)} />}
       {showPrivacy  && <PrivacyPolicy   onClose={() => setShowPrivacy(false)} />}

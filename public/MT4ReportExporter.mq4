@@ -19,7 +19,7 @@
 //+------------------------------------------------------------------+
 #property copyright ""
 #property link      ""
-#property version   "1.50"
+#property version   "1.60"
 #property strict
 #property description "取引履歴を JSON へ自動エクスポートします。自動売買 OFF でも動作します。"
 
@@ -207,7 +207,7 @@ void ExportTrades()
    int openTotal = OrdersTotal();
    bool firstPos = true;
    for (int i = 0; i < openTotal; i++)
-　   {
+   {
       if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
       if (OrderType() > OP_SELL) continue;
 

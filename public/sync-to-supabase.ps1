@@ -326,7 +326,7 @@ try {
         }
 
         # Wait up to 5 seconds for a file change
-        $change = $watcher.WaitForChanged([IO.WatcherChangeTypes]::Changed, 5000)
+        $change = $watcher.WaitForChanged([IO.WatcherChangeTypes]::Changed, 2000)
         if ($change.TimedOut) { continue }
 
         $name = $change.Name

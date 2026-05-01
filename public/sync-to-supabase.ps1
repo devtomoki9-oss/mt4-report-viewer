@@ -271,12 +271,8 @@ try {
                 -Method Get `
                 -Headers @{ "apikey" = $AnonKey; "Authorization" = "Bearer $jwt" } `
                 -ErrorAction Stop
-            # null チェック後に型で分岐して安全に配列化
-            $eaList = @()
-            if ($null -ne $eaResp) {
-                if ($eaResp -is [System.Array]) { $eaList = $eaResp } else { $eaList = @($eaResp) }
-            }
-            foreach ($row in $eaList) {
+            # foreach は null(0回)/PSCustomObject(1回)/Array(N回) を安全に処理する
+            foreach ($row in $eaResp) {
                 if ($null -eq $row) { continue }
                 $n = "$($row.account_number)"
                 if ($n) { $desired[$n] = [bool]$row.enabled }

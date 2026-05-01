@@ -1,17 +1,10 @@
-# sync-to-supabase.ps1
-# Upload MT4/MT5 JSON reports to Supabase (Realtime mode)
-#
-# Watches the MTExport folder and uploads immediately on file change.
-# Uses a mutex so only one instance runs at a time.
-# Task scheduler can keep calling every minute - extras exit instantly.
-#
-# Also polls Supabase for AutoTrading toggle commands (ea_controls where account_number=0)
-# and sends Ctrl+E to all running MetaTrader windows when the state changes.
+# sync-to-supabase.ps1 v14
+# 完全耐障害版 - MT4/MT5 → Supabase 同期 + AutoTrading 制御
 #
 # Usage A (direct):
 #   .\sync-to-supabase.ps1 -Url "https://xxxx.supabase.co" -AnonKey "eyJ..." -Email "you@example.com" -Password "pass"
 #
-# Usage B (via run-sync.vbs, no args needed - credentials embedded in vbs):
+# Usage B (via run-sync.vbs):
 #   wscript run-sync.vbs
 
 param(
@@ -33,26 +26,35 @@ if (-not $Url -or -not $AnonKey -or -not $Email -or -not $Password) {
 }
 
 # ── Single-instance guard ─────────────────────────────────────────
-$mutex = New-Object System.Threading.Mutex($false, "Global\MTExportSyncMutex")
+$mutex    = New-Object System.Threading.Mutex($false, "Global\MTExportSyncMutex")
 $acquired = $false
-try {
-    $acquired = $mutex.WaitOne(0)
-} catch [System.Threading.AbandonedMutexException] {
-    $acquired = $true  # 前回プロセスが異常終了 → 放棄済みmutexを引き継ぐ
-}
-if (-not $acquired) {
-    exit 0
-}
+try    { $acquired = $mutex.WaitOne(0) }
+catch  [System.Threading.AbandonedMutexException] { $acquired = $true }
+if (-not $acquired) { exit 0 }
 
-# ── ログ出力（コンソール + ファイル） ────────────────────────────
+# ── 定数 ─────────────────────────────────────────────────────────
+$LOOP_WAIT_MS        = 2000   # WaitForChanged タイムアウト
+$CTRL_E_COOLDOWN_SEC = 20     # Ctrl+E 送信後の最小待機秒数
+$CTRL_E_MAX_RETRY    = 3      # 最大リトライ回数（超えたらリセット）
+$FILE_LOCK_RETRY     = 3      # ファイル読み込みリトライ回数
+$FILE_STABILITY_MS   = 200    # ファイルサイズ安定確認待機
+$SCAN_INTERVAL_SEC   = 5      # 定期スキャン間隔（FSW補完）
+$TOKEN_REFRESH_SEC   = 300    # トークン有効期限の何秒前に更新するか
+
+# ── ログ ──────────────────────────────────────────────────────────
+if (-not (Test-Path $Folder)) {
+    New-Item -ItemType Directory -Path $Folder -Force | Out-Null
+}
 $LogFile = Join-Path $Folder "sync.log"
-function Log($msg) {
-    $line = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] $msg"
+
+function Log {
+    param([string]$msg, [string]$level = "INFO")
+    $line = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] [$level] $msg"
     Write-Host $line
-    Add-Content -Path $LogFile -Value $line -Encoding UTF8 -ErrorAction SilentlyContinue
+    try { Add-Content -Path $LogFile -Value $line -Encoding UTF8 -ErrorAction SilentlyContinue } catch {}
 }
 
-# ── Win32 API for AutoTrading toggle (Ctrl+E) ─────────────────────
+# ── Win32 API (Ctrl+E 送信用) ─────────────────────────────────────
 Add-Type @"
 using System;
 using System.Runtime.InteropServices;
@@ -69,297 +71,393 @@ public class Win32 {
     public const byte VK_CONTROL = 0x11;
     public const byte VK_E = 0x45;
 }
-"@
+"@ -ErrorAction SilentlyContinue
 
-# ── Auth helpers ──────────────────────────────────────────────────
-function Get-Auth {
-    $body = @{ email = $Email; password = $Password } | ConvertTo-Json
-    $res = Invoke-RestMethod "$Url/auth/v1/token?grant_type=password" `
-        -Method Post `
-        -Headers @{ "apikey" = $AnonKey; "Content-Type" = "application/json" } `
-        -Body $body -ErrorAction Stop
-    return $res
+# ── Auth ──────────────────────────────────────────────────────────
+$script:jwt         = $null
+$script:tokenExpiry = [datetime]::MinValue
+
+function Invoke-Auth {
+    param([int]$maxRetry = 3)
+    for ($i = 0; $i -lt $maxRetry; $i++) {
+        try {
+            $body = @{ email = $Email; password = $Password } | ConvertTo-Json
+            $res = Invoke-RestMethod "$Url/auth/v1/token?grant_type=password" `
+                -Method Post `
+                -Headers @{ "apikey" = $AnonKey; "Content-Type" = "application/json" } `
+                -Body $body -ErrorAction Stop
+            $script:jwt         = $res.access_token
+            $script:tokenExpiry = (Get-Date).AddSeconds($res.expires_in - $TOKEN_REFRESH_SEC)
+            Log "[Auth] Signed in OK (expires in $($res.expires_in)s)"
+            return $true
+        } catch {
+            $wait = [math]::Pow(2, $i) * 5
+            Log "[Auth] Attempt $($i+1)/$maxRetry failed: $($_.Exception.Message). Retry in ${wait}s" -level WARN
+            if ($i -lt ($maxRetry - 1)) { Start-Sleep -Seconds ([int]$wait) }
+        }
+    }
+    Log "[Auth] All retries exhausted - continuing with existing token" -level ERROR
+    return $false
 }
 
-function New-Headers($jwt) {
+function Ensure-ValidToken {
+    if ($null -eq $script:jwt -or (Get-Date) -gt $script:tokenExpiry) {
+        Invoke-Auth | Out-Null
+    }
+}
+
+function New-Headers {
     return @{
         "apikey"        = $AnonKey
-        "Authorization" = "Bearer $jwt"
+        "Authorization" = "Bearer $script:jwt"
         "Content-Type"  = "application/json"
         "Prefer"        = "resolution=merge-duplicates"
     }
 }
 
-# ── Upload single file ────────────────────────────────────────────
-function Send-Report($filePath, $headers) {
-    $text   = [IO.File]::ReadAllText($filePath, [Text.Encoding]::UTF8)
-    $parsed = $text | ConvertFrom-Json
-    $accountNumber = [long]$parsed.account
-    $filename = [IO.Path]::GetFileName($filePath)
-    $body = @{
-        p_account_number = $accountNumber
-        p_filename       = $filename
-        p_data           = $parsed
-    } | ConvertTo-Json -Depth 20 -Compress
-    Invoke-RestMethod "$Url/rest/v1/rpc/upsert_report" `
-        -Method Post -Headers $headers -Body $body -ErrorAction Stop | Out-Null
-    Log "[OK] $filename (account: $accountNumber)"
-}
-
-# ── AutoTrading toggle helpers ────────────────────────────────────
-function Get-TradingStates($jwt) {
-    $states = @{}
+# ── 安全なファイル読み込み ────────────────────────────────────────
+# ・サイズ安定確認（書き込み途中を除外）
+# ・ロック時リトライ
+function Read-FileWithRetry {
+    param([string]$path)
+    if (-not (Test-Path $path)) { return $null }
     try {
-        $resp = Invoke-RestMethod "$Url/rest/v1/ea_controls?select=account_number,enabled" `
-            -Method Get `
-            -Headers @{ "apikey" = $AnonKey; "Authorization" = "Bearer $jwt" } `
-            -ErrorAction Stop
-        foreach ($row in @($resp)) {
-            if ($row -ne $null -and $row.PSObject.Properties['account_number']) {
-                $states[[string]$row.account_number] = [bool]$row.enabled
-            }
+        $size1 = (Get-Item $path -ErrorAction Stop).Length
+        Start-Sleep -Milliseconds $FILE_STABILITY_MS
+        $size2 = (Get-Item $path -ErrorAction Stop).Length
+        if ($size1 -ne $size2) {
+            Log "[File] $([IO.Path]::GetFileName($path)): size unstable, skipping" -level WARN
+            return $null
         }
-        Log "[AutoTrading] ea_controls loaded: $($states.Count) row(s)"
+    } catch { return $null }
+
+    for ($i = 0; $i -lt $FILE_LOCK_RETRY; $i++) {
+        try { return [IO.File]::ReadAllText($path, [Text.Encoding]::UTF8) }
+        catch { if ($i -lt ($FILE_LOCK_RETRY - 1)) { Start-Sleep -Milliseconds 300 } }
     }
-    catch {
-        Log "[AutoTrading] ERROR in Get-TradingStates: $($_.Exception.Message)"
-        return $null
-    }
-    return $states
+    Log "[File] $([IO.Path]::GetFileName($path)): locked after $FILE_LOCK_RETRY retries" -level WARN
+    return $null
 }
 
-function Set-TradingState($accountNumber, $enabled, $jwt) {
-    $body = @{
-        p_account_number = [long]$accountNumber
-        p_enabled        = [bool]$enabled
-    } | ConvertTo-Json -Compress
+# ── MT JSON から autoTrading 実際値を取得 ─────────────────────────
+function Get-ActualTradingState {
+    param([string]$acct)
+    $text = Read-FileWithRetry (Join-Path $Folder "mt4_report_$acct.json")
+    if ($null -eq $text) { return $null }
     try {
-        Invoke-RestMethod "$Url/rest/v1/rpc/upsert_ea_control" `
-            -Method Post `
-            -Headers @{ "apikey" = $AnonKey; "Authorization" = "Bearer $jwt"; "Content-Type" = "application/json" } `
-            -Body $body -ErrorAction Stop | Out-Null
-        Log "[AutoTrading] Synced ea_controls: account=$accountNumber enabled=$enabled"
+        if ($text -match '"autoTrading"\s*:\s*(true|false)') { return ($Matches[1] -eq 'true') }
+    } catch {}
+    return $null
+}
+
+# ── Supabase から desired 状態を取得 ─────────────────────────────
+function Get-DesiredStates {
+    try {
+        $wc = New-Object System.Net.WebClient
+        $wc.Headers.Add("apikey",        $AnonKey)
+        $wc.Headers.Add("Authorization", "Bearer $script:jwt")
+        $wc.Headers.Add("Accept",        "application/json")
+        $rows = $wc.DownloadString("$Url/rest/v1/ea_controls?select=account_number,desired_enabled") | ConvertFrom-Json
+        $result = @{}
+        foreach ($row in $rows) {
+            if ($null -eq $row) { continue }
+            $n = [string]($row.account_number)
+            if ($n) { $result[$n] = [bool]($row.desired_enabled) }
+        }
+        Log "[DB] ea_controls loaded: $($result.Count) row(s)"
+        return $result
     } catch {
-        Log "[AutoTrading] Set-TradingState error: $_"
+        Log "[DB] Get-DesiredStates failed: $($_.Exception.Message)" -level WARN
+        return $null
     }
 }
 
-function Get-ActualTradingState($accountNumber) {
-    $jsonPath = Join-Path $Folder "mt4_report_$accountNumber.json"
-    if (-not (Test-Path $jsonPath)) { return $null }
+# ── MT 手動変更を DB へ反映 ───────────────────────────────────────
+function Sync-ActualToDb {
+    param([string]$acct, [bool]$actualState)
     try {
-        $text = [IO.File]::ReadAllText($jsonPath, [Text.Encoding]::UTF8)
-        if ($text -match '"autoTrading"\s*:\s*(true|false)') {
-            return [bool]($Matches[1] -eq 'true')
-        }
-        return $null
-    }
-    catch {
-        return $null
+        $body = @{
+            p_account_number       = [long]$acct
+            p_desired_enabled      = $actualState
+            p_last_applied_enabled = $actualState
+        } | ConvertTo-Json -Compress
+        Invoke-RestMethod "$Url/rest/v1/rpc/upsert_ea_control" `
+            -Method Post -Headers (New-Headers) -Body $body -ErrorAction Stop | Out-Null
+        Log "[DB] account=$acct synced actual→desired ($actualState)"
+    } catch {
+        Log "[DB] Sync-ActualToDb failed account=$acct : $($_.Exception.Message)" -level WARN
     }
 }
 
-function Send-AutoTradingToggle($accountNumber) {
-    $allMt = @(Get-Process | Where-Object {
-        $_.MainWindowHandle -ne [IntPtr]::Zero -and
-        $_.ProcessName -match '^terminal'
-    })
-    if ($allMt.Count -eq 0) {
-        Log "[AutoTrading] No MetaTrader windows found"
-        return
+# ── レポートを Supabase にアップロード ───────────────────────────
+function Send-Report {
+    param([string]$filePath)
+    $text = Read-FileWithRetry $filePath
+    if ($null -eq $text) { return }
+    try {
+        $parsed  = $text | ConvertFrom-Json
+        $acctNum = [long]$parsed.account
+        $fname   = [IO.Path]::GetFileName($filePath)
+        $body = @{
+            p_account_number = $acctNum
+            p_filename       = $fname
+            p_data           = $parsed
+        } | ConvertTo-Json -Depth 20 -Compress
+        Invoke-RestMethod "$Url/rest/v1/rpc/upsert_report" `
+            -Method Post -Headers (New-Headers) -Body $body -ErrorAction Stop | Out-Null
+        Log "[Upload] OK: $fname (account: $acctNum)"
+    } catch {
+        Log "[Upload] FAILED: $([IO.Path]::GetFileName($filePath)): $($_.Exception.Message)" -level WARN
     }
-    # 口座番号でウィンドウタイトルを検索、見つからなければフォールバック
-    $targets = @($allMt | Where-Object { $_.MainWindowTitle -match "\b$accountNumber\b" })
-    if ($targets.Count -eq 0) {
-        if ($allMt.Count -eq 1) {
-            $targets = $allMt
-            Log "[AutoTrading] Account ${accountNumber}: title match failed, using only MT window"
-        } else {
-            Log "[AutoTrading] Cannot identify window for account ${accountNumber} ($($allMt.Count) windows open)"
-            return
-        }
-    }
-    # AttachThreadInput でバックグラウンドからでも SetForegroundWindow を成功させる
-    $fgHwnd   = [Win32]::GetForegroundWindow()
-    $dummy    = [uint32]0
-    $fgThread = if ($fgHwnd -ne [IntPtr]::Zero) { [Win32]::GetWindowThreadProcessId($fgHwnd, [ref]$dummy) } else { 0 }
-    $myThread = [Win32]::GetCurrentThreadId()
-
-    foreach ($proc in $targets) {
-        $hwnd = $proc.MainWindowHandle
-        if ($fgThread -ne 0 -and $fgThread -ne $myThread) {
-            [Win32]::AttachThreadInput($myThread, $fgThread, $true) | Out-Null
-        }
-        [Win32]::ShowWindow($hwnd, 9) | Out-Null   # SW_RESTORE
-        [Win32]::SetForegroundWindow($hwnd) | Out-Null
-        [Win32]::BringWindowToTop($hwnd) | Out-Null
-        if ($fgThread -ne 0 -and $fgThread -ne $myThread) {
-            [Win32]::AttachThreadInput($myThread, $fgThread, $false) | Out-Null
-        }
-        Start-Sleep -Milliseconds 300
-        [Win32]::keybd_event([Win32]::VK_CONTROL, 0, 0, 0)
-        [Win32]::keybd_event([Win32]::VK_E, 0, 0, 0)
-        [Win32]::keybd_event([Win32]::VK_E, 0, [Win32]::KEYEVENTF_KEYUP, 0)
-        [Win32]::keybd_event([Win32]::VK_CONTROL, 0, [Win32]::KEYEVENTF_KEYUP, 0)
-        Start-Sleep -Milliseconds 300
-    }
-    Log "[AutoTrading] Ctrl+E sent to account $accountNumber ($($targets.Count) window(s))"
 }
 
-if (-not (Test-Path $Folder)) {
-    New-Item -ItemType Directory -Path $Folder -Force | Out-Null
-}
-
-Log "==== sync-to-supabase.ps1 v13 started ===="
-Log "Folder: $Folder"
-Log "LogFile: $LogFile"
-
-try {
-    # ── Initial sign-in ───────────────────────────────────────────
-    $auth        = Get-Auth
-    $jwt         = $auth.access_token
-    $tokenExpiry = (Get-Date).AddSeconds($auth.expires_in - 300)
-    $headers     = New-Headers $jwt
-    Log "[Auth] Signed in as $Email"
-
-    # ── Initial upload of all existing files ─────────────────────
-    $files = Get-ChildItem -Path $Folder -Filter "mt4_report_*.json" -ErrorAction SilentlyContinue
-    foreach ($file in $files) {
-        try {
-            Send-Report $file.FullName $headers
+# ── Ctrl+E を MT ウィンドウへ送信 ────────────────────────────────
+function Send-CtrlE {
+    param([string]$acct)
+    try {
+        $allMt = @(Get-Process -ErrorAction SilentlyContinue | Where-Object {
+            $_.MainWindowHandle -ne [IntPtr]::Zero -and $_.ProcessName -match '^terminal'
+        })
+        if ($allMt.Count -eq 0) {
+            Log "[CtrlE] account=$acct: No MetaTrader window found" -level WARN
+            return $false
         }
-        catch {
-            Log "[NG] $($file.Name): $($_.Exception.Message)"
+        $targets = @($allMt | Where-Object { $_.MainWindowTitle -match "\b$acct\b" })
+        if ($targets.Count -eq 0) {
+            if ($allMt.Count -eq 1) {
+                $targets = $allMt
+                Log "[CtrlE] account=$acct: title match failed, using only MT window"
+            } else {
+                Log "[CtrlE] account=$acct: cannot identify window ($($allMt.Count) windows open)" -level WARN
+                return $false
+            }
         }
-    }
+        $fgHwnd   = [Win32]::GetForegroundWindow()
+        $dummy    = [uint32]0
+        $fgThread = if ($fgHwnd -ne [IntPtr]::Zero) { [Win32]::GetWindowThreadProcessId($fgHwnd, [ref]$dummy) } else { 0 }
+        $myThread = [Win32]::GetCurrentThreadId()
 
-    # ── Ctrl+E 送信後のクールダウン（EA が JSON を更新するまで待つ） ──
-    $ctrlECooldown     = @{}  # { accountNumber: datetime }
-    $prevDesiredStates = @{}  # 前回ループ時の desired 状態
-    $prevActualStates  = @{}  # 前回ループ時の actual 状態
-
-    # ── FileSystemWatcher ─────────────────────────────────────────
-    $watcher = New-Object System.IO.FileSystemWatcher
-    $watcher.Path   = $Folder
-    $watcher.Filter = "mt4_report_*.json"
-    $watcher.NotifyFilter = [IO.NotifyFilters]'LastWrite'
-    $watcher.EnableRaisingEvents = $true
-
-    # Debounce: track last upload time per file (avoid double-fire)
-    $lastUpload = @{}
-
-    Log "[Watch] Monitoring $Folder ..."
-
-    while ($true) {
-        # Token refresh (5 min before expiry)
-        if ((Get-Date) -gt $tokenExpiry) {
+        foreach ($proc in $targets) {
+            $hwnd = $proc.MainWindowHandle
             try {
-                $auth        = Get-Auth
-                $jwt         = $auth.access_token
-                $tokenExpiry = (Get-Date).AddSeconds($auth.expires_in - 300)
-                $headers     = New-Headers $jwt
-                Log "[Auth] Token refreshed"
+                if ($fgThread -ne 0 -and $fgThread -ne $myThread) {
+                    [Win32]::AttachThreadInput($myThread, $fgThread, $true) | Out-Null
+                }
+                [Win32]::ShowWindow($hwnd, 9) | Out-Null
+                [Win32]::SetForegroundWindow($hwnd) | Out-Null
+                [Win32]::BringWindowToTop($hwnd) | Out-Null
+                if ($fgThread -ne 0 -and $fgThread -ne $myThread) {
+                    [Win32]::AttachThreadInput($myThread, $fgThread, $false) | Out-Null
+                }
+                Start-Sleep -Milliseconds 300
+                [Win32]::keybd_event([Win32]::VK_CONTROL, 0, 0, 0)
+                [Win32]::keybd_event([Win32]::VK_E, 0, 0, 0)
+                [Win32]::keybd_event([Win32]::VK_E, 0, [Win32]::KEYEVENTF_KEYUP, 0)
+                [Win32]::keybd_event([Win32]::VK_CONTROL, 0, [Win32]::KEYEVENTF_KEYUP, 0)
+                Start-Sleep -Milliseconds 300
             } catch {
-                Log "[Auth] Token refresh failed: $($_.Exception.Message)"
+                Log "[CtrlE] account=$acct: keybd_event error: $($_.Exception.Message)" -level WARN
             }
         }
+        Log "[CtrlE] account=$acct: sent to $($targets.Count) window(s)"
+        return $true
+    } catch {
+        Log "[CtrlE] account=$acct: unexpected error: $($_.Exception.Message)" -level ERROR
+        return $false
+    }
+}
 
-        # AutoTrading 状態同期（希望値 vs JSON実際値）
-        # Invoke-RestMethod の PS5.1 内部オブジェクト問題を避けるため
-        # WebClient で生 JSON を取得し ConvertFrom-Json でパースする
-        $desired = @{}
+# ── 状態機械 per account ─────────────────────────────────────────
+# $accountStates[$acct] = @{
+#   prevDesired = $null|bool   前回ループの desired
+#   prevActual  = $null|bool   前回ループの actual
+#   lastCmdTime = $null|datetime  最後に Ctrl+E を送った時刻
+#   retryCount  = int           現在の連続リトライ数
+# }
+$accountStates = @{}
+
+function Get-AccountState {
+    param([string]$acct)
+    if (-not $accountStates.ContainsKey($acct)) {
+        $accountStates[$acct] = @{
+            prevDesired = $null
+            prevActual  = $null
+            lastCmdTime = $null
+            retryCount  = 0
+        }
+    }
+    return $accountStates[$acct]
+}
+
+function Invoke-AutoTradingSync {
+    param([hashtable]$desiredMap)
+    $keys = @($desiredMap.Keys)
+    foreach ($acct in $keys) {
         try {
-            $wc = New-Object System.Net.WebClient
-            $wc.Headers.Add("apikey",         $AnonKey)
-            $wc.Headers.Add("Authorization",  "Bearer $jwt")
-            $wc.Headers.Add("Accept",         "application/json")
-            $eaJson = $wc.DownloadString("$Url/rest/v1/ea_controls?select=account_number,enabled")
-            $eaRows = $eaJson | ConvertFrom-Json
-            foreach ($row in $eaRows) {
-                if ($null -eq $row) { continue }
-                $n = [string]($row.account_number)
-                if ($n) { $desired[$n] = [bool]($row.enabled) }
+            $desired = $desiredMap[$acct]
+            $actual  = Get-ActualTradingState $acct
+            $st      = Get-AccountState $acct
+
+            $prevDesired = $st.prevDesired
+            $prevActual  = $st.prevActual
+
+            Log "[State] account=$acct desired=$desired actual=$actual prevDesired=$prevDesired prevActual=$prevActual retry=$($st.retryCount)"
+
+            # actual 不明（JSON未存在または読み込み失敗）→ skip
+            if ($null -eq $actual) {
+                $st.prevDesired = $desired
+                continue
             }
-            Log "[AutoTrading] ea_controls loaded: $($desired.Count) row(s)"
-        } catch {
-            Log "[AutoTrading] ERROR line=$($_.InvocationInfo.ScriptLineNumber): $($_.Exception.Message)"
-        }
-        if ($desired.Count -gt 0) {
-          try {
-            $desiredKeys = @($desired.Keys)
-            foreach ($acct in $desiredKeys) {
-                $desiredState = $desired[$acct]
-                $actualState  = Get-ActualTradingState $acct
-                $prevDesired  = $prevDesiredStates[$acct]
-                $prevActual   = $prevActualStates[$acct]
-                $prevDesiredStates[$acct] = $desiredState
-                $prevActualStates[$acct]  = $actualState
 
-                Log "[AutoTrading] Account ${acct}: desired=$desiredState actual=$actualState"
-                if ($null -eq $actualState) { continue }
-                if ($actualState -eq $desiredState) { continue }
+            $desiredChanged = ($null -ne $prevDesired -and $prevDesired -ne $desired)
+            $actualChanged  = ($null -ne $prevActual  -and $prevActual  -ne $actual)
 
-                $lastSent = $ctrlECooldown[$acct]
-                if ($null -ne $lastSent -and ((Get-Date) - $lastSent).TotalSeconds -lt 15) {
-                    Log "[AutoTrading] Account ${acct}: cooldown, skipping"
+            # ── 同期済み ──────────────────────────────────────────
+            if ($actual -eq $desired) {
+                if ($st.retryCount -gt 0) {
+                    Log "[State] account=$acct: CONFIRMED (retry=$($st.retryCount) succeeded)"
+                }
+                $st.retryCount  = 0
+                $st.lastCmdTime = $null
+                $st.prevDesired = $desired
+                $st.prevActual  = $actual
+                continue
+            }
+
+            # ── 不一致 ────────────────────────────────────────────
+
+            # MT 手動変更（desired は変わっておらず actual だけ変わった）→ DB 更新
+            if ($actualChanged -and -not $desiredChanged -and $null -ne $prevDesired) {
+                Log "[State] account=$acct: reason=manual_change actual=$actual -> DB sync"
+                Sync-ActualToDb $acct $actual
+                $st.retryCount  = 0
+                $st.lastCmdTime = $null
+                $st.prevDesired = $desired
+                $st.prevActual  = $actual
+                continue
+            }
+
+            # クールダウン中
+            if ($null -ne $st.lastCmdTime) {
+                $elapsed = ((Get-Date) - $st.lastCmdTime).TotalSeconds
+                if ($elapsed -lt $CTRL_E_COOLDOWN_SEC) {
+                    Log "[State] account=$acct: cooldown ${elapsed}s / ${CTRL_E_COOLDOWN_SEC}s"
+                    $st.prevDesired = $desired
+                    $st.prevActual  = $actual
                     continue
                 }
-
-                $desiredChanged = ($null -ne $prevDesired -and $prevDesired -ne $desiredState)
-                $actualChanged  = ($null -ne $prevActual  -and $prevActual  -ne $actualState)
-
-                if ($null -eq $prevDesired) {
-                    # 初回起動: desired を MT に適用
-                    Log "[AutoTrading] Account ${acct}: initial -> Ctrl+E (desired=$desiredState)"
-                    Send-AutoTradingToggle $acct
-                    $ctrlECooldown[$acct] = Get-Date
-                } elseif ($desiredChanged -and -not $actualChanged) {
-                    # Web が desired を変更 → Ctrl+E で MT に適用
-                    Log "[AutoTrading] Account ${acct}: web change -> Ctrl+E (desired=$desiredState)"
-                    Send-AutoTradingToggle $acct
-                    $ctrlECooldown[$acct] = Get-Date
-                } elseif ($actualChanged -and -not $desiredChanged) {
-                    # MT が手動変更 → ea_controls を同期
-                    Log "[AutoTrading] Account ${acct}: MT manual change -> syncing DB (actual=$actualState)"
-                    Set-TradingState $acct $actualState $jwt
-                } else {
-                    # 持続的な不一致 (Ctrl+E 未応答) → 再送
-                    Log "[AutoTrading] Account ${acct}: persistent mismatch, retrying Ctrl+E"
-                    Send-AutoTradingToggle $acct
-                    $ctrlECooldown[$acct] = Get-Date
-                }
             }
-          } catch {
-            Log "[AutoTrading] SYNC ERROR line=$($_.InvocationInfo.ScriptLineNumber): $($_.Exception.Message)"
-          }
-        }
 
-        # Wait up to 5 seconds for a file change
-        $change = $watcher.WaitForChanged([IO.WatcherChangeTypes]::Changed, 2000)
-        if ($change.TimedOut) { continue }
+            # リトライ上限到達 → リセットして次サイクルへ
+            if ($st.retryCount -ge $CTRL_E_MAX_RETRY) {
+                Log "[State] account=$acct: max retries ($CTRL_E_MAX_RETRY) reached, resetting" -level WARN
+                $st.retryCount  = 0
+                $st.lastCmdTime = $null
+                $st.prevDesired = $desired
+                $st.prevActual  = $actual
+                continue
+            }
 
-        $name = $change.Name
-        $now  = [long]((Get-Date) - [datetime]'1970-01-01').TotalSeconds
+            # 実行理由
+            $reason = if ($null -eq $prevDesired) { 'initial' }
+                      elseif ($desiredChanged -and -not $actualChanged) { 'web_change' }
+                      else { 'retry' }
 
-        # Debounce: skip if same file uploaded within last 2 seconds
-        if ($lastUpload.ContainsKey($name) -and ($now - $lastUpload[$name]) -lt 2) { continue }
-        $lastUpload[$name] = $now
+            Log "[State] account=$acct: reason=$reason -> Ctrl+E (desired=$desired retry=$($st.retryCount+1)/$CTRL_E_MAX_RETRY)"
+            $sent = Send-CtrlE $acct
+            if ($sent) {
+                $st.retryCount++
+                $st.lastCmdTime = Get-Date
+            }
+            $st.prevDesired = $desired
+            $st.prevActual  = $actual
 
-        # Wait briefly for the file write to complete
-        Start-Sleep -Milliseconds 500
-
-        $filePath = Join-Path $Folder $name
-        try {
-            Send-Report $filePath $headers
-        }
-        catch {
-            Log "[NG] $name : $($_.Exception.Message)"
+        } catch {
+            Log "[State] account=$acct: UNHANDLED: $($_.Exception.Message)" -level ERROR
         }
     }
+}
+
+# ── 定期スキャン（FSW 取りこぼし補完） ───────────────────────────
+$lastScanTime = [datetime]::MinValue
+$lastUpload   = @{}  # name → LastWriteTime.Ticks
+
+function Invoke-FileScan {
+    try {
+        $files = Get-ChildItem -Path $Folder -Filter "mt4_report_*.json" -ErrorAction SilentlyContinue
+        if ($null -eq $files) { return }
+        foreach ($file in $files) {
+            $n     = $file.Name
+            $ticks = $file.LastWriteTime.Ticks
+            if ($lastUpload.ContainsKey($n) -and $lastUpload[$n] -eq $ticks) { continue }
+            $lastUpload[$n] = $ticks
+            Send-Report $file.FullName
+        }
+    } catch {
+        Log "[Scan] periodic scan error: $($_.Exception.Message)" -level WARN
+    }
+}
+
+# ── メイン ────────────────────────────────────────────────────────
+Log "==== sync-to-supabase.ps1 v14 started ===="
+Log "Folder: $Folder"
+
+Invoke-Auth | Out-Null
+Invoke-FileScan
+
+$watcher = $null
+try {
+    $watcher = New-Object System.IO.FileSystemWatcher
+    $watcher.Path                = $Folder
+    $watcher.Filter              = "mt4_report_*.json"
+    $watcher.NotifyFilter        = [IO.NotifyFilters]'LastWrite'
+    $watcher.EnableRaisingEvents = $true
+    Log "[Watch] FileSystemWatcher started"
 } catch {
-    Log "[FATAL] $_"
+    Log "[Watch] FileSystemWatcher init failed: $($_.Exception.Message) - scan-only mode" -level WARN
+}
+
+try {
+    while ($true) {
+        try {
+            # トークン有効性確保
+            Ensure-ValidToken
+
+            # AutoTrading 状態機械
+            $desiredMap = Get-DesiredStates
+            if ($null -ne $desiredMap -and $desiredMap.Count -gt 0) {
+                Invoke-AutoTradingSync $desiredMap
+            }
+
+            # FileSystemWatcher（リアルタイム検知）
+            if ($null -ne $watcher) {
+                try {
+                    $change = $watcher.WaitForChanged([IO.WatcherChangeTypes]::Changed, $LOOP_WAIT_MS)
+                    if (-not $change.TimedOut -and $change.Name) {
+                        Start-Sleep -Milliseconds 500
+                        Send-Report (Join-Path $Folder $change.Name)
+                    }
+                } catch {
+                    Log "[Watch] WaitForChanged error: $($_.Exception.Message)" -level WARN
+                    Start-Sleep -Milliseconds $LOOP_WAIT_MS
+                }
+            } else {
+                Start-Sleep -Milliseconds $LOOP_WAIT_MS
+            }
+
+            # 定期スキャン（FSW 補完）
+            if (((Get-Date) - $lastScanTime).TotalSeconds -ge $SCAN_INTERVAL_SEC) {
+                $lastScanTime = Get-Date
+                Invoke-FileScan
+            }
+
+        } catch {
+            Log "[Loop] Unhandled: $($_.Exception.Message) (line $($_.InvocationInfo.ScriptLineNumber))" -level ERROR
+            Start-Sleep -Milliseconds 1000
+        }
+    }
 } finally {
-    if ($watcher) { $watcher.Dispose() }
-    $mutex.ReleaseMutex()
-    Log "==== sync-to-supabase.ps1 stopped ===="
+    if ($null -ne $watcher) { try { $watcher.Dispose() } catch {} }
+    try { $mutex.ReleaseMutex() } catch {}
+    Log "==== sync-to-supabase.ps1 v14 stopped ===="
 }

@@ -210,7 +210,7 @@ if (-not (Test-Path $Folder)) {
     New-Item -ItemType Directory -Path $Folder -Force | Out-Null
 }
 
-Log "==== sync-to-supabase.ps1 v11 started ===="
+Log "==== sync-to-supabase.ps1 v12 started ===="
 Log "Folder: $Folder"
 Log "LogFile: $LogFile"
 
@@ -286,8 +286,9 @@ try {
         }
         if ($desired.Count -gt 0) {
           try {
-            foreach ($acct in $desired.Keys) {
-                $desiredState = $desired[$acct]
+            foreach ($entry in $desired.GetEnumerator()) {
+                $acct         = [string]$entry.Key
+                $desiredState = [bool]$entry.Value
                 $actualState  = Get-ActualTradingState $acct
                 $prevDesired  = $prevDesiredStates[$acct]
                 $prevActual   = $prevActualStates[$acct]

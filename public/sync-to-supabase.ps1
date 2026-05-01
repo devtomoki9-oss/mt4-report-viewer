@@ -272,9 +272,10 @@ try {
                 -Headers @{ "apikey" = $AnonKey; "Authorization" = "Bearer $jwt" } `
                 -ErrorAction Stop
             foreach ($row in @($eaResp)) {
-                if ($row -ne $null -and $row.PSObject.Properties['account_number']) {
-                    $desired[[string]$row.account_number] = [bool]$row.enabled
-                }
+                if ($null -eq $row) { continue }
+                $acctNum = $row.account_number
+                if ($null -eq $acctNum) { continue }
+                $desired[[string]$acctNum] = [bool]$row.enabled
             }
             Log "[AutoTrading] ea_controls loaded: $($desired.Count) row(s)"
         } catch {

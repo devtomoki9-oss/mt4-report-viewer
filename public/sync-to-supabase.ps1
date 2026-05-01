@@ -423,7 +423,9 @@ try {
                     $change = $watcher.WaitForChanged([IO.WatcherChangeTypes]::Changed, $LOOP_WAIT_MS)
                     if (-not $change.TimedOut -and $change.Name) {
                         Start-Sleep -Milliseconds 500
-                        Send-Report (Join-Path $Folder $change.Name)
+                        $fswPath = Join-Path $Folder $change.Name
+                        Send-Report $fswPath
+                        try { $lastUpload[$change.Name] = (Get-Item $fswPath -ErrorAction Stop).LastWriteTime.Ticks } catch {}
                     }
                 } catch {
                     Log "[Watch] WaitForChanged error: $($_.Exception.Message)" -level WARN

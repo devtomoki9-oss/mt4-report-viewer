@@ -104,12 +104,13 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
             <button
               onClick={e => { e.stopPropagation(); onTradingToggle(!tradingEnabled) }}
               title={tradingEnabled ? '自動取引を停止' : '自動取引を稼働'}
-              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border transition-colors
+              className={`flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full border transition-all
                 ${tradingEnabled
                   ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30'
-                  : 'text-slate-500 border-slate-700 bg-slate-700/20 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/30'
+                  : 'text-slate-500 border-slate-700 bg-slate-800/50 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/30'
                 }`}
             >
+              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 transition-colors ${tradingEnabled ? 'bg-emerald-400' : 'bg-slate-600'}`} />
               {tradingEnabled ? '稼働中' : '停止中'}
             </button>
           )}

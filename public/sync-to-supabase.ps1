@@ -1,4 +1,4 @@
-# sync-to-supabase.ps1 v17
+# sync-to-supabase.ps1 v23
 # Full fault-tolerant edition - MT4/MT5 -> Supabase sync + AutoTrading control
 #
 # Usage A (direct):
@@ -33,13 +33,13 @@ catch  [System.Threading.AbandonedMutexException] { $acquired = $true }
 if (-not $acquired) { exit 0 }
 
 # -- Constants ----------------------------------------------------------------
-$LOOP_WAIT_MS        = 2000
-$CTRL_E_COOLDOWN_SEC = 20
-$CTRL_E_MAX_RETRY    = 3
-$FILE_LOCK_RETRY     = 3
-$FILE_STABILITY_MS   = 200
-$SCAN_INTERVAL_SEC   = 5
-$TOKEN_REFRESH_SEC   = 300
+$LOOP_WAIT_MS              = 2000
+$CTRL_E_MAX_RETRY          = 3
+$CTRL_E_PENDING_TIMEOUT_SEC = 8  # if MT4 does not update JSON within this time, retry Ctrl+E
+$FILE_LOCK_RETRY           = 3
+$FILE_STABILITY_MS         = 200
+$SCAN_INTERVAL_SEC         = 5
+$TOKEN_REFRESH_SEC         = 300
 
 # -- Logging ------------------------------------------------------------------
 if (-not (Test-Path $Folder)) {
@@ -154,15 +154,22 @@ function Read-FileWithRetry {
     return $null
 }
 
-# -- Get autoTrading actual state from MT JSON --------------------------------
+# -- Get autoTrading actual state + JSON mod time from MT JSON ----------------
 function Get-ActualTradingState {
     param([string]$acct)
-    $text = Read-FileWithRetry (Join-Path $Folder "mt4_report_$acct.json")
-    if ($null -eq $text) { return $null }
+    $path    = Join-Path $Folder "mt4_report_$acct.json"
+    $modTime = [long]0
     try {
-        if ($text -match '"autoTrading"\s*:\s*(true|false)') { return ($Matches[1] -eq 'true') }
+        if (Test-Path $path) { $modTime = (Get-Item $path -ErrorAction Stop).LastWriteTime.Ticks }
     } catch {}
-    return $null
+    $text = Read-FileWithRetry $path
+    if ($null -eq $text) { return @{ State = $null; ModTime = $modTime } }
+    try {
+        if ($text -match '"autoTrading"\s*:\s*(true|false)') {
+            return @{ State = ($Matches[1] -eq 'true'); ModTime = $modTime }
+        }
+    } catch {}
+    return @{ State = $null; ModTime = $modTime }
 }
 
 # -- Load desired states from Supabase ----------------------------------------
@@ -314,11 +321,13 @@ function Get-AccountState {
     param([string]$acct)
     if (-not $accountStates.ContainsKey($acct)) {
         $accountStates[$acct] = @{
-            prevDesired = $null
-            prevActual  = $null
-            lastCmdTime = $null
-            retryCount  = 0
-            cmdPending  = $false
+            prevDesired       = $null
+            prevActual        = $null
+            lastCmdTime       = $null
+            retryCount        = 0
+            cmdPending        = $false
+            jsonModAtCmd      = $null
+            stableConfirmedAt = $null
         }
     }
     return $accountStates[$acct]
@@ -330,13 +339,15 @@ function Invoke-AutoTradingSync {
     foreach ($acct in $keys) {
         try {
             $desired = $desiredMap[$acct]
-            $actual  = Get-ActualTradingState $acct
+            $info    = Get-ActualTradingState $acct
+            $actual  = $info.State
+            $modTime = $info.ModTime
             $st      = Get-AccountState $acct
 
             $prevDesired = $st.prevDesired
             $prevActual  = $st.prevActual
 
-            Log "[State] account=$acct desired=$desired actual=$actual prevDesired=$prevDesired prevActual=$prevActual retry=$($st.retryCount)"
+            Log "[State] account=$acct desired=$desired actual=$actual modTime=$modTime jsonModAtCmd=$($st.jsonModAtCmd) retry=$($st.retryCount)"
 
             if ($null -eq $actual) {
                 $st.prevDesired = $desired
@@ -346,50 +357,71 @@ function Invoke-AutoTradingSync {
             $desiredChanged = ($null -ne $prevDesired -and $prevDesired -ne $desired)
             $actualChanged  = ($null -ne $prevActual  -and $prevActual  -ne $actual)
 
+            # -- Stable: actual matches desired --------------------------------
             if ($actual -eq $desired) {
                 if ($st.retryCount -gt 0) {
                     Log "[State] account=${acct}: CONFIRMED (retry=$($st.retryCount) succeeded)"
                 }
-                $st.retryCount  = 0
-                $st.lastCmdTime = $null
-                $st.cmdPending  = $false
-                $st.prevDesired = $desired
-                $st.prevActual  = $actual
+                $st.retryCount        = 0
+                $st.cmdPending        = $false
+                $st.jsonModAtCmd      = $null
+                $st.stableConfirmedAt = Get-Date
+                $st.prevDesired       = $desired
+                $st.prevActual        = $actual
                 continue
             }
 
+            # -- MT4 manual change detection -----------------------------------
+            # actualChanged + desired unchanged + no pending command = manual MT4 change
             if ($actualChanged -and -not $desiredChanged -and $null -ne $prevDesired) {
-                # actual changed but desired did not - treat as transient MT4 state change, always retry
-                # never write back to DB here: the web app toggle is the authoritative desired state
-                Log "[State] account=${acct}: actual changed unexpectedly (actual=$actual desired=$desired), resetting for retry"
-                $st.retryCount  = 0
-                $st.lastCmdTime = $null
-                $st.cmdPending  = $false
-                $st.prevDesired = $desired
-                $st.prevActual  = $actual
-                continue
+                $fromOurCmd = $null -ne $st.jsonModAtCmd -and $modTime -gt $st.jsonModAtCmd
+                if (-not $fromOurCmd) {
+                    Log "[State] account=${acct}: manual MT4 change detected (actual=$actual) -> DB sync"
+                    Sync-ActualToDb $acct $actual
+                    $st.retryCount        = 0
+                    $st.cmdPending        = $false
+                    $st.lastCmdTime       = $null
+                    $st.jsonModAtCmd      = $null
+                    $st.stableConfirmedAt = $null
+                    $st.prevDesired       = $desired
+                    $st.prevActual        = $actual
+                    continue
+                }
+                # JSON updated after our Ctrl+E but state is still wrong - fall through to retry
+                Log "[State] account=${acct}: actual changed after our Ctrl+E, state still wrong, will retry"
+                $st.cmdPending = $false
             }
 
-            if ($null -ne $st.lastCmdTime) {
-                $elapsed = ((Get-Date) - $st.lastCmdTime).TotalSeconds
-                if ($elapsed -lt $CTRL_E_COOLDOWN_SEC) {
-                    Log "[State] account=${acct}: cooldown ${elapsed}s / ${CTRL_E_COOLDOWN_SEC}s"
-                    $st.prevDesired = $desired
-                    $st.prevActual  = $actual
-                    continue
+            # -- Wait for MT4 to process our Ctrl+E (JSON not yet updated) ----
+            if ($st.cmdPending) {
+                $jsonUpdated = $null -ne $st.jsonModAtCmd -and $modTime -gt $st.jsonModAtCmd
+                if (-not $jsonUpdated) {
+                    $elapsed = if ($st.lastCmdTime) { [int]((Get-Date) - $st.lastCmdTime).TotalSeconds } else { 0 }
+                    if ($elapsed -lt $CTRL_E_PENDING_TIMEOUT_SEC) {
+                        Log "[State] account=${acct}: waiting for JSON update (${elapsed}s)"
+                        $st.prevDesired = $desired
+                        $st.prevActual  = $actual
+                        continue
+                    }
+                    # EA did not write JSON within timeout - clear pending and retry Ctrl+E
+                    Log "[State] account=${acct}: JSON not updated after ${elapsed}s, retrying Ctrl+E" -level WARN
+                    $st.cmdPending = $false
                 }
             }
 
+            # -- Max retry guard -----------------------------------------------
             if ($st.retryCount -ge $CTRL_E_MAX_RETRY) {
                 Log "[State] account=${acct}: max retries ($CTRL_E_MAX_RETRY) reached, resetting" -level WARN
-                $st.retryCount  = 0
-                $st.lastCmdTime = $null
-                $st.cmdPending  = $false
-                $st.prevDesired = $desired
-                $st.prevActual  = $actual
+                $st.retryCount   = 0
+                $st.cmdPending   = $false
+                $st.lastCmdTime  = $null
+                $st.jsonModAtCmd = $null
+                $st.prevDesired  = $desired
+                $st.prevActual   = $actual
                 continue
             }
 
+            # -- Send Ctrl+E ---------------------------------------------------
             if ($null -eq $prevDesired) {
                 $reason = 'initial'
             } elseif ($desiredChanged -and -not $actualChanged) {
@@ -402,8 +434,9 @@ function Invoke-AutoTradingSync {
             $sent = Send-CtrlE $acct
             if ($sent) {
                 $st.retryCount++
-                $st.lastCmdTime = Get-Date
-                $st.cmdPending  = $true
+                $st.lastCmdTime  = Get-Date
+                $st.cmdPending   = $true
+                $st.jsonModAtCmd = $modTime   # record JSON mod time at command send
             }
             $st.prevDesired = $desired
             $st.prevActual  = $actual
@@ -435,7 +468,7 @@ function Invoke-FileScan {
 }
 
 # -- Main ---------------------------------------------------------------------
-Log "==== sync-to-supabase.ps1 v17 started ===="
+Log "==== sync-to-supabase.ps1 v23 started ===="
 Log "Folder: $Folder"
 
 Invoke-Auth | Out-Null
@@ -493,5 +526,5 @@ try {
 } finally {
     if ($null -ne $watcher) { try { $watcher.Dispose() } catch {} }
     try { $mutex.ReleaseMutex() } catch {}
-    Log "==== sync-to-supabase.ps1 v17 stopped ===="
+    Log "==== sync-to-supabase.ps1 v23 stopped ===="
 }

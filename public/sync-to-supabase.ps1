@@ -157,7 +157,7 @@ function Read-FileWithRetry {
 # -- Get autoTrading actual state + JSON mod time from MT JSON ----------------
 function Get-ActualTradingState {
     param([string]$acct)
-    $path    = Join-Path $Folder "mt4_report_$acct.json"
+    $path    = Join-Path $Folder "$acct.json"
     $modTime = [long]0
     try {
         if (Test-Path $path) { $modTime = (Get-Item $path -ErrorAction Stop).LastWriteTime.Ticks }
@@ -453,7 +453,7 @@ $lastUpload   = @{}
 
 function Invoke-FileScan {
     try {
-        $files = Get-ChildItem -Path $Folder -Filter "mt4_report_*.json" -ErrorAction SilentlyContinue
+        $files = Get-ChildItem -Path $Folder -Filter "*.json" -ErrorAction SilentlyContinue
         if ($null -eq $files) { return }
         foreach ($file in $files) {
             $n     = $file.Name
@@ -478,7 +478,7 @@ $watcher = $null
 try {
     $watcher = New-Object System.IO.FileSystemWatcher
     $watcher.Path                = $Folder
-    $watcher.Filter              = "mt4_report_*.json"
+    $watcher.Filter              = "*.json"
     $watcher.NotifyFilter        = [IO.NotifyFilters]'LastWrite'
     $watcher.EnableRaisingEvents = $true
     Log "[Watch] FileSystemWatcher started"

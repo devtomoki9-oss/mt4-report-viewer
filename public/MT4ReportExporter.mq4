@@ -15,7 +15,7 @@
 //|                                                                  |
 //|  【出力先】                                                      |
 //|  %USERPROFILE%\MTExport\                                        |
-//|  mt4_report_<口座番号>.json                                      |
+//|  <口座番号>.json                                                 |
 //+------------------------------------------------------------------+
 #property copyright ""
 #property link      ""
@@ -151,7 +151,7 @@ void ExportTrades()
 
    CreateDirectoryW(exportDir, 0);
 
-   string filepath = exportDir + "\\mt4_report_" + IntegerToString(AccountNumber()) + ".json";
+   string filepath = exportDir + "\\" + IntegerToString(AccountNumber()) + ".json";
 
    string json = "{\n";
    json += "  \"account\": "     + IntegerToString(AccountNumber())     + ",\n";

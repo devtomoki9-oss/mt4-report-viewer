@@ -90,6 +90,17 @@ function SyncSection() {
         <Code>Set-ExecutionPolicy -Scope CurrentUser RemoteSigned</Code>
       </CheckItem>
 
+      <CheckItem n="Q" title="詳細レポートに一部の取引しか表示されない">
+        <p>MT4/MT5 の口座履歴タブの表示期間が制限されていると、EA がエクスポートできる取引件数も同じ期間に限られます。</p>
+        <p className="mt-1"><strong className="text-slate-300">解決手順：</strong></p>
+        <ol className="list-decimal list-inside space-y-1 mt-1 ml-1">
+          <li>MT4/MT5 の下部パネルにある <strong className="text-slate-300">口座履歴</strong> タブを開く</li>
+          <li>タブ内の取引一覧を <strong className="text-slate-300">右クリック</strong></li>
+          <li>メニューから <strong className="text-slate-300">全期間</strong> を選択</li>
+        </ol>
+        <p className="mt-1.5">全期間を選択すると、次の同期タイミングですべての取引が読み込まれます。</p>
+      </CheckItem>
+
       <CheckItem n="Q" title="口座カードを削除したのにまた表示される">
         <p>口座カード右上の <strong className="text-slate-300">✕ ボタン</strong> を押すと、サーバー上のレポートデータも削除されます。</p>
         <p className="mt-1">ただし <strong className="text-slate-300">同期スクリプトが動作中の場合、MT4/MT5 が次にエクスポートしたタイミングで自動的に再アップロードされます。</strong></p>

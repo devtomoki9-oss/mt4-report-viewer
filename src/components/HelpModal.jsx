@@ -92,7 +92,13 @@ function SyncSection() {
       <CheckItem n="Q" title="口座カードを削除したのにまた表示される">
         <p>口座カード右上の <strong className="text-slate-300">✕ ボタン</strong> を押すと、Supabase 上のレポートデータも削除されます。</p>
         <p className="mt-1">ただし <strong className="text-slate-300">sync-to-supabase.ps1 が動作中の場合、MT4/MT5 が次にエクスポートしたタイミングで自動的に再アップロードされます。</strong></p>
-        <p className="mt-1">口座を完全に表示しないようにするには、MT4/MT5 側で該当口座の EA（MT4ReportExporter / MT5ReportExporter）を停止してから削除してください。</p>
+        <p className="mt-1">口座を完全に表示しないようにするには、以下の手順を行ってください。</p>
+        <ol className="list-decimal list-inside space-y-1 mt-1.5 ml-1">
+          <li>MT4/MT5 側で該当口座の EA（MT4ReportExporter / MT5ReportExporter）を停止する</li>
+          <li>エクスプローラーで以下のフォルダを開き、該当口座番号の JSON ファイルを削除する</li>
+        </ol>
+        <Code>%USERPROFILE%\MTExport\</Code>
+        <p className="mt-1.5">JSON ファイル名は口座番号を含む形式（例: <code className="text-slate-300 bg-[#111827] px-1 rounded">12345678.json</code>）になっています。ファイルを削除した後、口座カードの <strong className="text-slate-300">✕ ボタン</strong> を押して Supabase 上のデータも削除してください。</p>
       </CheckItem>
     </div>
   )

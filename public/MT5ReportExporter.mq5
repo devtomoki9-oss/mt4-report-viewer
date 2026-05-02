@@ -10,7 +10,7 @@
 //|                                                                  |
 //|  【出力先】                                                      |
 //|  %USERPROFILE%\MTExport\                                        |
-//|  mt4_report_<口座番号>.json  (MT4 と同じ形式)                    |
+//|  <口座番号>.json                                                 |
 //+------------------------------------------------------------------+
 #property copyright ""
 #property link      ""
@@ -165,7 +165,7 @@ void ExportTrades()
    CreateDirectoryW(exportDir, 0);
 
    long   accountNumber = AccountInfoInteger(ACCOUNT_LOGIN);
-   string filepath = exportDir + "\\mt4_report_" + IntegerToString(accountNumber) + ".json";
+   string filepath = exportDir + "\\" + IntegerToString(accountNumber) + ".json";
 
    HistorySelect(0, TimeCurrent() + 1);
    int total = HistoryDealsTotal();

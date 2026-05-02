@@ -1,4 +1,4 @@
-# sync-to-supabase.ps1 v23
+# sync-to-supabase.ps1 v24
 # Full fault-tolerant edition - MT4/MT5 -> Supabase sync + AutoTrading control
 #
 # Usage A (direct):
@@ -468,7 +468,7 @@ function Invoke-FileScan {
 }
 
 # -- Main ---------------------------------------------------------------------
-Log "==== sync-to-supabase.ps1 v23 started ===="
+Log "==== sync-to-supabase.ps1 v24 started ===="
 Log "Folder: $Folder"
 
 Invoke-Auth | Out-Null
@@ -526,5 +526,5 @@ try {
 } finally {
     if ($null -ne $watcher) { try { $watcher.Dispose() } catch {} }
     try { $mutex.ReleaseMutex() } catch {}
-    Log "==== sync-to-supabase.ps1 v23 stopped ===="
+    Log "==== sync-to-supabase.ps1 v24 stopped ===="
 }

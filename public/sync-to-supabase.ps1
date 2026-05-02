@@ -1,4 +1,4 @@
-# sync-to-supabase.ps1 v22
+# sync-to-supabase.ps1 v23
 # Full fault-tolerant edition - MT4/MT5 -> Supabase sync + AutoTrading control
 #
 # Usage A (direct):
@@ -374,10 +374,8 @@ function Invoke-AutoTradingSync {
             # -- MT4 manual change detection -----------------------------------
             # actualChanged + desired unchanged + no pending command = manual MT4 change
             if ($actualChanged -and -not $desiredChanged -and $null -ne $prevDesired) {
-                $fromOurCmd    = $null -ne $st.jsonModAtCmd -and $modTime -gt $st.jsonModAtCmd
-                # Within 120s of stable confirmation, treat revert as a retry target (not manual)
-                $recentlyStable = $null -ne $st.stableConfirmedAt -and ((Get-Date) - $st.stableConfirmedAt).TotalSeconds -lt 120
-                if (-not $fromOurCmd -and -not $recentlyStable) {
+                $fromOurCmd = $null -ne $st.jsonModAtCmd -and $modTime -gt $st.jsonModAtCmd
+                if (-not $fromOurCmd) {
                     Log "[State] account=${acct}: manual MT4 change detected (actual=$actual) -> DB sync"
                     Sync-ActualToDb $acct $actual
                     $st.retryCount        = 0
@@ -389,13 +387,8 @@ function Invoke-AutoTradingSync {
                     $st.prevActual        = $actual
                     continue
                 }
-                if ($recentlyStable) {
-                    Log "[State] account=${acct}: actual reverted within stable window, will retry Ctrl+E"
-                }
                 # JSON updated after our Ctrl+E but state is still wrong - fall through to retry
-                if (-not $recentlyStable) {
-                    Log "[State] account=${acct}: actual changed after our Ctrl+E, state still wrong, will retry"
-                }
+                Log "[State] account=${acct}: actual changed after our Ctrl+E, state still wrong, will retry"
                 $st.cmdPending = $false
             }
 
@@ -475,7 +468,7 @@ function Invoke-FileScan {
 }
 
 # -- Main ---------------------------------------------------------------------
-Log "==== sync-to-supabase.ps1 v22 started ===="
+Log "==== sync-to-supabase.ps1 v23 started ===="
 Log "Folder: $Folder"
 
 Invoke-Auth | Out-Null
@@ -533,5 +526,5 @@ try {
 } finally {
     if ($null -ne $watcher) { try { $watcher.Dispose() } catch {} }
     try { $mutex.ReleaseMutex() } catch {}
-    Log "==== sync-to-supabase.ps1 v22 stopped ===="
+    Log "==== sync-to-supabase.ps1 v23 stopped ===="
 }

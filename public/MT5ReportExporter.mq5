@@ -14,7 +14,7 @@
 //+------------------------------------------------------------------+
 #property copyright ""
 #property link      ""
-#property version   "1.10"
+#property version   "1.20"
 #property description "取引履歴を JSON へ自動エクスポートします。自動売買 OFF でも動作します。"
 
 #import "kernel32.dll"
@@ -36,13 +36,15 @@
 input int    RefreshMinutes  = 1;           // 定期エクスポート間隔（分）
 input int    RealtimeSec     = 10;          // Tick 発生時の最小エクスポート間隔（秒）
 input string ExportSubFolder = "MTExport"; // USERPROFILE 直下のサブフォルダ名
+input int    ChartTimeframe  = 15;          // チャート時間足（分）: 1/5/15/30/60/240/1440
+input int    ChartBars       = 200;         // チャート出力本数（最大500）
 
 #define TIMER_SEC 5
 
 int      g_ExportTick         = 0;
 datetime g_LastTriggerExport  = 0;
 datetime g_LastRealtimeExport = 0;
-bool     g_LastAutoTrading    = false; // AutoTrading 状態変化を検知して即時エクスポートするために使用
+bool     g_LastAutoTrading    = false;
 
 //+------------------------------------------------------------------+
 int OnInit()
@@ -71,7 +73,6 @@ void OnTimer()
 {
    bool triggered = CheckTrigger();
 
-   // AutoTrading 状態が変化した場合は即時エクスポート（Ctrl+E 後 5 秒以内に反映）
    bool currentAT = (bool)TerminalInfoInteger(TERMINAL_TRADE_ALLOWED);
    bool atChanged  = (currentAT != g_LastAutoTrading);
    g_LastAutoTrading = currentAT;
@@ -84,8 +85,6 @@ void OnTimer()
    }
 }
 
-//+------------------------------------------------------------------+
-//|  トリガーファイル（_refresh.cmd）を確認する                      |
 //+------------------------------------------------------------------+
 bool CheckTrigger()
 {
@@ -149,9 +148,50 @@ string TimeToISO(datetime t)
 }
 
 //+------------------------------------------------------------------+
+//|  int(分) を ENUM_TIMEFRAMES に変換                               |
+//+------------------------------------------------------------------+
+ENUM_TIMEFRAMES IntToTimeframe(int minutes)
+{
+   switch(minutes)
+   {
+      case 1:    return PERIOD_M1;
+      case 5:    return PERIOD_M5;
+      case 15:   return PERIOD_M15;
+      case 30:   return PERIOD_M30;
+      case 60:   return PERIOD_H1;
+      case 240:  return PERIOD_H4;
+      case 1440: return PERIOD_D1;
+      default:   return PERIOD_M15;
+   }
+}
+
+//+------------------------------------------------------------------+
+//|  保有ポジションのシンボルを収集（重複排除）                       |
+//+------------------------------------------------------------------+
+int CollectPositionSymbols(string &symbols[])
+{
+   int count = 0;
+   int posTotal = PositionsTotal();
+   for (int i = 0; i < posTotal; i++)
+   {
+      ulong ticket = PositionGetTicket(i);
+      if (ticket == 0) continue;
+      string sym = PositionGetString(POSITION_SYMBOL);
+      bool found = false;
+      for (int j = 0; j < count; j++) if (symbols[j] == sym) { found = true; break; }
+      if (!found) { ArrayResize(symbols, count + 1); symbols[count++] = sym; }
+   }
+   if (count == 0)
+   {
+      ArrayResize(symbols, 1);
+      symbols[0] = Symbol();
+      count = 1;
+   }
+   return count;
+}
+
+//+------------------------------------------------------------------+
 //|  取引履歴を JSON ファイルに書き出す                              |
-//|  OUT/INOUT ディールを起点に IN ディールを position ID で検索し   |
-//|  MT4 と同形式の完結したトレードレコードを出力する                |
 //+------------------------------------------------------------------+
 void ExportTrades()
 {
@@ -180,7 +220,7 @@ void ExportTrades()
    json += "  \"credit\": "       + DoubleToString(AccountInfoDouble(ACCOUNT_CREDIT),  2)  + ",\n";
    json += "  \"leverage\": "     + IntegerToString(AccountInfoInteger(ACCOUNT_LEVERAGE))  + ",\n";
    json += "  \"exportTime\": \"" + TimeToISO(TimeCurrent())                              + "\",\n";
-   json += "  \"autoTrading\": " + ((bool)TerminalInfoInteger(TERMINAL_TRADE_ALLOWED) ? "true" : "false") + ",\n";
+   json += "  \"autoTrading\": "  + ((bool)TerminalInfoInteger(TERMINAL_TRADE_ALLOWED) ? "true" : "false") + ",\n";
    json += "  \"trades\": [\n";
 
    bool first = true;
@@ -207,7 +247,6 @@ void ExportTrades()
       string   comment    = HistoryDealGetString(outTicket,  DEAL_COMMENT);
       ulong    posId      = (ulong)HistoryDealGetInteger(outTicket, DEAL_POSITION_ID);
 
-      // 対応する IN ディールをポジション ID で検索
       datetime openTime  = closeTime;
       double   openPrice = closePrice;
       for (int j = 0; j < i; j++)
@@ -277,10 +316,44 @@ void ExportTrades()
       json += "}";
    }
 
-   json += "\n  ]\n}\n";
+   // チャートデータ（保有ポジションのシンボル）
+   json += "\n  ],\n";
+   json += "  \"charts\": {\n";
+
+   string symbols[];
+   int symCount = CollectPositionSymbols(symbols);
+   ENUM_TIMEFRAMES tf = IntToTimeframe(ChartTimeframe);
+   int bars = MathMax(1, MathMin(ChartBars, 500));
+
+   for (int si = 0; si < symCount; si++)
+   {
+      if (si > 0) json += ",\n";
+      string sym    = symbols[si];
+      int    digits = (int)SymbolInfoInteger(sym, SYMBOL_DIGITS);
+
+      MqlRates rates[];
+      int copied = CopyRates(sym, tf, 0, bars, rates);
+
+      json += "    \"" + sym + "\": {\"tf\":" + IntegerToString(ChartTimeframe) + ",\"candles\":[\n";
+
+      bool firstBar = true;
+      for (int i = copied - 1; i >= 0; i--)
+      {
+         if (!firstBar) json += ",\n";
+         firstBar = false;
+         json += "      {\"t\":\"" + TimeToISO(rates[i].time) + "\","
+               + "\"o\":" + DoubleToString(rates[i].open,  digits) + ","
+               + "\"h\":" + DoubleToString(rates[i].high,  digits) + ","
+               + "\"l\":" + DoubleToString(rates[i].low,   digits) + ","
+               + "\"c\":" + DoubleToString(rates[i].close, digits) + "}";
+      }
+      json += "\n    ]}";
+   }
+
+   json += "\n  }\n}\n";
 
    if (WriteStringToFile(filepath, json))
-      Print("[MT5Exporter] エクスポート完了: ", filepath, "  (", total, " deals, ", posTotal, " positions)");
+      Print("[MT5Exporter] エクスポート完了: ", filepath, "  (", total, " deals, ", posTotal, " positions, ", symCount, " charts)");
    else
       Print("[MT5Exporter] 書き込み失敗: ", filepath, "  エラー: ", GetLastError());
 }

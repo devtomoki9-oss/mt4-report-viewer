@@ -338,6 +338,7 @@ export function parseMT4Json(jsonText, accountLabel = '') {
     },
     trades,
     positions,
+    charts: data.charts || {},
     stats: calcStatsFromTrades(trades),
   }
 }

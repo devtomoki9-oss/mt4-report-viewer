@@ -74,8 +74,10 @@ public class Win32 {
 "@ -ErrorAction SilentlyContinue
 
 # -- Auth ---------------------------------------------------------------------
-$script:jwt         = $null
-$script:tokenExpiry = [datetime]::MinValue
+$script:jwt            = $null
+$script:tokenExpiry    = [datetime]::MinValue
+$script:authFailedUntil = [datetime]::MinValue
+$AUTH_COOLDOWN_SEC      = 60
 
 function Invoke-Auth {
     param([int]$maxRetry = 3)
@@ -86,8 +88,9 @@ function Invoke-Auth {
                 -Method Post `
                 -Headers @{ "apikey" = $AnonKey; "Content-Type" = "application/json" } `
                 -Body $body -ErrorAction Stop
-            $script:jwt         = $res.access_token
-            $script:tokenExpiry = (Get-Date).AddSeconds($res.expires_in - $TOKEN_REFRESH_SEC)
+            $script:jwt            = $res.access_token
+            $script:tokenExpiry    = (Get-Date).AddSeconds($res.expires_in - $TOKEN_REFRESH_SEC)
+            $script:authFailedUntil = [datetime]::MinValue
             Log "[Auth] Signed in OK (expires in $($res.expires_in)s)"
             return $true
         } catch {
@@ -105,11 +108,13 @@ function Invoke-Auth {
             if ($i -lt ($maxRetry - 1)) { Start-Sleep -Seconds ([int]$wait) }
         }
     }
-    Log "[Auth] All retries exhausted - continuing with existing token" -level ERROR
+    $script:authFailedUntil = (Get-Date).AddSeconds($AUTH_COOLDOWN_SEC)
+    Log "[Auth] All retries exhausted - next retry after ${AUTH_COOLDOWN_SEC}s" -level ERROR
     return $false
 }
 
 function Ensure-ValidToken {
+    if ((Get-Date) -lt $script:authFailedUntil) { return }
     if ($null -eq $script:jwt -or (Get-Date) -gt $script:tokenExpiry) {
         Invoke-Auth | Out-Null
     }

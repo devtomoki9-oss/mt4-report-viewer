@@ -1,6 +1,13 @@
 import { useEffect, useRef, useCallback, useState, forwardRef, useImperativeHandle } from 'react'
 import { createChart, CrosshairMode, CandlestickSeries, LineSeries, createSeriesMarkers } from 'lightweight-charts'
 
+// "2024.05.03 09:15:00" / "2024-05-03 09:15:00" → "05/03 09:15"
+const fmtTime = (str) => {
+  if (!str) return ''
+  const m = str.match(/\d{4}[.\-](\d{2})[.\-](\d{2})\s+(\d{2}):(\d{2})/)
+  return m ? `${m[1]}/${m[2]} ${m[3]}:${m[4]}` : ''
+}
+
 // ---- Hover tooltip ---------------------------------------------------------
 function MarkerTooltip({ tooltip, containerRef }) {
   if (!tooltip) return null
@@ -10,14 +17,25 @@ function MarkerTooltip({ tooltip, containerRef }) {
 
   const rows = []
   if (data.buyEntries?.length > 0)
-    rows.push({ label: '▲ 買エントリー', items: data.buyEntries.map(e => e.size), cls: 'text-emerald-400' })
+    rows.push({
+      label: '▲ 買エントリー',
+      items: data.buyEntries.map(e => ({ value: String(e.size), time: fmtTime(e.time) })),
+      cls: 'text-emerald-400',
+    })
   if (data.sellEntries?.length > 0)
-    rows.push({ label: '▼ 売エントリー', items: data.sellEntries.map(e => e.size), cls: 'text-red-400' })
+    rows.push({
+      label: '▼ 売エントリー',
+      items: data.sellEntries.map(e => ({ value: String(e.size), time: fmtTime(e.time) })),
+      cls: 'text-red-400',
+    })
   if (data.exits?.length > 0) {
     const total = data.exits.reduce((s, e) => s + e.pnl, 0)
     rows.push({
       label: '● 決済',
-      items: data.exits.map(e => `${e.pnl >= 0 ? '+' : ''}${e.pnl.toFixed(0)}`),
+      items: data.exits.map(e => ({
+        value: `${e.pnl >= 0 ? '+' : ''}${e.pnl.toFixed(0)}`,
+        time:  fmtTime(e.time),
+      })),
       cls: total >= 0 ? 'text-emerald-400' : 'text-red-400',
     })
   }
@@ -30,14 +48,21 @@ function MarkerTooltip({ tooltip, containerRef }) {
         left:      isRight ? tooltip.x - 8 : tooltip.x + 12,
         top:       Math.max(4, tooltip.y - 20),
         transform: isRight ? 'translateX(-100%)' : undefined,
-        minWidth:  '130px',
-        maxWidth:  '220px',
+        minWidth:  '160px',
+        maxWidth:  '240px',
       }}
     >
       {rows.map((row, i) => (
         <div key={i} className={i > 0 ? 'mt-1.5 pt-1.5 border-t border-[#1f2d40]' : ''}>
-          <div className={`font-semibold ${row.cls} mb-0.5`}>{row.label} {row.items.length}件</div>
-          <div className="text-slate-400 pl-2 break-all">{row.items.join(' / ')}</div>
+          <div className={`font-semibold ${row.cls} mb-1`}>{row.label} {row.items.length}件</div>
+          <div className="space-y-0.5 pl-2">
+            {row.items.map((item, j) => (
+              <div key={j} className="flex items-center justify-between gap-3">
+                <span className="text-slate-300">{item.value}</span>
+                <span className="text-slate-500 tabular-nums">{item.time}</span>
+              </div>
+            ))}
+          </div>
         </div>
       ))}
     </div>
@@ -53,8 +78,8 @@ const TradeChart = forwardRef(function TradeChart(
   const chartRef        = useRef(null)
   const detailMapRef    = useRef(new Map())
   const savedRangeRef   = useRef(null)
-  const savedCtxRef     = useRef(null)   // { symbol, tf } — context for saved range
-  const totalCandlesRef = useRef(0)      // 縮小上限の計算用
+  const savedCtxRef     = useRef(null)
+  const totalCandlesRef = useRef(0)
   const [tooltip, setTooltip] = useState(null)
 
   const toUnixSec = (str) =>
@@ -68,7 +93,6 @@ const TradeChart = forwardRef(function TradeChart(
     const total  = totalCandlesRef.current
     const center = (range.from + range.to) / 2
     const half   = (range.to - range.from) / 2 * factor
-    // 縮小が全データ幅を超えるときは fitContent に切り替え
     if (factor > 1 && total > 0 && half * 2 >= total) {
       chart.timeScale().fitContent()
       return
@@ -140,14 +164,15 @@ const TradeChart = forwardRef(function TradeChart(
         const ts = toUnixSec(t.openTime)
         if (ts >= firstTs && ts <= lastTs) {
           const d = getDetail(snapToBar(ts))
-          if (t.type === 'buy') d.buyEntries.push({ size: t.size })
-          else                  d.sellEntries.push({ size: t.size })
+          if (t.type === 'buy') d.buyEntries.push({ size: t.size, time: t.openTime })
+          else                  d.sellEntries.push({ size: t.size, time: t.openTime })
         }
       }
       if (t.closeTime) {
         const ts  = toUnixSec(t.closeTime)
         const pnl = t.netProfit ?? t.profit ?? 0
-        if (ts >= firstTs && ts <= lastTs) getDetail(snapToBar(ts)).exits.push({ size: t.size, pnl })
+        if (ts >= firstTs && ts <= lastTs)
+          getDetail(snapToBar(ts)).exits.push({ size: t.size, pnl, time: t.closeTime })
       }
     }
 
@@ -178,6 +203,18 @@ const TradeChart = forwardRef(function TradeChart(
     createSeriesMarkers(candleSeries, markerList)
     detailMapRef.current = detailMap
 
+    // スクロールズーム上限：全データ幅を超えたら fitContent に戻す
+    let lockFit = false
+    chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
+      if (lockFit || !range) return
+      const total = totalCandlesRef.current
+      if (total > 0 && (range.to - range.from) > total * 1.1) {
+        lockFit = true
+        chart.timeScale().fitContent()
+        setTimeout(() => { lockFit = false }, 50)
+      }
+    })
+
     // クロスヘアでホバー時にツールチップ表示
     chart.subscribeCrosshairMove((param) => {
       if (!param.point || !param.time || !detailMapRef.current.has(param.time)) {
@@ -199,10 +236,17 @@ const TradeChart = forwardRef(function TradeChart(
       ])
     }
 
-    // 同symbol×同TFならズーム状態を復元、それ以外はfitContent
+    // 同symbol×同TFならズーム状態を復元（範囲を有効値にクランプ）
     const ctx = savedCtxRef.current
     if (savedRangeRef.current && ctx?.symbol === symbol && ctx?.tf === tf) {
-      chart.timeScale().setVisibleLogicalRange(savedRangeRef.current)
+      const total = candles.length
+      const from  = Math.max(0, savedRangeRef.current.from)
+      const to    = Math.min(total - 1, savedRangeRef.current.to)
+      if (to > from) {
+        chart.timeScale().setVisibleLogicalRange({ from, to })
+      } else {
+        chart.timeScale().fitContent()
+      }
     } else {
       chart.timeScale().fitContent()
     }

@@ -37,8 +37,12 @@ export default function TradeChart({ chartData, trades = [], positions = [], sym
       wickDownColor:   '#ef4444',
     })
 
+    // MT4: "2024.01.15 09:00:00" / MT5: "2024-01-15 09:00:00" を両方処理
+    const toUnixSec = (str) =>
+      Math.floor(new Date(str.replace(' ', 'T').replace(/\./g, '-')).getTime() / 1000)
+
     const candles = (chartData.candles || []).map(c => ({
-      time:  Math.floor(new Date(c.t.replace(' ', 'T')).getTime() / 1000),
+      time:  toUnixSec(c.t),
       open:  c.o,
       high:  c.h,
       low:   c.l,
@@ -51,7 +55,7 @@ export default function TradeChart({ chartData, trades = [], positions = [], sym
     const markers = []
     for (const t of symTrades) {
       if (t.openTime) {
-        const ts = Math.floor(new Date(t.openTime.replace(' ', 'T')).getTime() / 1000)
+        const ts = toUnixSec(t.openTime)
         markers.push({
           time:     ts,
           position: t.type === 'buy' ? 'belowBar' : 'aboveBar',
@@ -61,7 +65,7 @@ export default function TradeChart({ chartData, trades = [], positions = [], sym
         })
       }
       if (t.closeTime) {
-        const ts = Math.floor(new Date(t.closeTime.replace(' ', 'T')).getTime() / 1000)
+        const ts = toUnixSec(t.closeTime)
         const isProfit = (t.netProfit ?? t.profit ?? 0) >= 0
         markers.push({
           time:     ts,

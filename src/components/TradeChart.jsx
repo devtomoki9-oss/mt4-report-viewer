@@ -1,10 +1,9 @@
 import { useEffect, useRef } from 'react'
-import { createChart, CrosshairMode } from 'lightweight-charts'
+import { createChart, CrosshairMode, CandlestickSeries, LineSeries, createSeriesMarkers } from 'lightweight-charts'
 
 export default function TradeChart({ chartData, trades = [], positions = [], symbol }) {
   const containerRef = useRef(null)
   const chartRef     = useRef(null)
-  const seriesRef    = useRef(null)
 
   useEffect(() => {
     if (!containerRef.current || !chartData) return
@@ -21,15 +20,15 @@ export default function TradeChart({ chartData, trades = [], positions = [], sym
       crosshair: { mode: CrosshairMode.Normal },
       rightPriceScale: { borderColor: '#1f2d40' },
       timeScale: {
-        borderColor:     '#1f2d40',
-        timeVisible:     true,
-        secondsVisible:  false,
+        borderColor:    '#1f2d40',
+        timeVisible:    true,
+        secondsVisible: false,
       },
       width:  containerRef.current.clientWidth,
       height: 420,
     })
 
-    const candleSeries = chart.addCandlestickSeries({
+    const candleSeries = chart.addSeries(CandlestickSeries, {
       upColor:         '#10b981',
       downColor:       '#ef4444',
       borderUpColor:   '#10b981',
@@ -38,7 +37,6 @@ export default function TradeChart({ chartData, trades = [], positions = [], sym
       wickDownColor:   '#ef4444',
     })
 
-    // ローソク足データをセット（t を Unix 秒に変換）
     const candles = (chartData.candles || []).map(c => ({
       time:  Math.floor(new Date(c.t.replace(' ', 'T')).getTime() / 1000),
       open:  c.o,
@@ -49,11 +47,7 @@ export default function TradeChart({ chartData, trades = [], positions = [], sym
 
     candleSeries.setData(candles)
 
-    // 売買マーカー（直近30件の取引）
-    const symTrades = trades
-      .filter(t => t.symbol === symbol)
-      .slice(-30)
-
+    const symTrades = trades.filter(t => t.symbol === symbol).slice(-30)
     const markers = []
     for (const t of symTrades) {
       if (t.openTime) {
@@ -79,14 +73,13 @@ export default function TradeChart({ chartData, trades = [], positions = [], sym
       }
     }
     markers.sort((a, b) => a.time - b.time)
-    candleSeries.setMarkers(markers)
+    createSeriesMarkers(candleSeries, markers)
 
-    // 保有ポジションの建値ライン
     for (const p of positions.filter(p => p.symbol === symbol)) {
-      const line = chart.addLineSeries({
-        color:       p.type === 'buy' ? '#34d399' : '#f87171',
-        lineWidth:   1,
-        lineStyle:   2, // dashed
+      const line = chart.addSeries(LineSeries, {
+        color:            p.type === 'buy' ? '#34d399' : '#f87171',
+        lineWidth:        1,
+        lineStyle:        2,
         priceLineVisible: false,
         lastValueVisible: false,
       })
@@ -101,9 +94,7 @@ export default function TradeChart({ chartData, trades = [], positions = [], sym
     }
 
     chart.timeScale().fitContent()
-
-    chartRef.current  = chart
-    seriesRef.current = candleSeries
+    chartRef.current = chart
 
     const handleResize = () => {
       if (containerRef.current) chart.applyOptions({ width: containerRef.current.clientWidth })
@@ -113,8 +104,7 @@ export default function TradeChart({ chartData, trades = [], positions = [], sym
     return () => {
       window.removeEventListener('resize', handleResize)
       chart.remove()
-      chartRef.current  = null
-      seriesRef.current = null
+      chartRef.current = null
     }
   }, [chartData, trades, positions, symbol])
 

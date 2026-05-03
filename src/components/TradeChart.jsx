@@ -54,6 +54,7 @@ const TradeChart = forwardRef(function TradeChart(
   const detailMapRef    = useRef(new Map())
   const savedRangeRef   = useRef(null)
   const savedCtxRef     = useRef(null)   // { symbol, tf } — context for saved range
+  const totalCandlesRef = useRef(0)      // 縮小上限の計算用
   const [tooltip, setTooltip] = useState(null)
 
   const toUnixSec = (str) =>
@@ -64,8 +65,14 @@ const TradeChart = forwardRef(function TradeChart(
     if (!chart) return
     const range = chart.timeScale().getVisibleLogicalRange()
     if (!range) return
+    const total  = totalCandlesRef.current
     const center = (range.from + range.to) / 2
     const half   = (range.to - range.from) / 2 * factor
+    // 縮小が全データ幅を超えるときは fitContent に切り替え
+    if (factor > 1 && total > 0 && half * 2 >= total) {
+      chart.timeScale().fitContent()
+      return
+    }
     chart.timeScale().setVisibleLogicalRange({ from: center - half, to: center + half })
   }, [])
 
@@ -104,6 +111,7 @@ const TradeChart = forwardRef(function TradeChart(
     })).filter(c => c.time > 0)
 
     candleSeries.setData(candles)
+    totalCandlesRef.current = candles.length
 
     const firstTs = candles[0]?.time ?? 0
     const lastTs  = candles[candles.length - 1]?.time ?? 0

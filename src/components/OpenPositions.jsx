@@ -168,7 +168,7 @@ export default function OpenPositions({ positions, aliases = {}, charts = {}, tr
       {chartSymbol && (
         <ChartModal
           symbol={chartSymbol}
-          chartData={charts[chartSymbol]}
+          chartDataMap={charts[chartSymbol]}
           trades={trades}
           positions={positions.filter(p => p.symbol === chartSymbol)}
           onClose={() => setChartSymbol(null)}

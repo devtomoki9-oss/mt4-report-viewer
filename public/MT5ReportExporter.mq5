@@ -14,7 +14,7 @@
 //+------------------------------------------------------------------+
 #property copyright ""
 #property link      ""
-#property version   "1.20"
+#property version   "1.30"
 #property description "取引履歴を JSON へ自動エクスポートします。自動売買 OFF でも動作します。"
 
 #import "kernel32.dll"
@@ -36,8 +36,7 @@
 input int    RefreshMinutes  = 1;           // 定期エクスポート間隔（分）
 input int    RealtimeSec     = 10;          // Tick 発生時の最小エクスポート間隔（秒）
 input string ExportSubFolder = "MTExport"; // USERPROFILE 直下のサブフォルダ名
-input int    ChartTimeframe  = 15;          // チャート時間足（分）: 1/5/15/30/60/240/1440
-input int    ChartBars       = 200;         // チャート出力本数（最大500）
+input int    ChartBars       = 100;         // 時間足ごとの出力本数（最大500）
 
 #define TIMER_SEC 5
 
@@ -316,14 +315,15 @@ void ExportTrades()
       json += "}";
    }
 
-   // チャートデータ（保有ポジションのシンボル）
+   // チャートデータ（保有ポジションのシンボル × 6時間足）
    json += "\n  ],\n";
    json += "  \"charts\": {\n";
 
    string symbols[];
    int symCount = CollectPositionSymbols(symbols);
-   ENUM_TIMEFRAMES tf = IntToTimeframe(ChartTimeframe);
    int bars = MathMax(1, MathMin(ChartBars, 500));
+   int tfs[6];
+   tfs[0]=1; tfs[1]=5; tfs[2]=15; tfs[3]=60; tfs[4]=240; tfs[5]=1440;
 
    for (int si = 0; si < symCount; si++)
    {
@@ -331,29 +331,37 @@ void ExportTrades()
       string sym    = symbols[si];
       int    digits = (int)SymbolInfoInteger(sym, SYMBOL_DIGITS);
 
-      MqlRates rates[];
-      int copied = CopyRates(sym, tf, 0, bars, rates);
+      json += "    \"" + sym + "\": {\n";
 
-      json += "    \"" + sym + "\": {\"tf\":" + IntegerToString(ChartTimeframe) + ",\"candles\":[\n";
-
-      bool firstBar = true;
-      for (int i = copied - 1; i >= 0; i--)
+      for (int ti = 0; ti < 6; ti++)
       {
-         if (!firstBar) json += ",\n";
-         firstBar = false;
-         json += "      {\"t\":\"" + TimeToISO(rates[i].time) + "\","
-               + "\"o\":" + DoubleToString(rates[i].open,  digits) + ","
-               + "\"h\":" + DoubleToString(rates[i].high,  digits) + ","
-               + "\"l\":" + DoubleToString(rates[i].low,   digits) + ","
-               + "\"c\":" + DoubleToString(rates[i].close, digits) + "}";
+         ENUM_TIMEFRAMES tfEnum = IntToTimeframe(tfs[ti]);
+         if (ti > 0) json += ",\n";
+         json += "      \"" + IntegerToString(tfs[ti]) + "\": {\"candles\":[\n";
+
+         MqlRates rates[];
+         int copied = CopyRates(sym, tfEnum, 0, bars, rates);
+
+         bool firstBar = true;
+         for (int i = copied - 1; i >= 0; i--)
+         {
+            if (!firstBar) json += ",\n";
+            firstBar = false;
+            json += "        {\"t\":\"" + TimeToISO(rates[i].time) + "\","
+                  + "\"o\":" + DoubleToString(rates[i].open,  digits) + ","
+                  + "\"h\":" + DoubleToString(rates[i].high,  digits) + ","
+                  + "\"l\":" + DoubleToString(rates[i].low,   digits) + ","
+                  + "\"c\":" + DoubleToString(rates[i].close, digits) + "}";
+         }
+         json += "\n      ]}";
       }
-      json += "\n    ]}";
+      json += "\n    }";
    }
 
    json += "\n  }\n}\n";
 
    if (WriteStringToFile(filepath, json))
-      Print("[MT5Exporter] エクスポート完了: ", filepath, "  (", total, " deals, ", posTotal, " positions, ", symCount, " charts)");
+      Print("[MT5Exporter] エクスポート完了: ", filepath, "  (", total, " deals, ", posTotal, " positions, ", symCount, " symbols x6TF)");
    else
       Print("[MT5Exporter] 書き込み失敗: ", filepath, "  エラー: ", GetLastError());
 }

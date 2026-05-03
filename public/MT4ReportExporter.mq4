@@ -19,7 +19,7 @@
 //+------------------------------------------------------------------+
 #property copyright ""
 #property link      ""
-#property version   "1.70"
+#property version   "1.80"
 #property strict
 #property description "取引履歴を JSON へ自動エクスポートします。自動売買 OFF でも動作します。"
 
@@ -43,8 +43,7 @@
 input int    RefreshMinutes  = 1;            // 定期エクスポート間隔（分）
 input int    RealtimeSec     = 10;           // Tick 発生時の最小エクスポート間隔（秒）
 input string ExportSubFolder = "MTExport";  // USERPROFILE 直下のサブフォルダ名
-input int    ChartTimeframe  = 15;           // チャート時間足（分）: 1/5/15/30/60/240/1440
-input int    ChartBars       = 200;          // チャート出力本数（最大500）
+input int    ChartBars       = 100;          // 時間足ごとの出力本数（最大500）
 
 #define TIMER_SEC 5
 
@@ -250,14 +249,15 @@ void ExportTrades()
       json += "}";
    }
 
-   // チャートデータ（保有ポジションのシンボル）
+   // チャートデータ（保有ポジションのシンボル × 6時間足）
    json += "\n  ],\n";
    json += "  \"charts\": {\n";
 
    string symbols[];
    int symCount = CollectPositionSymbols(symbols);
-   int tf   = ChartTimeframe;
    int bars = MathMax(1, MathMin(ChartBars, 500));
+   int tfs[6];
+   tfs[0]=1; tfs[1]=5; tfs[2]=15; tfs[3]=60; tfs[4]=240; tfs[5]=1440;
 
    for (int si = 0; si < symCount; si++)
    {
@@ -265,32 +265,40 @@ void ExportTrades()
       string sym    = symbols[si];
       int    digits = (int)MarketInfo(sym, MODE_DIGITS);
 
-      json += "    \"" + sym + "\": {\"tf\":" + IntegerToString(tf) + ",\"candles\":[\n";
+      json += "    \"" + sym + "\": {\n";
 
-      bool firstBar = true;
-      for (int i = bars - 1; i >= 0; i--)
+      for (int ti = 0; ti < 6; ti++)
       {
-         datetime t = iTime(sym, tf, i);
-         if (t == 0) continue;
-         double o = iOpen(sym,  tf, i);
-         double h = iHigh(sym,  tf, i);
-         double l = iLow(sym,   tf, i);
-         double c = iClose(sym, tf, i);
-         if (!firstBar) json += ",\n";
-         firstBar = false;
-         json += "      {\"t\":\"" + TimeToISO(t) + "\","
-               + "\"o\":" + DoubleToString(o, digits) + ","
-               + "\"h\":" + DoubleToString(h, digits) + ","
-               + "\"l\":" + DoubleToString(l, digits) + ","
-               + "\"c\":" + DoubleToString(c, digits) + "}";
+         int tf = tfs[ti];
+         if (ti > 0) json += ",\n";
+         json += "      \"" + IntegerToString(tf) + "\": {\"candles\":[\n";
+
+         bool firstBar = true;
+         for (int i = bars - 1; i >= 0; i--)
+         {
+            datetime t = iTime(sym, tf, i);
+            if (t == 0) continue;
+            double o = iOpen(sym,  tf, i);
+            double h = iHigh(sym,  tf, i);
+            double l = iLow(sym,   tf, i);
+            double c = iClose(sym, tf, i);
+            if (!firstBar) json += ",\n";
+            firstBar = false;
+            json += "        {\"t\":\"" + TimeToISO(t) + "\","
+                  + "\"o\":" + DoubleToString(o, digits) + ","
+                  + "\"h\":" + DoubleToString(h, digits) + ","
+                  + "\"l\":" + DoubleToString(l, digits) + ","
+                  + "\"c\":" + DoubleToString(c, digits) + "}";
+         }
+         json += "\n      ]}";
       }
-      json += "\n    ]}";
+      json += "\n    }";
    }
 
    json += "\n  }\n}\n";
 
    if (WriteStringToFile(filepath, json))
-      Print("[MTExporter] エクスポート完了: ", filepath, "  (", total, " 件, ", openTotal, " positions, ", symCount, " charts)");
+      Print("[MTExporter] エクスポート完了: ", filepath, "  (", total, " 件, ", openTotal, " positions, ", symCount, " symbols x6TF)");
    else
       Print("[MTExporter] 書き込み失敗: ", filepath, "  エラー: ", GetLastError());
 }

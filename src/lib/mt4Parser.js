@@ -276,6 +276,19 @@ function normMT4Date(s) {
   return s.replace(/^(\d{4})\.(\d{2})\.(\d{2})/, '$1-$2-$3')
 }
 
+// 旧フォーマット { tf, candles } → 新フォーマット { "tf": { candles } } に統一
+function normalizeCharts(raw) {
+  if (!raw || typeof raw !== 'object') return {}
+  return Object.fromEntries(
+    Object.entries(raw).map(([sym, val]) => {
+      if (Array.isArray(val?.candles)) {
+        return [sym, { [String(val.tf ?? 15)]: { candles: val.candles } }]
+      }
+      return [sym, val]
+    })
+  )
+}
+
 export function parseMT4Json(jsonText, accountLabel = '') {
   const data = JSON.parse(jsonText)
   const raw = data.trades || []
@@ -338,7 +351,7 @@ export function parseMT4Json(jsonText, accountLabel = '') {
     },
     trades,
     positions,
-    charts: data.charts || {},
+    charts: normalizeCharts(data.charts),
     stats: calcStatsFromTrades(trades),
   }
 }

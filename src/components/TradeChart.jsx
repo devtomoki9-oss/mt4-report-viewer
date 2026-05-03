@@ -1,9 +1,27 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { createChart, CrosshairMode, CandlestickSeries, LineSeries, createSeriesMarkers } from 'lightweight-charts'
 
 export default function TradeChart({ chartData, trades = [], positions = [], symbol }) {
   const containerRef = useRef(null)
   const chartRef     = useRef(null)
+
+  // MT4: "2024.01.15 09:00:00" / MT5: "2024-01-15 09:00:00" を両方処理
+  const toUnixSec = (str) =>
+    Math.floor(new Date(str.replace(' ', 'T').replace(/\./g, '-')).getTime() / 1000)
+
+  const handleZoom = useCallback((factor) => {
+    const chart = chartRef.current
+    if (!chart) return
+    const range = chart.timeScale().getVisibleLogicalRange()
+    if (!range) return
+    const center = (range.from + range.to) / 2
+    const half   = (range.to - range.from) / 2 * factor
+    chart.timeScale().setVisibleLogicalRange({ from: center - half, to: center + half })
+  }, [])
+
+  const handleFit = useCallback(() => {
+    chartRef.current?.timeScale().fitContent()
+  }, [])
 
   useEffect(() => {
     if (!containerRef.current || !chartData) return
@@ -37,10 +55,6 @@ export default function TradeChart({ chartData, trades = [], positions = [], sym
       wickDownColor:   '#ef4444',
     })
 
-    // MT4: "2024.01.15 09:00:00" / MT5: "2024-01-15 09:00:00" を両方処理
-    const toUnixSec = (str) =>
-      Math.floor(new Date(str.replace(' ', 'T').replace(/\./g, '-')).getTime() / 1000)
-
     const candles = (chartData.candles || []).map(c => ({
       time:  toUnixSec(c.t),
       open:  c.o,
@@ -51,34 +65,48 @@ export default function TradeChart({ chartData, trades = [], positions = [], sym
 
     candleSeries.setData(candles)
 
-    const symTrades = trades.filter(t => t.symbol === symbol).slice(-30)
-    const markers = []
+    // マーカー生成 + 同一バー・同一ポジションの重複を統合
+    const symTrades = trades.filter(t => t.symbol === symbol).slice(-50)
+    const markerMap = new Map() // key: `${time}_${position}` → marker
+
+    const addMarker = (m) => {
+      const key = `${m.time}_${m.position}`
+      if (markerMap.has(key)) {
+        const ex = markerMap.get(key)
+        if (m.text) ex.text = ex.text ? `${ex.text} / ${m.text}` : m.text
+      } else {
+        markerMap.set(key, { ...m })
+      }
+    }
+
     for (const t of symTrades) {
       if (t.openTime) {
         const ts = toUnixSec(t.openTime)
-        markers.push({
+        if (ts > 0) addMarker({
           time:     ts,
           position: t.type === 'buy' ? 'belowBar' : 'aboveBar',
           color:    t.type === 'buy' ? '#10b981'  : '#ef4444',
           shape:    t.type === 'buy' ? 'arrowUp'  : 'arrowDown',
-          text:     `${t.type === 'buy' ? '買' : '売'} ${t.size}`,
+          text:     String(t.size),
         })
       }
       if (t.closeTime) {
         const ts = toUnixSec(t.closeTime)
-        const isProfit = (t.netProfit ?? t.profit ?? 0) >= 0
-        markers.push({
+        const pnl = t.netProfit ?? t.profit ?? 0
+        if (ts > 0) addMarker({
           time:     ts,
           position: t.type === 'buy' ? 'aboveBar' : 'belowBar',
-          color:    isProfit ? '#10b981' : '#ef4444',
+          color:    pnl >= 0 ? '#10b981' : '#ef4444',
           shape:    'circle',
-          text:     `決済 ${isProfit ? '+' : ''}${(t.netProfit ?? t.profit ?? 0).toFixed(0)}`,
+          text:     `${pnl >= 0 ? '+' : ''}${pnl.toFixed(0)}`,
         })
       }
     }
-    markers.sort((a, b) => a.time - b.time)
+
+    const markers = [...markerMap.values()].sort((a, b) => a.time - b.time)
     createSeriesMarkers(candleSeries, markers)
 
+    // 保有ポジションの建値ライン
     for (const p of positions.filter(p => p.symbol === symbol)) {
       const line = chart.addSeries(LineSeries, {
         color:            p.type === 'buy' ? '#34d399' : '#f87171',
@@ -88,11 +116,9 @@ export default function TradeChart({ chartData, trades = [], positions = [], sym
         lastValueVisible: false,
       })
       if (candles.length > 0) {
-        const first = candles[0].time
-        const last  = candles[candles.length - 1].time
         line.setData([
-          { time: first, value: p.openPrice },
-          { time: last,  value: p.openPrice },
+          { time: candles[0].time,                  value: p.openPrice },
+          { time: candles[candles.length - 1].time, value: p.openPrice },
         ])
       }
     }
@@ -114,11 +140,33 @@ export default function TradeChart({ chartData, trades = [], positions = [], sym
 
   if (!chartData) {
     return (
-      <div className="flex items-center justify-center h-[420px] text-slate-600 text-sm">
+      <div className="flex items-center justify-center h-[420px] text-slate-600 text-sm text-center leading-relaxed">
         チャートデータがありません。<br />EA を再コンパイルして再アタッチしてください。
       </div>
     )
   }
 
-  return <div ref={containerRef} className="w-full" />
+  return (
+    <div className="relative">
+      <div ref={containerRef} className="w-full" />
+      {/* 拡大縮小ボタン */}
+      <div className="absolute top-2 right-2 flex flex-col gap-1 z-10">
+        <button
+          onClick={() => handleZoom(0.6)}
+          className="w-7 h-7 bg-[#111827]/80 border border-[#1f2d40] text-slate-300 hover:text-white hover:bg-[#1f2d40] rounded text-base leading-none flex items-center justify-center transition-colors"
+          title="拡大"
+        >+</button>
+        <button
+          onClick={handleFit}
+          className="w-7 h-7 bg-[#111827]/80 border border-[#1f2d40] text-slate-400 hover:text-white hover:bg-[#1f2d40] rounded text-xs leading-none flex items-center justify-center transition-colors"
+          title="全体表示"
+        >⊡</button>
+        <button
+          onClick={() => handleZoom(1.7)}
+          className="w-7 h-7 bg-[#111827]/80 border border-[#1f2d40] text-slate-300 hover:text-white hover:bg-[#1f2d40] rounded text-base leading-none flex items-center justify-center transition-colors"
+          title="縮小"
+        >−</button>
+      </div>
+    </div>
+  )
 }

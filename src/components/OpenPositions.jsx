@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import ChartModal from './ChartModal'
 
 export default function OpenPositions({ positions, aliases = {}, charts = {}, trades = [] }) {
@@ -10,6 +10,13 @@ export default function OpenPositions({ positions, aliases = {}, charts = {}, tr
     return positions.filter(p => { const ok = !seen.has(p.account); seen.add(p.account); return ok })
                     .map(p => p.account)
   }, [positions])
+
+  // 絞り込み中の口座がポジションから消えたら自動解除
+  useEffect(() => {
+    if (selectedAccount && !positions.some(p => p.account === selectedAccount)) {
+      setSelectedAccount(null)
+    }
+  }, [positions, selectedAccount])
 
   const filtered = selectedAccount ? positions.filter(p => p.account === selectedAccount) : positions
 

@@ -20,7 +20,7 @@ export default function ChartModal({ symbol, chartDataMap, trades, positions, on
       onClick={onClose}
     >
       <div
-        className="bg-[#111827] border border-[#1f2d40] rounded-t-2xl sm:rounded-2xl w-full max-w-4xl flex flex-col"
+        className="bg-[#111827] border border-[#1f2d40] rounded-t-2xl sm:rounded-2xl w-full max-w-4xl flex flex-col max-h-[100dvh] sm:max-h-[90dvh] overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* ヘッダ */}
@@ -65,7 +65,7 @@ export default function ChartModal({ symbol, chartDataMap, trades, positions, on
         </div>
 
         {/* チャート本体 */}
-        <div className="p-4">
+        <div className="p-4 flex-1 min-h-0 overflow-hidden">
           <TradeChart
             ref={tradeChartRef}
             symbol={symbol}
@@ -77,7 +77,7 @@ export default function ChartModal({ symbol, chartDataMap, trades, positions, on
         </div>
 
         {/* 凡例 */}
-        <div className="px-5 pb-4 flex items-center gap-4 text-xs text-slate-500 flex-wrap">
+        <div className="px-5 pb-4 flex items-center gap-4 text-xs text-slate-500 flex-wrap flex-shrink-0 landscape:max-sm:hidden">
           <span className="flex items-center gap-1"><span className="text-emerald-400">▲</span> エントリー（買）</span>
           <span className="flex items-center gap-1"><span className="text-red-400">▼</span> エントリー（売）</span>
           <span className="flex items-center gap-1"><span className="text-slate-400">●</span> 決済</span>

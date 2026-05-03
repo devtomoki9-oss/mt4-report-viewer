@@ -75,6 +75,7 @@ const TradeChart = forwardRef(function TradeChart(
   ref
 ) {
   const containerRef    = useRef(null)
+  const wrapperRef      = useRef(null)
   const chartRef        = useRef(null)
   const detailMapRef    = useRef(new Map())
   const savedRangeRef   = useRef(null)
@@ -111,7 +112,9 @@ const TradeChart = forwardRef(function TradeChart(
   }), [handleZoom, handleFit])
 
   useEffect(() => {
-    if (!containerRef.current || !chartData) return
+    if (!containerRef.current || !wrapperRef.current || !chartData) return
+
+    const chartHeight = Math.max(wrapperRef.current.clientHeight, 200)
 
     const chart = createChart(containerRef.current, {
       layout:          { background: { color: '#0d1117' }, textColor: '#94a3b8' },
@@ -120,7 +123,7 @@ const TradeChart = forwardRef(function TradeChart(
       rightPriceScale: { borderColor: '#1f2d40' },
       timeScale:       { borderColor: '#1f2d40', timeVisible: true, secondsVisible: false },
       width:  containerRef.current.clientWidth,
-      height: 420,
+      height: chartHeight,
     })
 
     const candleSeries = chart.addSeries(CandlestickSeries, {
@@ -277,7 +280,12 @@ const TradeChart = forwardRef(function TradeChart(
     chartRef.current = chart
 
     const handleResize = () => {
-      if (containerRef.current) chart.applyOptions({ width: containerRef.current.clientWidth })
+      if (containerRef.current && wrapperRef.current) {
+        chart.applyOptions({
+          width:  containerRef.current.clientWidth,
+          height: Math.max(wrapperRef.current.clientHeight, 200),
+        })
+      }
     }
     window.addEventListener('resize', handleResize)
 
@@ -294,14 +302,14 @@ const TradeChart = forwardRef(function TradeChart(
 
   if (!chartData) {
     return (
-      <div className="flex items-center justify-center h-[420px] text-slate-600 text-sm text-center leading-relaxed">
+      <div className="flex items-center justify-center h-full min-h-[200px] text-slate-600 text-sm text-center leading-relaxed">
         チャートデータがありません。<br />EA を再コンパイルして再アタッチしてください。
       </div>
     )
   }
 
   return (
-    <div className="relative">
+    <div ref={wrapperRef} className="relative h-full min-h-[200px]">
       <div ref={containerRef} className="w-full" />
       <MarkerTooltip tooltip={tooltip} containerRef={containerRef} />
     </div>

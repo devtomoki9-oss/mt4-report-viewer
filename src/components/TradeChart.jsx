@@ -127,6 +127,7 @@ const TradeChart = forwardRef(function TradeChart(
       upColor: '#10b981', downColor: '#ef4444',
       borderUpColor: '#10b981', borderDownColor: '#ef4444',
       wickUpColor: '#10b981', wickDownColor: '#ef4444',
+      priceLineVisible: false,
     })
 
     const candles = (chartData.candles || []).map(c => ({

@@ -127,10 +127,7 @@ const TradeChart = forwardRef(function TradeChart(
       upColor: '#10b981', downColor: '#ef4444',
       borderUpColor: '#10b981', borderDownColor: '#ef4444',
       wickUpColor: '#10b981', wickDownColor: '#ef4444',
-      priceLineVisible: true,
-      priceLineColor: '#94a3b8',
-      priceLineWidth: 1,
-      priceLineStyle: 2,
+      priceLineVisible: false,
     })
 
     const candles = (chartData.candles || []).map(c => ({
@@ -140,6 +137,20 @@ const TradeChart = forwardRef(function TradeChart(
 
     candleSeries.setData(candles)
     totalCandlesRef.current = candles.length
+
+    // 最終価格ライン（グレー点線・建値ラインと色を区別）
+    if (candles.length > 0) {
+      const lastClose = candles[candles.length - 1].close
+      const lastPriceSeries = chart.addSeries(LineSeries, {
+        color: '#94a3b8', lineWidth: 1, lineStyle: 2,
+        priceLineVisible: false, lastValueVisible: true,
+        crosshairMarkerVisible: false,
+      })
+      lastPriceSeries.setData([
+        { time: candles[0].time,                  value: lastClose },
+        { time: candles[candles.length - 1].time, value: lastClose },
+      ])
+    }
 
     const firstTs = candles[0]?.time ?? 0
     const lastTs  = candles[candles.length - 1]?.time ?? 0
@@ -208,6 +219,7 @@ const TradeChart = forwardRef(function TradeChart(
     detailMapRef.current = detailMap
 
     // スクロールズーム上限：全データ幅を超えたら fitContent に戻す
+    // ズームレンジをリアルタイムで保存（クリーンアップ時の null 問題を回避）
     let lockFit = false
     chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
       if (lockFit || !range) return
@@ -215,8 +227,15 @@ const TradeChart = forwardRef(function TradeChart(
       if (total > 0 && (range.to - range.from) > total * 1.1) {
         lockFit = true
         chart.timeScale().fitContent()
-        setTimeout(() => { lockFit = false }, 50)
+        setTimeout(() => {
+          lockFit = false
+          const r = chart.timeScale().getVisibleLogicalRange()
+          if (r) { savedRangeRef.current = r; savedCtxRef.current = { symbol, tf } }
+        }, 50)
+        return
       }
+      savedRangeRef.current = range
+      savedCtxRef.current   = { symbol, tf }
     })
 
     // クロスヘアでホバー時にツールチップ表示
@@ -264,8 +283,9 @@ const TradeChart = forwardRef(function TradeChart(
 
     return () => {
       setTooltip(null)
-      savedRangeRef.current = chart.timeScale().getVisibleLogicalRange()
-      savedCtxRef.current   = { symbol, tf }
+      // 最終フォールバック（subscriber で既に保存済みだが念のため）
+      const r = chart.timeScale().getVisibleLogicalRange()
+      if (r) { savedRangeRef.current = r; savedCtxRef.current = { symbol, tf } }
       window.removeEventListener('resize', handleResize)
       chart.remove()
       chartRef.current = null

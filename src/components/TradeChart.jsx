@@ -65,11 +65,16 @@ export default function TradeChart({ chartData, trades = [], positions = [], sym
 
     candleSeries.setData(candles)
 
-    // マーカー生成 + 同一バー・同一ポジションの重複を統合
-    const symTrades = trades.filter(t => t.symbol === symbol).slice(-50)
+    // ローソク足の時間範囲（この範囲外のマーカーは左/右端に集積するため除外）
+    const firstTs = candles[0]?.time ?? 0
+    const lastTs  = candles[candles.length - 1]?.time ?? 0
+
+    // マーカー生成 + 同一バー・同一方向の重複を統合
+    const symTrades = trades.filter(t => t.symbol === symbol)
     const markerMap = new Map() // key: `${time}_${position}` → marker
 
     const addMarker = (m) => {
+      if (m.time < firstTs || m.time > lastTs) return // 範囲外除外
       const key = `${m.time}_${m.position}`
       if (markerMap.has(key)) {
         const ex = markerMap.get(key)
@@ -149,8 +154,8 @@ export default function TradeChart({ chartData, trades = [], positions = [], sym
   return (
     <div className="relative">
       <div ref={containerRef} className="w-full" />
-      {/* 拡大縮小ボタン */}
-      <div className="absolute top-2 right-2 flex flex-col gap-1 z-10">
+      {/* 拡大縮小ボタン（左上・価格軸と干渉しない位置） */}
+      <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
         <button
           onClick={() => handleZoom(0.6)}
           className="w-7 h-7 bg-[#111827]/80 border border-[#1f2d40] text-slate-300 hover:text-white hover:bg-[#1f2d40] rounded text-base leading-none flex items-center justify-center transition-colors"

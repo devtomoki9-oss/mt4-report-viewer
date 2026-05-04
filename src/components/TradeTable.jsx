@@ -17,22 +17,41 @@ const COLS = [
 
 const PAGE_SIZE = 50
 
+const ALL = '__all__'
+
 export default function TradeTable({ trades = [], showSearch = true, aliases = {} }) {
   const [sort, setSort] = useState({ key: 'closeTime', dir: 'desc' })
-  const [filter, setFilter] = useState('')
+  const [symbolFilter, setSymbolFilter] = useState(ALL)
+  const [typeFilter, setTypeFilter] = useState(ALL)
+  const [accountFilter, setAccountFilter] = useState(ALL)
   const [page, setPage] = useState(0)
   const tableTopRef = useRef(null)
 
+  const { symbolOptions, typeOptions, accountOptions } = useMemo(() => {
+    const symbols = new Set()
+    const types = new Set()
+    const accounts = new Set()
+    for (const t of trades) {
+      if (t.symbol) symbols.add(t.symbol)
+      if (t.type) types.add(t.type)
+      if (t.account) accounts.add(t.account)
+    }
+    return {
+      symbolOptions: [...symbols].sort(),
+      typeOptions: [...types].sort(),
+      accountOptions: [...accounts].sort((a, b) =>
+        (aliases[a] || a).localeCompare(aliases[b] || b)
+      ),
+    }
+  }, [trades, aliases])
+
   const sorted = useMemo(() => {
-    const f = filter.toLowerCase()
-    let filtered = f
-      ? trades.filter(t =>
-          (t.symbol || '').toLowerCase().includes(f) ||
-          (t.type || '').toLowerCase().includes(f) ||
-          (aliases[t.account] || t.account || '').toLowerCase().includes(f) ||
-          (t.ticket || '').toLowerCase().includes(f)
-        )
-      : trades
+    const filtered = trades.filter(t => {
+      if (symbolFilter !== ALL && t.symbol !== symbolFilter) return false
+      if (typeFilter !== ALL && t.type !== typeFilter) return false
+      if (accountFilter !== ALL && t.account !== accountFilter) return false
+      return true
+    })
 
     return [...filtered].sort((a, b) => {
       const av = a[sort.key] ?? ''
@@ -40,7 +59,7 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
       const cmp = typeof av === 'number' ? av - bv : String(av).localeCompare(String(bv))
       return sort.dir === 'asc' ? cmp : -cmp
     })
-  }, [trades, sort, filter])
+  }, [trades, sort, symbolFilter, typeFilter, accountFilter])
 
   const pages = Math.ceil(sorted.length / PAGE_SIZE)
   const paged = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
@@ -50,7 +69,14 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
     setPage(0)
   }
 
-  const handleFilter = (v) => { setFilter(v); setPage(0) }
+  const updateFilter = (setter) => (v) => { setter(v); setPage(0) }
+  const hasActiveFilter = symbolFilter !== ALL || typeFilter !== ALL || accountFilter !== ALL
+  const resetFilters = () => {
+    setSymbolFilter(ALL)
+    setTypeFilter(ALL)
+    setAccountFilter(ALL)
+    setPage(0)
+  }
 
   const fmtPrice = (v) => {
     if (!v) return '—'
@@ -68,20 +94,40 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
   return (
     <div ref={tableTopRef} className="space-y-3">
       {showSearch && (
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1 max-w-xs">
-            <input
-              type="text"
-              placeholder="通貨ペア / 口座で絞り込み…"
-              value={filter}
-              onChange={e => handleFilter(e.target.value)}
-              className="w-full bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-3 py-2 text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20"
-            />
-            {filter && (
-              <button onClick={() => handleFilter('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400">✕</button>
-            )}
-          </div>
-          <div className="text-xs text-slate-600">{sorted.length} 件</div>
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={symbolFilter}
+            onChange={e => updateFilter(setSymbolFilter)(e.target.value)}
+            className="bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-2.5 py-2 text-xs text-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20"
+          >
+            <option value={ALL}>通貨ペア: すべて</option>
+            {symbolOptions.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <select
+            value={typeFilter}
+            onChange={e => updateFilter(setTypeFilter)(e.target.value)}
+            className="bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-2.5 py-2 text-xs text-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20"
+          >
+            <option value={ALL}>種別: すべて</option>
+            {typeOptions.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+          <select
+            value={accountFilter}
+            onChange={e => updateFilter(setAccountFilter)(e.target.value)}
+            className="bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-2.5 py-2 text-xs text-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 max-w-[200px]"
+          >
+            <option value={ALL}>口座: すべて</option>
+            {accountOptions.map(a => <option key={a} value={a}>{aliases[a] || a}</option>)}
+          </select>
+          {hasActiveFilter && (
+            <button
+              onClick={resetFilters}
+              className="px-2.5 py-2 text-xs rounded-lg bg-[#1a2235] text-slate-400 hover:bg-[#1f2d40] hover:text-slate-200 transition-colors"
+            >
+              リセット
+            </button>
+          )}
+          <div className="text-xs text-slate-600 ml-auto">{sorted.length} 件</div>
         </div>
       )}
 

@@ -156,7 +156,8 @@ export default function ManualModal({ onClose, onDownloadVbs }) {
             <table className="w-full text-xs border-collapse">
               <tbody>
                 {[
-                  ['サマリー', '全口座合算の残高・含み損益・純益・勝率・PF・エクイティカーブ・保有ポジション・AI分析（Pro）'],
+                  ['サマリー', '全口座合算の残高・含み損益・純益・勝率・PF・エクイティカーブ・保有ポジション'],
+                  ['AIインサイト', 'AI診断・スコアカード・改善提案・口座別改善提案・勝ちパターン分析。Free プランは診断1件のみ、その他は Pro 限定'],
                   ['口座別成績', '口座ごとの詳細な統計・エクイティカーブ・取引履歴'],
                   ['全取引', '全口座の取引履歴を一覧・検索・フィルタ'],
                   ['カレンダー', '月次カレンダー形式で日ごとの損益を確認'],
@@ -168,7 +169,7 @@ export default function ManualModal({ onClose, onDownloadVbs }) {
                 ))}
               </tbody>
             </table>
-            <p className="text-slate-500 mt-1">サマリー・口座別成績・全取引タブでは画面上部の期間フィルターで集計対象期間を絞り込めます。</p>
+            <p className="text-slate-500 mt-1">サマリー・AIインサイト・口座別成績・全取引タブでは画面上部の期間フィルターで集計対象期間を絞り込めます。</p>
             <div className="bg-[#0d1117] border border-[#1f2d40] rounded-lg p-3 space-y-1.5 mt-2">
               <div className="text-slate-400 font-medium text-[11px] mb-1">口座別成績タブの口座カード操作</div>
               <ul className="list-disc list-inside space-y-1.5 ml-1 text-slate-500">
@@ -204,7 +205,8 @@ export default function ManualModal({ onClose, onDownloadVbs }) {
                   ['取引データの同期・閲覧', '○', '○'],
                   ['複数口座管理', '○', '○'],
                   ['カレンダー・エクイティカーブ', '○', '○'],
-                  ['AI インサイト分析', '—', '○'],
+                  ['AI インサイト（診断）', '1件', '○'],
+                  ['AI インサイト（改善提案・口座別・パターン分析）', '—', '○'],
                 ].map(([feat, free, pro]) => (
                   <tr key={feat} className="border-b border-[#1f2d40]">
                     <td className="py-2 pr-3 text-slate-400">{feat}</td>

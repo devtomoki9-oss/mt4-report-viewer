@@ -552,6 +552,15 @@ export default function App() {
     [accounts, filteredTrades]
   )
 
+  const perAccountData = useMemo(
+    () => filteredAccStats.map(acc => ({
+      account: acc.account,
+      trades: filteredTrades.filter(t => t.account === acc.account.name),
+      stats: acc.stats,
+    })),
+    [filteredAccStats, filteredTrades]
+  )
+
   const sortedFilteredAccStats = useMemo(() => {
     const fn = ACC_SORT_FNS[accSort.key] ?? ACC_SORT_FNS.profit
     return [...filteredAccStats].sort((a, b) => {
@@ -840,7 +849,7 @@ export default function App() {
               <>
                 {tab === 'overview' && agg && (
                   <div className="space-y-5">
-                    <InsightPanel trades={filteredTrades} stats={agg} plan={plan} onUpgrade={handleUpgrade} />
+                    <InsightPanel trades={filteredTrades} stats={agg} plan={plan} onUpgrade={handleUpgrade} perAccountData={perAccountData} />
                     {isFiltered && (
                       <div className="flex items-center gap-2 text-xs text-slate-500">
                         <span className="bg-blue-500/15 text-blue-400 px-2 py-0.5 rounded font-medium">

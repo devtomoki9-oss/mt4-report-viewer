@@ -53,6 +53,7 @@ import InsightPanel from './components/InsightPanel'
 import LoginScreen from './components/LoginScreen'
 import LandingPage from './components/LandingPage'
 import PasswordResetScreen from './components/PasswordResetScreen'
+import LanguageSwitcher from './components/LanguageSwitcher'
 
 const TABS = [
   { id: 'overview',  label: 'サマリー'      },
@@ -620,6 +621,7 @@ export default function App() {
                   ))}
                 </nav>
               )}
+              <LanguageSwitcher compact />
               {user && (
                 <>
                   <button

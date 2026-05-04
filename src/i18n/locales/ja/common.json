@@ -1,0 +1,8 @@
+{
+  "language": {
+    "switcher": {
+      "label": "言語",
+      "current": "{{name}}"
+    }
+  }
+}

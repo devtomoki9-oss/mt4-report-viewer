@@ -55,10 +55,11 @@ import LandingPage from './components/LandingPage'
 import PasswordResetScreen from './components/PasswordResetScreen'
 
 const TABS = [
-  { id: 'overview',  label: 'サマリー'   },
-  { id: 'ea',        label: '口座別成績' },
-  { id: 'trades',    label: '全取引'     },
-  { id: 'calendar',  label: 'カレンダー' },
+  { id: 'overview',  label: 'サマリー'      },
+  { id: 'insight',   label: 'AIインサイト'  },
+  { id: 'ea',        label: '口座別成績'    },
+  { id: 'trades',    label: '全取引'        },
+  { id: 'calendar',  label: 'カレンダー'   },
 ]
 
 const EXPORT_INTERVAL_MS = 1 * 60 * 1000
@@ -847,9 +848,11 @@ export default function App() {
               </div>
             ) : (
               <>
+                {tab === 'insight' && (
+                  <InsightPanel trades={filteredTrades} stats={agg} plan={plan} onUpgrade={handleUpgrade} perAccountData={perAccountData} />
+                )}
                 {tab === 'overview' && agg && (
                   <div className="space-y-5">
-                    <InsightPanel trades={filteredTrades} stats={agg} plan={plan} onUpgrade={handleUpgrade} perAccountData={perAccountData} />
                     {isFiltered && (
                       <div className="flex items-center gap-2 text-xs text-slate-500">
                         <span className="bg-blue-500/15 text-blue-400 px-2 py-0.5 rounded font-medium">

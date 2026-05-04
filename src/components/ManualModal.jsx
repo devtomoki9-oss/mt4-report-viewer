@@ -157,7 +157,7 @@ export default function ManualModal({ onClose, onDownloadVbs }) {
               <tbody>
                 {[
                   ['サマリー', '全口座合算の残高・含み損益・純益・勝率・PF・エクイティカーブ・保有ポジション・AI分析（Pro）'],
-                  ['口座別成績', '口座ごとの詳細な統計・エクイティカーブ・取引履歴。口座名変更・自動売買 ON/OFF・口座削除も可能'],
+                  ['口座別成績', '口座ごとの詳細な統計・エクイティカーブ・取引履歴'],
                   ['全取引', '全口座の取引履歴を一覧・検索・フィルタ'],
                   ['カレンダー', '月次カレンダー形式で日ごとの損益を確認'],
                 ].map(([tab, desc]) => (
@@ -169,6 +169,14 @@ export default function ManualModal({ onClose, onDownloadVbs }) {
               </tbody>
             </table>
             <p className="text-slate-500 mt-1">サマリー・口座別成績・全取引タブでは画面上部の期間フィルターで集計対象期間を絞り込めます。</p>
+            <div className="bg-[#0d1117] border border-[#1f2d40] rounded-lg p-3 space-y-1.5 mt-2">
+              <div className="text-slate-400 font-medium text-[11px] mb-1">口座別成績タブの口座カード操作</div>
+              <ul className="list-disc list-inside space-y-1.5 ml-1 text-slate-500">
+                <li><strong className="text-slate-300">口座名変更</strong>：口座カードにマウスを乗せると表示される ✎ ボタンをクリックして表示名を編集</li>
+                <li><strong className="text-slate-300">自動売買 ON/OFF</strong>：口座カードのトグルスイッチで EA の自動売買を遠隔制御できます。変更は MT4/MT5 に Ctrl+E で反映されます</li>
+                <li><strong className="text-slate-300">口座データ削除</strong>：口座カードの × ボタンでその口座のデータをクラウドから削除します</li>
+              </ul>
+            </div>
           </section>
 
           {/* アカウント管理 */}
@@ -177,9 +185,6 @@ export default function ManualModal({ onClose, onDownloadVbs }) {
             <ul className="list-disc list-inside space-y-1.5 ml-1">
               <li><strong className="text-slate-300">ログアウト</strong>：画面右上のメールアドレス/プランバッジ → ドロップダウンメニューの「ログアウト」をクリック</li>
               <li><strong className="text-slate-300">アカウント削除</strong>：同ドロップダウンメニューの「アカウント削除」→「削除」と入力して確定。すべてのデータが完全に削除されます（取り消し不可）</li>
-              <li><strong className="text-slate-300">口座名変更</strong>：サマリーまたは口座別成績タブの口座カードにマウスを乗せると表示される ✎ ボタンをクリックして表示名を編集</li>
-              <li><strong className="text-slate-300">自動売買 ON/OFF</strong>：口座カードのトグルスイッチで EA の自動売買を遠隔制御できます。変更は MT4/MT5 に Ctrl+E で反映されます</li>
-              <li><strong className="text-slate-300">口座データ削除</strong>：口座カードの × ボタンでその口座のデータをクラウドから削除します</li>
             </ul>
           </section>
 

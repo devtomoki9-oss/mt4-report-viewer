@@ -27,6 +27,10 @@ export default function ManualModal({ onClose, onDownloadVbs }) {
           <section className="space-y-2">
             <h2 className="text-sm font-semibold text-slate-200">MT Report Viewer とは</h2>
             <p>MT4 / MT5 の取引レポートをクラウドに自動アップロードし、複数口座の成績をブラウザで一元管理するアプリです。PC 上の EA がデータを書き出し、PowerShell スクリプトが変更を検知して即時アップロードします。ブラウザ側は Supabase Realtime で変更を受け取りほぼリアルタイムに表示を更新します。</p>
+            <div className="bg-[#0d1117] border border-[#1f2d40] rounded-lg px-3 py-2 text-slate-500 space-y-0.5">
+              <div className="text-slate-400 font-medium text-[11px] mb-1">前提構成</div>
+              <p>本アプリは <strong className="text-slate-300">MT4/MT5 インスタンス 1 つにつき口座 1 つ</strong>、<strong className="text-slate-300">口座 1 つにつき EA 1 つ</strong>を前提として設計・実装しています。1 つのインスタンスで複数口座への同時ログインや、同一口座への複数 EA の設置は想定していません。</p>
+            </div>
           </section>
 
           {/* アカウント登録 */}

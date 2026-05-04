@@ -81,6 +81,7 @@ const TradeChart = forwardRef(function TradeChart(
   const savedRangeRef   = useRef(null)
   const savedCtxRef     = useRef(null)
   const totalCandlesRef = useRef(0)
+  const hideTimerRef    = useRef(null)
   const [tooltip, setTooltip] = useState(null)
 
   const toUnixSec = (str) =>
@@ -242,10 +243,20 @@ const TradeChart = forwardRef(function TradeChart(
     })
 
     // クロスヘアでホバー時にツールチップ表示
+    // 非表示はデバウンスしてチラつきを防ぐ
     chart.subscribeCrosshairMove((param) => {
       if (!param.point || !param.time || !detailMapRef.current.has(param.time)) {
-        setTooltip(null)
+        if (!hideTimerRef.current) {
+          hideTimerRef.current = setTimeout(() => {
+            setTooltip(null)
+            hideTimerRef.current = null
+          }, 80)
+        }
         return
+      }
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current)
+        hideTimerRef.current = null
       }
       setTooltip({ x: param.point.x, y: param.point.y, data: detailMapRef.current.get(param.time) })
     })
@@ -290,6 +301,10 @@ const TradeChart = forwardRef(function TradeChart(
     window.addEventListener('resize', handleResize)
 
     return () => {
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current)
+        hideTimerRef.current = null
+      }
       setTooltip(null)
       // 最終フォールバック（subscriber で既に保存済みだが念のため）
       const r = chart.timeScale().getVisibleLogicalRange()

@@ -20,7 +20,7 @@ export default function ChartModal({ symbol, chartDataMap, trades, positions, on
       onClick={onClose}
     >
       <div
-        className="bg-[#111827] border border-[#1f2d40] rounded-t-2xl sm:rounded-2xl w-full max-w-4xl flex flex-col max-h-[100dvh] sm:max-h-[90dvh] overflow-hidden"
+        className="bg-[#111827] border border-[#1f2d40] rounded-t-2xl sm:rounded-2xl w-full max-w-5xl flex flex-col max-h-[100dvh] sm:h-[680px] sm:max-h-[90dvh] overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* ヘッダ */}

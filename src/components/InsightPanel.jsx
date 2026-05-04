@@ -157,7 +157,7 @@ function WinPatternsContent({ patterns }) {
 
 // ── メインコンポーネント ────────────────────────────
 
-export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgrade }) {
+export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgrade, perAccountData = [] }) {
   const alerts      = useMemo(() => generateAlerts(trades, stats),     [trades, stats])
   const insights    = useMemo(() => generateInsights(trades, stats),   [trades, stats])
   const suggestions = useMemo(() => generateSuggestions(trades, stats),[trades, stats])
@@ -167,6 +167,15 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
   )
   const tradeScore  = useMemo(() => calcTradeScore(stats, trades),  [stats, trades])
   const riskScore   = useMemo(() => calcRiskScore(stats, trades),   [stats, trades])
+
+  const perAccountSuggestions = useMemo(() => {
+    if (perAccountData.length < 2) return []
+    return perAccountData.map(({ account, trades: accTrades, stats: accStats }) => ({
+      name: account.name,
+      suggestions: generateSuggestions(accTrades, accStats).slice(0, 3),
+      tradeScore: calcTradeScore(accStats, accTrades),
+    }))
+  }, [perAccountData])
 
   const visibleInsights    = plan === 'pro' ? insights    : insights.slice(0, 1)
   const lockedInsightCount = plan === 'free' ? Math.max(0, insights.length - 1) : 0
@@ -275,6 +284,74 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
           </div>
         )}
       </div>
+
+      {/* 口座別改善提案 */}
+      {perAccountSuggestions.length > 0 && (
+        <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span>📋</span>
+              <span className="text-sm font-semibold text-slate-200">口座別改善提案</span>
+            </div>
+            {plan === 'free' && (
+              <span className="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded font-medium">
+                Pro限定
+              </span>
+            )}
+          </div>
+
+          {plan === 'free' ? (
+            <div className="relative">
+              <div className="space-y-3 blur-[3px] pointer-events-none select-none opacity-40">
+                {[
+                  { name: '口座A', items: ['ストップロスを見直し、リスクリワード比を改善してください', 'ドローダウンが大きいためロットサイズを下げてください'] },
+                  { name: '口座B', items: ['エントリー条件を根本から見直してください', 'ロンドン時間のトレードを削減することを検討してください'] },
+                ].map(({ name, items }) => (
+                  <div key={name} className="border border-[#1f2d40] rounded-lg p-3">
+                    <div className="text-xs font-semibold text-slate-400 mb-2">{name}</div>
+                    <div className="space-y-1.5">
+                      {items.map((msg, i) => (
+                        <SuggestionRow key={i} item={{ priority: i === 0 ? 'high' : 'medium', message: msg }} index={i} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <button
+                  onClick={onUpgrade}
+                  className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 py-2 rounded-lg font-semibold shadow-lg transition-colors">
+                  Pro にアップグレードして解放
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {perAccountSuggestions.map(({ name, suggestions: accSuggestions, tradeScore: accScore }) => (
+                <div key={name} className="border border-[#1f2d40] rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-semibold text-slate-300 bg-[#0d1520] px-2 py-0.5 rounded border border-[#2a3a50]">
+                      {name}
+                    </span>
+                    {accScore !== null && (
+                      <span className={`text-xs font-mono ${tradeScoreStyle(accScore).color}`}>
+                        スコア {accScore}
+                      </span>
+                    )}
+                  </div>
+                  {accSuggestions.length === 0 ? (
+                    <div className="text-xs text-emerald-400/70 py-1">改善点なし（良好なパフォーマンスです）</div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {accSuggestions.map((item, i) => <SuggestionRow key={i} item={item} index={i} />)}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 勝ちパターン分析 */}
       <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4">

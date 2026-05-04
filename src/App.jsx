@@ -518,6 +518,15 @@ export default function App() {
     () => accounts.flatMap(a => (a.positions || []).map(p => ({ ...p, account: a.account.name }))),
     [accounts]
   )
+  const allCharts = useMemo(() => {
+    const merged = {}
+    for (const a of accounts) {
+      for (const [sym, data] of Object.entries(a.charts || {})) {
+        if (!merged[sym]) merged[sym] = data
+      }
+    }
+    return merged
+  }, [accounts])
   const { dataMin, dataMax } = useMemo(() => {
     const dates = allTrades.map(t => toDay(t.closeTime)).filter(Boolean).sort()
     return { dataMin: dates[0] || '', dataMax: dates[dates.length - 1] || '' }
@@ -541,6 +550,15 @@ export default function App() {
       stats: calcStatsFromTrades(filteredTrades.filter(t => t.account === acc.account.name)),
     })),
     [accounts, filteredTrades]
+  )
+
+  const perAccountData = useMemo(
+    () => filteredAccStats.map(acc => ({
+      account: acc.account,
+      trades: filteredTrades.filter(t => t.account === acc.account.name),
+      stats: acc.stats,
+    })),
+    [filteredAccStats, filteredTrades]
   )
 
   const sortedFilteredAccStats = useMemo(() => {
@@ -831,7 +849,7 @@ export default function App() {
               <>
                 {tab === 'overview' && agg && (
                   <div className="space-y-5">
-                    <InsightPanel trades={filteredTrades} stats={agg} plan={plan} onUpgrade={handleUpgrade} />
+                    <InsightPanel trades={filteredTrades} stats={agg} plan={plan} onUpgrade={handleUpgrade} perAccountData={perAccountData} />
                     {isFiltered && (
                       <div className="flex items-center gap-2 text-xs text-slate-500">
                         <span className="bg-blue-500/15 text-blue-400 px-2 py-0.5 rounded font-medium">
@@ -870,7 +888,7 @@ export default function App() {
                       <StatCard label="最大DD" value={fmt(agg.maxDrawdown)} color="warn" />
                     </div>
                     <EquityChart data={equityCurve} title="全口座合算 エクイティカーブ" />
-                    <OpenPositions positions={allPositions} aliases={aliases} />
+                    <OpenPositions positions={allPositions} aliases={aliases} charts={allCharts} trades={filteredTrades} />
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <div className="text-sm font-semibold text-slate-400">口座別成績</div>

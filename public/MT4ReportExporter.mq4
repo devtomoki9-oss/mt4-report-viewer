@@ -19,7 +19,7 @@
 //+------------------------------------------------------------------+
 #property copyright ""
 #property link      ""
-#property version   "1.60"
+#property version   "1.80"
 #property strict
 #property description "取引履歴を JSON へ自動エクスポートします。自動売買 OFF でも動作します。"
 
@@ -43,14 +43,14 @@
 input int    RefreshMinutes  = 1;            // 定期エクスポート間隔（分）
 input int    RealtimeSec     = 10;           // Tick 発生時の最小エクスポート間隔（秒）
 input string ExportSubFolder = "MTExport";  // USERPROFILE 直下のサブフォルダ名
+input int    ChartBars       = 100;          // 時間足ごとの出力本数（最大500）
 
-// タイマー間隔（秒）: トリガーファイルをこの間隔でチェックする
 #define TIMER_SEC 5
 
 int      g_ExportTick         = 0;
 datetime g_LastTriggerExport  = 0;
 datetime g_LastRealtimeExport = 0;
-bool     g_LastAutoTrading    = false; // AutoTrading 状態変化を検知して即時エクスポートするために使用
+bool     g_LastAutoTrading    = false;
 
 //+------------------------------------------------------------------+
 int OnInit()
@@ -70,17 +70,15 @@ void OnTick()
    if (now - g_LastRealtimeExport >= sec)
    {
       g_LastRealtimeExport = now;
-      g_ExportTick = 0; // 定期タイマーもリセット（二重エクスポート防止）
+      g_ExportTick = 0;
       ExportTrades();
    }
 }
 
 void OnTimer()
 {
-   // ブラウザからの即時エクスポート要求をチェック
    bool triggered = CheckTrigger();
 
-   // AutoTrading 状態が変化した場合は即時エクスポート（Ctrl+E 後 5 秒以内に反映）
    bool currentAT = (bool)TerminalInfoInteger(TERMINAL_TRADE_ALLOWED);
    bool atChanged  = (currentAT != g_LastAutoTrading);
    g_LastAutoTrading = currentAT;
@@ -94,10 +92,6 @@ void OnTimer()
 }
 
 //+------------------------------------------------------------------+
-//|  トリガーファイル（_refresh.cmd）を確認する                      |
-//|  ブラウザが書き込むと即時エクスポートが発動する                  |
-//|  ファイルの削除はブラウザ側が行う（全インスタンス対応のため）    |
-//+------------------------------------------------------------------+
 bool CheckTrigger()
 {
    string triggerPath = GetExportDir() + "\\_refresh.cmd";
@@ -106,7 +100,6 @@ bool CheckTrigger()
    if (h == -1) return false;
    CloseHandle(h);
 
-   // 30秒以内の二重発火を防ぐ
    datetime now = TimeCurrent();
    if (now - g_LastTriggerExport < 30) return false;
    g_LastTriggerExport = now;
@@ -135,6 +128,31 @@ bool WriteStringToFile(string filepath, string content)
    bool ok = WriteFile(hFile, buf, (uint)len, written, 0);
    CloseHandle(hFile);
    return ok;
+}
+
+//+------------------------------------------------------------------+
+//|  保有ポジションのシンボルを収集（重複排除）                       |
+//+------------------------------------------------------------------+
+int CollectPositionSymbols(string &symbols[])
+{
+   int count = 0;
+   int openTotal = OrdersTotal();
+   for (int i = 0; i < openTotal; i++)
+   {
+      if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
+      if (OrderType() > OP_SELL) continue;
+      string sym = OrderSymbol();
+      bool found = false;
+      for (int j = 0; j < count; j++) if (symbols[j] == sym) { found = true; break; }
+      if (!found) { ArrayResize(symbols, count + 1); symbols[count++] = sym; }
+   }
+   if (count == 0)
+   {
+      ArrayResize(symbols, 1);
+      symbols[0] = Symbol();
+      count = 1;
+   }
+   return count;
 }
 
 //+------------------------------------------------------------------+
@@ -231,10 +249,56 @@ void ExportTrades()
       json += "}";
    }
 
-   json += "\n  ]\n}\n";
+   // チャートデータ（保有ポジションのシンボル × 6時間足）
+   json += "\n  ],\n";
+   json += "  \"charts\": {\n";
+
+   string symbols[];
+   int symCount = CollectPositionSymbols(symbols);
+   int bars = MathMax(1, MathMin(ChartBars, 500));
+   int tfs[6];
+   tfs[0]=1; tfs[1]=5; tfs[2]=15; tfs[3]=60; tfs[4]=240; tfs[5]=1440;
+
+   for (int si = 0; si < symCount; si++)
+   {
+      if (si > 0) json += ",\n";
+      string sym    = symbols[si];
+      int    digits = (int)MarketInfo(sym, MODE_DIGITS);
+
+      json += "    \"" + sym + "\": {\n";
+
+      for (int ti = 0; ti < 6; ti++)
+      {
+         int tf = tfs[ti];
+         if (ti > 0) json += ",\n";
+         json += "      \"" + IntegerToString(tf) + "\": {\"candles\":[\n";
+
+         bool firstBar = true;
+         for (int i = bars - 1; i >= 0; i--)
+         {
+            datetime t = iTime(sym, tf, i);
+            if (t == 0) continue;
+            double o = iOpen(sym,  tf, i);
+            double h = iHigh(sym,  tf, i);
+            double l = iLow(sym,   tf, i);
+            double c = iClose(sym, tf, i);
+            if (!firstBar) json += ",\n";
+            firstBar = false;
+            json += "        {\"t\":\"" + TimeToISO(t) + "\","
+                  + "\"o\":" + DoubleToString(o, digits) + ","
+                  + "\"h\":" + DoubleToString(h, digits) + ","
+                  + "\"l\":" + DoubleToString(l, digits) + ","
+                  + "\"c\":" + DoubleToString(c, digits) + "}";
+         }
+         json += "\n      ]}";
+      }
+      json += "\n    }";
+   }
+
+   json += "\n  }\n}\n";
 
    if (WriteStringToFile(filepath, json))
-      Print("[MTExporter] エクスポート完了: ", filepath, "  (", total, " 件, ", openTotal, " positions)");
+      Print("[MTExporter] エクスポート完了: ", filepath, "  (", total, " 件, ", openTotal, " positions, ", symCount, " symbols x6TF)");
    else
       Print("[MTExporter] 書き込み失敗: ", filepath, "  エラー: ", GetLastError());
 }

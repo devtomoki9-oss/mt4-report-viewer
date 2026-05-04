@@ -114,7 +114,21 @@ export default function EquityChart({ data, title = 'エクイティカーブ' }
 
   const final    = data[data.length - 1]?.equity || 0
   const isProfit = final >= 0
-  const isZoomed = safeStart > 0 || safeEnd < data.length - 1
+  const handleZoom = (zoomIn) => {
+    const total   = data.length
+    const visible = rangeRef.current.endIndex - rangeRef.current.startIndex
+    const step    = Math.max(3, Math.round(visible * 0.15))
+    let s  = rangeRef.current.startIndex + (zoomIn ? step : -step)
+    let en = rangeRef.current.endIndex   - (zoomIn ? step : -step)
+    if (en - s < 5) return
+    s  = Math.max(0, s)
+    en = Math.min(total - 1, en)
+    if (s >= en) return
+    const next = { startIndex: s, endIndex: en }
+    rangeRef.current = next
+    setRange(next)
+    setBrushKey(k => k + 1)
+  }
 
   const resetZoom = () => {
     const r = { startIndex: 0, endIndex: data.length - 1 }
@@ -123,18 +137,18 @@ export default function EquityChart({ data, title = 'エクイティカーブ' }
     setBrushKey(k => k + 1)
   }
 
+  const btnCls = "w-7 h-7 bg-[#0d1117] border border-[#1f2d40] text-slate-400 hover:text-white hover:bg-[#1f2d40] rounded leading-none flex items-center justify-center transition-colors"
+
   return (
     <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4" ref={containerRef}>
       <div className="flex items-center justify-between mb-3">
         <div className="text-sm font-semibold text-slate-300">{title}</div>
-        <div className="flex items-center gap-3">
-          <span className="hidden sm:inline text-xs text-slate-600">スクロールで拡大縮小</span>
-          {isZoomed && (
-            <button onClick={resetZoom}
-              className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
-              全体表示
-            </button>
-          )}
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1">
+            <button onClick={() => handleZoom(true)}  className={btnCls} title="拡大"><span className="text-base">+</span></button>
+            <button onClick={resetZoom}               className={btnCls} title="全体表示"><span className="text-xs">⊡</span></button>
+            <button onClick={() => handleZoom(false)} className={btnCls} title="縮小"><span className="text-base">−</span></button>
+          </div>
           <div className={`font-mono text-sm font-bold ${isProfit ? 'text-emerald-400' : 'text-red-400'}`}>
             {isProfit ? '+' : ''}{final.toFixed(2)}
           </div>

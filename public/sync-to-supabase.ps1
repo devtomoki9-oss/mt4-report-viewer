@@ -1,4 +1,4 @@
-# sync-to-supabase.ps1 v24
+# sync-to-supabase.ps1 v25
 # Full fault-tolerant edition - MT4/MT5 -> Supabase sync + AutoTrading control
 #
 # Usage A (direct):
@@ -74,8 +74,10 @@ public class Win32 {
 "@ -ErrorAction SilentlyContinue
 
 # -- Auth ---------------------------------------------------------------------
-$script:jwt         = $null
-$script:tokenExpiry = [datetime]::MinValue
+$script:jwt            = $null
+$script:tokenExpiry    = [datetime]::MinValue
+$script:authFailedUntil = [datetime]::MinValue
+$AUTH_COOLDOWN_SEC      = 60
 
 function Invoke-Auth {
     param([int]$maxRetry = 3)
@@ -86,8 +88,9 @@ function Invoke-Auth {
                 -Method Post `
                 -Headers @{ "apikey" = $AnonKey; "Content-Type" = "application/json" } `
                 -Body $body -ErrorAction Stop
-            $script:jwt         = $res.access_token
-            $script:tokenExpiry = (Get-Date).AddSeconds($res.expires_in - $TOKEN_REFRESH_SEC)
+            $script:jwt            = $res.access_token
+            $script:tokenExpiry    = (Get-Date).AddSeconds($res.expires_in - $TOKEN_REFRESH_SEC)
+            $script:authFailedUntil = [datetime]::MinValue
             Log "[Auth] Signed in OK (expires in $($res.expires_in)s)"
             return $true
         } catch {
@@ -105,11 +108,13 @@ function Invoke-Auth {
             if ($i -lt ($maxRetry - 1)) { Start-Sleep -Seconds ([int]$wait) }
         }
     }
-    Log "[Auth] All retries exhausted - continuing with existing token" -level ERROR
+    $script:authFailedUntil = (Get-Date).AddSeconds($AUTH_COOLDOWN_SEC)
+    Log "[Auth] All retries exhausted - next retry after ${AUTH_COOLDOWN_SEC}s" -level ERROR
     return $false
 }
 
 function Ensure-ValidToken {
+    if ((Get-Date) -lt $script:authFailedUntil) { return }
     if ($null -eq $script:jwt -or (Get-Date) -gt $script:tokenExpiry) {
         Invoke-Auth | Out-Null
     }
@@ -214,9 +219,9 @@ function Sync-ActualToDb {
 function Send-Report {
     param([string]$filePath)
     $text = Read-FileWithRetry $filePath
-    if ($null -eq $text) { return }
+    if ($null -eq $text) { return $false }
     $parsed  = $null
-    try { $parsed = $text | ConvertFrom-Json } catch { return }
+    try { $parsed = $text | ConvertFrom-Json } catch { return $false }
     $acctNum = [long]$parsed.account
     $fname   = [IO.Path]::GetFileName($filePath)
     $body = @{
@@ -230,7 +235,7 @@ function Send-Report {
             Invoke-RestMethod "$Url/rest/v1/rpc/upsert_report" `
                 -Method Post -Headers (New-RpcHeaders) -Body $body -ErrorAction Stop | Out-Null
             Log "[Upload] OK: $fname (account: $acctNum)"
-            return
+            return $true
         } catch {
             $statusCode = 0
             try { $statusCode = [int]$_.Exception.Response.StatusCode } catch {}
@@ -238,6 +243,7 @@ function Send-Report {
                 Log "[Upload] Auth error ($statusCode), forcing re-auth and retry..." -level WARN
                 $script:jwt = $null
                 $script:tokenExpiry = [datetime]::MinValue
+                $script:authFailedUntil = [datetime]::MinValue
                 Ensure-ValidToken
                 continue
             }
@@ -251,6 +257,7 @@ function Send-Report {
             Log "[Upload] FAILED: ${fname}: $($_.Exception.Message) | $errBody" -level WARN
         }
     }
+    return $false
 }
 
 # -- Send Ctrl+E to MetaTrader window -----------------------------------------
@@ -453,14 +460,22 @@ $lastUpload   = @{}
 
 function Invoke-FileScan {
     try {
-        $files = Get-ChildItem -Path $Folder -Filter "*.json" -ErrorAction SilentlyContinue
-        if ($null -eq $files) { return }
+        $files = @(Get-ChildItem -Path $Folder -Filter "*.json" -ErrorAction SilentlyContinue)
+        if ($files.Count -eq 0) {
+            Log "[Scan] no JSON files found in $Folder" -level WARN
+            return
+        }
+        $uploaded = 0
+        $skipped  = 0
         foreach ($file in $files) {
             $n     = $file.Name
             $ticks = $file.LastWriteTime.Ticks
-            if ($lastUpload.ContainsKey($n) -and $lastUpload[$n] -eq $ticks) { continue }
-            $lastUpload[$n] = $ticks
-            Send-Report $file.FullName
+            if ($lastUpload.ContainsKey($n) -and $lastUpload[$n] -eq $ticks) { $skipped++; continue }
+            $ok = Send-Report $file.FullName
+            if ($ok) { $lastUpload[$n] = $ticks; $uploaded++ }
+        }
+        if ($uploaded -gt 0 -or $skipped -eq 0) {
+            Log "[Scan] done: $($files.Count) file(s), uploaded=$uploaded, skipped=$skipped"
         }
     } catch {
         Log "[Scan] periodic scan error: $($_.Exception.Message)" -level WARN
@@ -468,7 +483,7 @@ function Invoke-FileScan {
 }
 
 # -- Main ---------------------------------------------------------------------
-Log "==== sync-to-supabase.ps1 v24 started ===="
+Log "==== sync-to-supabase.ps1 v25 started ===="
 Log "Folder: $Folder"
 
 Invoke-Auth | Out-Null
@@ -502,8 +517,10 @@ try {
                     if (-not $change.TimedOut -and $change.Name) {
                         Start-Sleep -Milliseconds 500
                         $fswPath = Join-Path $Folder $change.Name
-                        Send-Report $fswPath
-                        try { $lastUpload[$change.Name] = (Get-Item $fswPath -ErrorAction Stop).LastWriteTime.Ticks } catch {}
+                        $ok = Send-Report $fswPath
+                        if ($ok) {
+                            try { $lastUpload[$change.Name] = (Get-Item $fswPath -ErrorAction Stop).LastWriteTime.Ticks } catch {}
+                        }
                     }
                 } catch {
                     Log "[Watch] WaitForChanged error: $($_.Exception.Message)" -level WARN
@@ -526,5 +543,5 @@ try {
 } finally {
     if ($null -ne $watcher) { try { $watcher.Dispose() } catch {} }
     try { $mutex.ReleaseMutex() } catch {}
-    Log "==== sync-to-supabase.ps1 v24 stopped ===="
+    Log "==== sync-to-supabase.ps1 v25 stopped ===="
 }

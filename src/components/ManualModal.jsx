@@ -183,9 +183,41 @@ export default function ManualModal({ onClose, onDownloadVbs }) {
             </ul>
           </section>
 
+          {/* プラン・サブスクリプション */}
+          <section className="space-y-2">
+            <h2 className="text-sm font-semibold text-slate-200">6. プラン・サブスクリプション</h2>
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-[#1f2d40]">
+                  <td className="py-1.5 pr-3 text-slate-500">機能</td>
+                  <td className="py-1.5 pr-3 text-slate-500 text-center">Free</td>
+                  <td className="py-1.5 text-blue-400 text-center font-medium">Pro</td>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ['取引データの同期・閲覧', '○', '○'],
+                  ['複数口座管理', '○', '○'],
+                  ['カレンダー・エクイティカーブ', '○', '○'],
+                  ['AI インサイト分析', '—', '○'],
+                ].map(([feat, free, pro]) => (
+                  <tr key={feat} className="border-b border-[#1f2d40]">
+                    <td className="py-2 pr-3 text-slate-400">{feat}</td>
+                    <td className="py-2 pr-3 text-slate-500 text-center">{free}</td>
+                    <td className={`py-2 text-center font-medium ${pro === '○' ? 'text-blue-400' : 'text-slate-600'}`}>{pro}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <ul className="list-disc list-inside space-y-1.5 ml-1 mt-2">
+              <li><strong className="text-slate-300">Pro へのアップグレード</strong>：画面右上のドロップダウンメニューに表示される「アップグレード」をクリックすると決済ページへ移動します</li>
+              <li><strong className="text-slate-300">サブスクリプション管理</strong>（Pro のみ）：同ドロップダウンメニューの「サブスクリプション管理」から請求情報の確認・プランの変更・解約が行えます</li>
+            </ul>
+          </section>
+
           {/* お問い合わせ */}
           <section className="space-y-2">
-            <h2 className="text-sm font-semibold text-slate-200">6. お問い合わせ</h2>
+            <h2 className="text-sm font-semibold text-slate-200">7. お問い合わせ</h2>
             <p>ご不明な点や不具合は画面下部の「お問い合わせ」からご連絡ください。</p>
           </section>
 

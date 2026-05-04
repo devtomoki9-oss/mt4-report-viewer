@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import TradeChart from './TradeChart'
 
 const TF_ORDER  = ['1', '5', '15', '60', '240', '1440']
@@ -19,9 +20,9 @@ export default function ChartModal({ symbol, chartDataMap, trades, positions, on
 
   const btnCls = "w-7 h-7 bg-[#0d1117] border border-[#1f2d40] text-slate-400 hover:text-white hover:bg-[#1f2d40] rounded leading-none flex items-center justify-center transition-colors flex-shrink-0"
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 bg-[#0a0e17]/90 backdrop-blur flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+      className="fixed inset-0 bg-[#0a0e17]/90 backdrop-blur flex items-end sm:items-center justify-center z-[9999] p-0 sm:p-4"
       onClick={onClose}
     >
       <div
@@ -90,6 +91,7 @@ export default function ChartModal({ symbol, chartDataMap, trades, positions, on
           <span className="text-slate-600">マーカーにホバーで詳細</span>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

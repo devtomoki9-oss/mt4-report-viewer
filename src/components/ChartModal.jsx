@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import TradeChart from './TradeChart'
 
 const TF_ORDER  = ['1', '5', '15', '60', '240', '1440']
@@ -9,6 +9,11 @@ export default function ChartModal({ symbol, chartDataMap, trades, positions, on
   const defaultTf = available.includes('15') ? '15' : (available[0] ?? null)
   const [selectedTf, setSelectedTf] = useState(defaultTf)
   const tradeChartRef = useRef(null)
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
 
   const chartData = chartDataMap?.[selectedTf] ?? null
 

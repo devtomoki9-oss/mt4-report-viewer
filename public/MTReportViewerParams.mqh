@@ -33,35 +33,34 @@
 //|  }                                                                |
 //|                                                                  |
 //|  void OnDeinit(const int reason) { ParamCleanup(); }              |
-//|  ----------------------------------------------------------------|
-//|                                                                  |
-//|  ファイル配置（USERPROFILE 直下、口座 × チャート単位）:           |
-//|    %USERPROFILE%\MTExport\<account>__<chartId>.manifest.json     |
-//|    %USERPROFILE%\MTExport\<account>__<chartId>.actual.json       |
-//|    %USERPROFILE%\MTExport\<account>__<chartId>.desired.json      |
-//|                                                                  |
-//|  chartId は "<symbol>#<TF>#<chartHandle>" 形式で自動生成され、    |
-//|  同一 EA でも EURUSD 用と USDJPY 用は別エントリになる。            |
 //+------------------------------------------------------------------+
 #property strict
 
 #ifdef __MQL5__
-   #define PV_HANDLE long
+   #import "kernel32.dll"
+      int  GetEnvironmentVariableW(string name, ushort &buf[], int bufSize);
+      int  CreateDirectoryW(string path, long sec);
+      long CreateFileW(string path, uint access, uint share, long sec,
+                       uint disp, uint flags, long tmpl);
+      bool WriteFile (long hFile, uchar &buf[], uint toWrite, uint &written[], long overlapped);
+      bool ReadFile  (long hFile, uchar &buf[], uint toRead,  uint &read[],    long overlapped);
+      bool CloseHandle(long hFile);
+      bool DeleteFileW(string path);
+      bool GetFileTime(long hFile, ulong &creation, ulong &access, ulong &write);
+   #import
 #else
-   #define PV_HANDLE int
+   #import "kernel32.dll"
+      int  GetEnvironmentVariableW(string name, ushort &buf[], int bufSize);
+      int  CreateDirectoryW(string path, int sec);
+      int  CreateFileW(string path, uint access, uint share, int sec,
+                       uint disp, uint flags, int tmpl);
+      bool WriteFile (int hFile, uchar &buf[], uint toWrite, uint &written[], int overlapped);
+      bool ReadFile  (int hFile, uchar &buf[], uint toRead,  uint &read[],    int overlapped);
+      bool CloseHandle(int hFile);
+      bool DeleteFileW(string path);
+      bool GetFileTime(int hFile, ulong &creation, ulong &access, ulong &write);
+   #import
 #endif
-
-#import "kernel32.dll"
-   int       GetEnvironmentVariableW(string name, ushort &buf[], int bufSize);
-   int       CreateDirectoryW(string path, PV_HANDLE sec);
-   PV_HANDLE CreateFileW(string path, uint access, uint share, PV_HANDLE sec,
-                         uint disp, uint flags, PV_HANDLE tmpl);
-   bool      WriteFile(PV_HANDLE hFile, uchar &buf[], uint toWrite, uint &written[], PV_HANDLE overlapped);
-   bool      ReadFile (PV_HANDLE hFile, uchar &buf[], uint toRead,  uint &read[],    PV_HANDLE overlapped);
-   bool      CloseHandle(PV_HANDLE hFile);
-   bool      DeleteFileW(string path);
-   bool      GetFileTime(PV_HANDLE hFile, ulong &creation, ulong &access, ulong &write);
-#import
 
 #define PV_TYPE_INT     1
 #define PV_TYPE_DOUBLE  2
@@ -77,15 +76,14 @@
 #define PV_OPEN_EXISTING          3
 #define PV_FILE_ATTRIBUTE_NORMAL  0x80
 #define PV_FILE_SHARE_READ        1
-#define PV_INVALID_HANDLE_VALUE   -1
 
 string  g_pv_name [PV_MAX];
 int     g_pv_type [PV_MAX];
-string  g_pv_str  [PV_MAX];   // 現在値（string でシリアライズ）
-string  g_pv_def  [PV_MAX];   // 既定値
-string  g_pv_min  [PV_MAX];   // 最小値（数値型のみ）
-string  g_pv_max  [PV_MAX];   // 最大値（数値型のみ）
-string  g_pv_enum [PV_MAX];   // enum 候補 "A|B|C"
+string  g_pv_str  [PV_MAX];
+string  g_pv_def  [PV_MAX];
+string  g_pv_min  [PV_MAX];
+string  g_pv_max  [PV_MAX];
+string  g_pv_enum [PV_MAX];
 int     g_pv_count = 0;
 
 ulong   g_pv_lastDesiredFt = 0;
@@ -104,8 +102,13 @@ string PV_ExportDir()
 //+------------------------------------------------------------------+
 string PV_TfStr()
 {
-   int p = Period();
-   switch(p)
+#ifdef __MQL5__
+   int sec = PeriodSeconds();
+   int min = sec / 60;
+#else
+   int min = Period();
+#endif
+   switch(min)
    {
       case 1:     return "M1";
       case 5:     return "M5";
@@ -117,12 +120,12 @@ string PV_TfStr()
       case 10080: return "W1";
       case 43200: return "MN1";
    }
-   return IntegerToString(p);
+   return IntegerToString(min);
 }
 
 string PV_ChartId()
 {
-   long cid = ChartID();
+   long cid = (long)ChartID();
    return Symbol() + "#" + PV_TfStr() + "#" + IntegerToString((int)cid);
 }
 
@@ -168,6 +171,8 @@ string PV_EscapeJson(string s)
 }
 
 //+------------------------------------------------------------------+
+//|  ファイル I/O（プラットフォームごとに分岐）                       |
+//+------------------------------------------------------------------+
 bool PV_WriteFile(string filepath, string content)
 {
    if (filepath == "") return false;
@@ -175,42 +180,71 @@ bool PV_WriteFile(string filepath, string content)
    int len = StringToCharArray(content, buf, 0, StringLen(content));
    if (len <= 0) return false;
    uint written[1];
-   PV_HANDLE h = CreateFileW(filepath, PV_GENERIC_WRITE, 0, 0, PV_CREATE_ALWAYS, PV_FILE_ATTRIBUTE_NORMAL, 0);
-   if ((long)h == PV_INVALID_HANDLE_VALUE) return false;
+#ifdef __MQL5__
+   long h = CreateFileW(filepath, PV_GENERIC_WRITE, 0, 0, PV_CREATE_ALWAYS, PV_FILE_ATTRIBUTE_NORMAL, 0);
+   if (h == -1) return false;
    bool ok = WriteFile(h, buf, (uint)len, written, 0);
    CloseHandle(h);
    return ok;
+#else
+   int h = CreateFileW(filepath, PV_GENERIC_WRITE, 0, 0, PV_CREATE_ALWAYS, PV_FILE_ATTRIBUTE_NORMAL, 0);
+   if (h == -1) return false;
+   bool ok = WriteFile(h, buf, (uint)len, written, 0);
+   CloseHandle(h);
+   return ok;
+#endif
 }
 
 string PV_ReadFile(string filepath)
 {
    if (filepath == "") return "";
-   PV_HANDLE h = CreateFileW(filepath, PV_GENERIC_READ, PV_FILE_SHARE_READ, 0, PV_OPEN_EXISTING, PV_FILE_ATTRIBUTE_NORMAL, 0);
-   if ((long)h == PV_INVALID_HANDLE_VALUE) return "";
    uchar buf[];
    ArrayResize(buf, 65536);
-   uint read[1];
+   uint readBytes[1];
    string out = "";
+#ifdef __MQL5__
+   long h = CreateFileW(filepath, PV_GENERIC_READ, PV_FILE_SHARE_READ, 0, PV_OPEN_EXISTING, PV_FILE_ATTRIBUTE_NORMAL, 0);
+   if (h == -1) return "";
    while (true)
    {
-      read[0] = 0;
-      bool ok = ReadFile(h, buf, 65536, read, 0);
-      if (!ok || read[0] == 0) break;
-      out += CharArrayToString(buf, 0, (int)read[0]);
-      if (read[0] < 65536) break;
+      readBytes[0] = 0;
+      bool ok = ReadFile(h, buf, 65536, readBytes, 0);
+      if (!ok || readBytes[0] == 0) break;
+      out += CharArrayToString(buf, 0, (int)readBytes[0]);
+      if (readBytes[0] < 65536) break;
    }
    CloseHandle(h);
+#else
+   int h = CreateFileW(filepath, PV_GENERIC_READ, PV_FILE_SHARE_READ, 0, PV_OPEN_EXISTING, PV_FILE_ATTRIBUTE_NORMAL, 0);
+   if (h == -1) return "";
+   while (true)
+   {
+      readBytes[0] = 0;
+      bool ok = ReadFile(h, buf, 65536, readBytes, 0);
+      if (!ok || readBytes[0] == 0) break;
+      out += CharArrayToString(buf, 0, (int)readBytes[0]);
+      if (readBytes[0] < 65536) break;
+   }
+   CloseHandle(h);
+#endif
    return out;
 }
 
 ulong PV_FileTime(string filepath)
 {
    if (filepath == "") return 0;
-   PV_HANDLE h = CreateFileW(filepath, PV_GENERIC_READ, PV_FILE_SHARE_READ, 0, PV_OPEN_EXISTING, PV_FILE_ATTRIBUTE_NORMAL, 0);
-   if ((long)h == PV_INVALID_HANDLE_VALUE) return 0;
    ulong c = 0, a = 0, w = 0;
+#ifdef __MQL5__
+   long h = CreateFileW(filepath, PV_GENERIC_READ, PV_FILE_SHARE_READ, 0, PV_OPEN_EXISTING, PV_FILE_ATTRIBUTE_NORMAL, 0);
+   if (h == -1) return 0;
    GetFileTime(h, c, a, w);
    CloseHandle(h);
+#else
+   int h = CreateFileW(filepath, PV_GENERIC_READ, PV_FILE_SHARE_READ, 0, PV_OPEN_EXISTING, PV_FILE_ATTRIBUTE_NORMAL, 0);
+   if (h == -1) return 0;
+   GetFileTime(h, c, a, w);
+   CloseHandle(h);
+#endif
    return w;
 }
 

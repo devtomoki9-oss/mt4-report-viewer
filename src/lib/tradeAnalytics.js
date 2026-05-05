@@ -1,7 +1,7 @@
 const SESSIONS = [
-  { name: 'アジア',       start: 0,  end: 9  },
-  { name: 'ロンドン',     start: 9,  end: 17 },
-  { name: 'ニューヨーク', start: 14, end: 23 },
+  { id: 'asia',    start: 0,  end: 9  },
+  { id: 'london',  start: 9,  end: 17 },
+  { id: 'newyork', start: 14, end: 23 },
 ]
 
 function profit(t) { return t.netProfit ?? t.profit ?? 0 }
@@ -100,22 +100,22 @@ export function calcRiskScore(stats, trades) {
 // ────────────────────────────────────────────────
 
 export function analyzeBySession(trades) {
-  const map = Object.fromEntries(SESSIONS.map(s => [s.name, { wins: 0, total: 0 }]))
+  const map = Object.fromEntries(SESSIONS.map(s => [s.id, { wins: 0, total: 0 }]))
   for (const t of trades) {
     const h = parseHour(t.closeTime)
     if (h === null) continue
     for (const s of SESSIONS) {
       if (h >= s.start && h < s.end) {
-        map[s.name].total++
-        if (profit(t) > 0) map[s.name].wins++
+        map[s.id].total++
+        if (profit(t) > 0) map[s.id].wins++
         break
       }
     }
   }
   return SESSIONS.map(s => ({
-    name:    s.name,
-    winRate: map[s.name].total > 0 ? map[s.name].wins / map[s.name].total : 0,
-    total:   map[s.name].total,
+    id:      s.id,
+    winRate: map[s.id].total > 0 ? map[s.id].wins / map[s.id].total : 0,
+    total:   map[s.id].total,
   }))
 }
 
@@ -144,7 +144,7 @@ function analyzeHoldingTime(trades) {
   const avgWinHold  = wins.reduce((s, t)   => s + holdingMinutes(t), 0) / wins.length
   const avgLossHold = losses.reduce((s, t) => s + holdingMinutes(t), 0) / losses.length
   if (avgLossHold > avgWinHold * 1.5)
-    return { type: 'warning', priority: 'high', message: '負けトレードの平均保有時間が勝ちトレードより長いです（損切りの遅れ）' }
+    return { type: 'warning', priority: 'high', i18nKey: 'insight.rules.holdingMismatch' }
   return null
 }
 
@@ -166,54 +166,62 @@ export function generateInsights(trades, stats) {
 
   if (expectancy < 0)
     insights.push({ type: 'warning', priority: 'high',
-      message: 'この手法は長期的に負ける可能性があります（期待値がマイナスです）' })
+      i18nKey: 'insight.rules.negativeExpectancy' })
 
   if (winRate < 40)
     insights.push({ type: 'warning', priority: 'high',
-      message: '勝率が低いためエントリー条件の見直しが必要です' })
+      i18nKey: 'insight.rules.lowWinRate' })
 
   if (avgWin > 0 && avgLoss > avgWin * 1.5)
     insights.push({ type: 'warning', priority: 'high',
-      message: `平均損失（${avgLoss.toFixed(1)}）が平均利益（${avgWin.toFixed(1)}）を大きく上回っています` })
+      i18nKey: 'insight.rules.highLossRatio',
+      i18nParams: { avgLoss: avgLoss.toFixed(1), avgWin: avgWin.toFixed(1) } })
 
   for (const s of sessions) {
     if (s.total < 30) continue
     const diff = s.winRate - allWR
     if (diff < -0.15)
       insights.push({ type: 'warning', priority: 'medium',
-        message: `${s.name}時間のパフォーマンスに偏りがあります（勝率${(s.winRate * 100).toFixed(0)}% vs 全体${winRate.toFixed(0)}%）` })
+        i18nKey: 'insight.rules.sessionUnderperform',
+        i18nParams: { sessionId: s.id, sessionRate: (s.winRate * 100).toFixed(0), overallRate: winRate.toFixed(0) } })
     else if (diff > 0.15)
       insights.push({ type: 'success', priority: 'low',
-        message: `${s.name}時間のパフォーマンスが高いです（勝率${(s.winRate * 100).toFixed(0)}%）` })
+        i18nKey: 'insight.rules.sessionOverperform',
+        i18nParams: { sessionId: s.id, sessionRate: (s.winRate * 100).toFixed(0) } })
   }
 
   if (streak >= 5)
     insights.push({ type: 'warning', priority: 'medium',
-      message: `最大${streak}連敗を記録しています。ポジションサイズを見直してください` })
+      i18nKey: 'insight.rules.lossStreak',
+      i18nParams: { streak } })
 
   const worst = symbols.find(s => s.total >= 5 && s.winRate < 0.35 && s.profit < 0)
   if (worst)
     insights.push({ type: 'warning', priority: 'medium',
-      message: `${worst.name}のパフォーマンスが低調です（勝率${(worst.winRate * 100).toFixed(0)}%・損益${worst.profit.toFixed(0)}）` })
+      i18nKey: 'insight.rules.symbolUnderperform',
+      i18nParams: { symbol: worst.name, rate: (worst.winRate * 100).toFixed(0), profit: worst.profit.toFixed(0) } })
 
   const holdingInsight = analyzeHoldingTime(trades)
   if (holdingInsight) insights.push(holdingInsight)
 
   if (maxDrawdown > 1000)
     insights.push({ type: 'warning', priority: 'medium',
-      message: `最大ドローダウンが${maxDrawdown.toFixed(0)}に達しています` })
+      i18nKey: 'insight.rules.drawdownLarge',
+      i18nParams: { value: maxDrawdown.toFixed(0) } })
 
   if (winRate >= 60)
     insights.push({ type: 'success', priority: 'low',
-      message: `勝率 ${winRate.toFixed(1)}% は優秀です` })
+      i18nKey: 'insight.rules.excellentWinRate',
+      i18nParams: { rate: winRate.toFixed(1) } })
 
   if (isFinite(profitFactor) && profitFactor >= 1.5)
     insights.push({ type: 'success', priority: 'low',
-      message: `プロフィットファクター ${profitFactor.toFixed(2)} は良好です` })
+      i18nKey: 'insight.rules.pfGood',
+      i18nParams: { pf: profitFactor.toFixed(2) } })
 
   if (isFinite(profitFactor) && profitFactor >= 1.5 && totalProfit > 0 && maxDrawdown / totalProfit < 0.2)
     insights.push({ type: 'success', priority: 'low',
-      message: 'ドローダウンが小さく安定したトレードです' })
+      i18nKey: 'insight.rules.stableTrades' })
 
   const priorityOrder = { high: 0, medium: 1, low: 2 }
   insights.sort((a, b) => (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3))
@@ -238,15 +246,15 @@ export function generateSuggestions(trades, stats) {
 
   if (curStreak >= 3)
     suggestions.push({ priority: 'high',
-      message: 'トレードを一時停止し、エントリー条件を再確認してください' })
+      i18nKey: 'insight.suggestionRules.pauseAndRecheck' })
 
   if (expectancy < 0)
     suggestions.push({ priority: 'high',
-      message: 'エントリー条件を根本から見直してください（現在の手法は期待値がマイナスです）' })
+      i18nKey: 'insight.suggestionRules.reviewStrategy' })
 
   if (avgWin > 0 && avgLoss > avgWin * 1.5)
     suggestions.push({ priority: 'high',
-      message: 'ストップロスを見直し、リスクリワード比を改善してください（目標 1:1.5 以上）' })
+      i18nKey: 'insight.suggestionRules.improveStopLoss' })
 
   const wins   = trades.filter(t => profit(t) > 0)
   const losses = trades.filter(t => profit(t) < 0)
@@ -255,25 +263,27 @@ export function generateSuggestions(trades, stats) {
     const avgLossHold = losses.reduce((s, t) => s + holdingMinutes(t), 0) / losses.length
     if (avgLossHold > avgWinHold * 1.5)
       suggestions.push({ priority: 'high',
-        message: '負けトレードを長く保有しすぎています。損切りルールを徹底してください' })
+        i18nKey: 'insight.suggestionRules.tightenLossExit' })
   }
 
   for (const s of sessions) {
     if (s.total >= 30 && (s.winRate - allWR) < -0.15)
       suggestions.push({ priority: 'medium',
-        message: `${s.name}時間のトレードを削減または停止することを検討してください` })
+        i18nKey: 'insight.suggestionRules.reduceSession',
+        i18nParams: { sessionId: s.id } })
   }
 
   for (const s of symbols) {
     if (s.total >= 5 && s.winRate < 0.35 && s.profit < 0)
       suggestions.push({ priority: 'medium',
-        message: `${s.name}のトレードを停止し、他の通貨ペアに集中することを検討してください` })
+        i18nKey: 'insight.suggestionRules.skipSymbol',
+        i18nParams: { symbol: s.name } })
   }
 
   const ddRatio = totalProfit > 0 ? maxDrawdown / totalProfit : 0
   if (ddRatio > 0.3)
     suggestions.push({ priority: 'medium',
-      message: 'ドローダウンが大きいため、ロットサイズを下げることを検討してください' })
+      i18nKey: 'insight.suggestionRules.reduceLot' })
 
   const priorityOrder = { high: 0, medium: 1, low: 2 }
   suggestions.sort((a, b) => (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3))
@@ -293,15 +303,18 @@ export function generateAlerts(trades, stats) {
 
   if (streak >= 3)
     alerts.push({ level: 'danger',
-      message: `現在 ${streak} 連敗中です。トレードを一時停止することを検討してください` })
+      i18nKey: 'insight.alertRules.ongoingStreak',
+      i18nParams: { streak } })
 
   if (maxDrawdown > 1000)
     alerts.push({ level: 'danger',
-      message: `ドローダウンが ${maxDrawdown.toFixed(0)} に達しています` })
+      i18nKey: 'insight.alertRules.drawdownDanger',
+      i18nParams: { value: maxDrawdown.toFixed(0) } })
 
   if (isFinite(profitFactor) && profitFactor < 1.2 && totalTrades >= 10)
     alerts.push({ level: 'warn',
-      message: `プロフィットファクターが ${profitFactor.toFixed(2)} に低下しています` })
+      i18nKey: 'insight.alertRules.pfWarn',
+      i18nParams: { pf: profitFactor.toFixed(2) } })
 
   return alerts
 }

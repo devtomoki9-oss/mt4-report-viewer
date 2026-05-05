@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback, useState, forwardRef, useImperativeHandle } from 'react'
+import { useTranslation } from 'react-i18next'
 import { createChart, CrosshairMode, CandlestickSeries, LineSeries, createSeriesMarkers } from 'lightweight-charts'
 
 // "2024.05.03 09:15:00" / "2024-05-03 09:15:00" → "05/03 09:15"
@@ -9,7 +10,7 @@ const fmtTime = (str) => {
 }
 
 // ---- Hover tooltip ---------------------------------------------------------
-function MarkerTooltip({ tooltip, containerRef }) {
+function MarkerTooltip({ tooltip, containerRef, t }) {
   if (!tooltip) return null
   const cw = containerRef.current?.clientWidth ?? 600
   const isRight = tooltip.x > cw * 0.62
@@ -18,20 +19,20 @@ function MarkerTooltip({ tooltip, containerRef }) {
   const rows = []
   if (data.buyEntries?.length > 0)
     rows.push({
-      label: '▲ 買エントリー',
+      label: t('chart.tooltip.buyEntries'),
       items: data.buyEntries.map(e => ({ value: String(e.size), time: fmtTime(e.time) })),
       cls: 'text-emerald-400',
     })
   if (data.sellEntries?.length > 0)
     rows.push({
-      label: '▼ 売エントリー',
+      label: t('chart.tooltip.sellEntries'),
       items: data.sellEntries.map(e => ({ value: String(e.size), time: fmtTime(e.time) })),
       cls: 'text-red-400',
     })
   if (data.exits?.length > 0) {
     const total = data.exits.reduce((s, e) => s + e.pnl, 0)
     rows.push({
-      label: '● 決済',
+      label: t('chart.tooltip.exits'),
       items: data.exits.map(e => ({
         value: `${e.pnl >= 0 ? '+' : ''}${e.pnl.toFixed(0)}`,
         time:  fmtTime(e.time),
@@ -54,7 +55,7 @@ function MarkerTooltip({ tooltip, containerRef }) {
     >
       {rows.map((row, i) => (
         <div key={i} className={i > 0 ? 'mt-1.5 pt-1.5 border-t border-[#1f2d40]' : ''}>
-          <div className={`font-semibold ${row.cls} mb-1`}>{row.label} {row.items.length}件</div>
+          <div className={`font-semibold ${row.cls} mb-1`}>{row.label} {t('units.items', { count: row.items.length })}</div>
           <div className="space-y-0.5 pl-2">
             {row.items.map((item, j) => (
               <div key={j} className="flex items-center justify-between gap-3">
@@ -74,6 +75,7 @@ const TradeChart = forwardRef(function TradeChart(
   { chartData, trades = [], positions = [], symbol, tf },
   ref
 ) {
+  const { t } = useTranslation()
   const containerRef    = useRef(null)
   const wrapperRef      = useRef(null)
   const chartRef        = useRef(null)
@@ -318,7 +320,7 @@ const TradeChart = forwardRef(function TradeChart(
   if (!chartData) {
     return (
       <div className="flex items-center justify-center h-full min-h-[200px] text-slate-600 text-sm text-center leading-relaxed">
-        チャートデータがありません。<br />EA を再コンパイルして再アタッチしてください。
+        {t('chart.empty')}<br />{t('chart.emptyHint')}
       </div>
     )
   }
@@ -326,7 +328,7 @@ const TradeChart = forwardRef(function TradeChart(
   return (
     <div ref={wrapperRef} className="relative h-full min-h-[200px]">
       <div ref={containerRef} className="w-full" />
-      <MarkerTooltip tooltip={tooltip} containerRef={containerRef} />
+      <MarkerTooltip tooltip={tooltip} containerRef={containerRef} t={t} />
     </div>
   )
 })

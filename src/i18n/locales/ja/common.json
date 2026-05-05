@@ -4,5 +4,876 @@
       "label": "言語",
       "current": "{{name}}"
     }
+  },
+  "common": {
+    "loading": "読み込み中…",
+    "processing": "処理中…",
+    "cancel": "キャンセル",
+    "close": "閉じる",
+    "save": "保存",
+    "delete": "削除",
+    "back": "戻る",
+    "prev": "← 前",
+    "next": "次 →",
+    "rename": "名前を変更",
+    "copy": "コピー",
+    "ok": "OK",
+    "all": "すべて",
+    "noData": "データなし",
+    "empty": "データがありません",
+    "search": "検索",
+    "filterReset": "リセット",
+    "downloadAction": "↓ ダウンロード",
+    "ariaPrev": "前へ",
+    "ariaNext": "次へ"
+  },
+  "units": {
+    "trades": "{{count}} 取引",
+    "items": "{{count}}件",
+    "itemsShort": "{{count}}件",
+    "accounts": "{{count}} 口座",
+    "days": "{{count}}日",
+    "candles": "{{count}}本",
+    "bars": "{{count}}本"
+  },
+  "app": {
+    "title": "MT4/MT5 Report Viewer",
+    "productName": "MT Report Viewer",
+    "productNamePro": "MT Report Viewer Pro",
+    "tabs": {
+      "overview": "サマリー",
+      "insight": "AIインサイト",
+      "ea": "口座別成績",
+      "trades": "全取引",
+      "calendar": "カレンダー"
+    },
+    "header": {
+      "refresh": "↻ 更新",
+      "refreshShort": "…",
+      "userMenu": {
+        "planPro": "Pro",
+        "planFree": "Free",
+        "planProLabel": "Pro プラン",
+        "planFreeLabel": "Free プラン",
+        "manageSubscription": "サブスクリプション管理",
+        "logout": "ログアウト",
+        "deleteAccount": "アカウント削除"
+      },
+      "clear": "クリア"
+    },
+    "toolbar": {
+      "addFiles": "+ ファイルを追加",
+      "clear": "クリア"
+    },
+    "syncWarn": {
+      "title": "Supabase にレポートデータが見つかりません",
+      "body": "MT4/MT5 が起動しているか、タスクスケジューラが動作しているか確認してください。"
+    },
+    "setup": {
+      "title": "はじめに",
+      "subtitle": "MT4/MT5 の取引データをクラウドに同期する初回設定",
+      "step1": {
+        "title": "EA のインストール",
+        "description": "3つのファイルをダウンロードして同じフォルダに保存し、{{file}} を実行します。"
+      },
+      "step2": {
+        "title": "同期スクリプトの設定",
+        "description": "2つのファイルを EA と同じフォルダにダウンロードし、ブロックを解除します。"
+      },
+      "step3": {
+        "title": "タスクスケジューラへの登録",
+        "description": "ファイル変更を検知してリアルタイムでアップロードします。PowerShell で実行してください。"
+      },
+      "manualLink": "詳細な手順（MT4/MT5 の設定含む）はマニュアルを参照",
+      "orUploadManual": "または HTML / JSON レポートを手動でアップロード"
+    },
+    "cleared": {
+      "message": "データがクリアされました",
+      "showSetup": "セットアップ手順を表示"
+    },
+    "filteredRange": {
+      "of": "の集計"
+    },
+    "noTradesInRange": {
+      "message": "選択期間に取引がありません",
+      "clearFilter": "絞り込みを解除"
+    },
+    "stats": {
+      "balanceTotal": "残高合計",
+      "creditTotal": "クレジット合計",
+      "equityTotal": "有効証拠金合計",
+      "floatPnlTotal": "含み損益合計",
+      "netProfitTotal": "純益合計",
+      "totalTrades": "総取引数",
+      "winRate": "勝率",
+      "profitFactor": "プロフィットファクター",
+      "grossProfit": "総利益",
+      "grossLoss": "総損失",
+      "maxDrawdown": "最大DD"
+    },
+    "equityChart": {
+      "allCombined": "全口座合算 エクイティカーブ",
+      "default": "エクイティカーブ"
+    },
+    "accountList": {
+      "title": "口座別成績",
+      "sort": {
+        "profit": "純益",
+        "name": "口座名",
+        "trades": "取引数",
+        "pf": "PF",
+        "winRate": "勝率",
+        "maxDrawdown": "最大DD"
+      }
+    },
+    "vbsModal": {
+      "title": "run-sync.vbs を生成",
+      "body": "パスワードを入力すると接続情報が埋め込まれた VBS ファイルをダウンロードします。\nsync-to-supabase.ps1 と同じフォルダに置いてください。",
+      "email": "メールアドレス",
+      "password": "パスワード",
+      "passwordPlaceholder": "ログインパスワード"
+    },
+    "errors": {
+      "generic": "エラーが発生しました。\n\n{{message}}",
+      "upgradeFailed": "アップグレードの処理中にエラーが発生しました。\n\n{{message}}",
+      "lemonNoUrl": "Lemon Squeezy から URL が返されませんでした",
+      "deleteFailed": "削除に失敗しました: {{message}}",
+      "subscriptionCancelFailed": "サブスクリプションのキャンセルに失敗しました",
+      "fileSystemAccessRequired": "Chrome / Edge をお使いください（File System Access API が必要です）"
+    },
+    "footer": {
+      "manual": "操作マニュアル",
+      "help": "ヘルプ",
+      "terms": "利用規約",
+      "privacy": "プライバシーポリシー",
+      "contact": "お問い合わせ",
+      "copyright": "© {{year}} MT Report Viewer"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "アカウントにログイン",
+      "submit": "ログイン",
+      "noAccountPrompt": "アカウントをお持ちでない方は",
+      "signupLink": "新規登録",
+      "forgotLink": "パスワードを忘れた方"
+    },
+    "signup": {
+      "title": "新規アカウント登録",
+      "submit": "登録",
+      "hasAccountPrompt": "すでにアカウントをお持ちの方は",
+      "loginLink": "ログイン"
+    },
+    "forgot": {
+      "title": "パスワードをリセット",
+      "submit": "リセットメールを送信",
+      "backToLogin": "ログイン画面へ戻る"
+    },
+    "fields": {
+      "email": "メールアドレス",
+      "password": "パスワード（8文字以上）",
+      "passwordConfirm": "パスワード（確認）"
+    },
+    "done": {
+      "signupTitle": "確認メールを送信しました",
+      "forgotTitle": "パスワードリセットメールを送信しました",
+      "signupBody": "{{email}} に届いたリンクをクリックして登録を完了してください。",
+      "forgotBody": "{{email}} に届いたリンクをクリックしてパスワードを再設定してください。",
+      "backToLogin": "ログイン画面へ戻る"
+    },
+    "agree": "登録することで {{privacyLink}} および {{termsLink}} に同意したものとみなします",
+    "agreePrivacy": "プライバシーポリシー",
+    "agreeTerms": "利用規約",
+    "errors": {
+      "passwordsMismatch": "パスワードが一致しません",
+      "unknown": "不明なエラーが発生しました",
+      "rateLimit": "メール送信の上限に達しました。しばらく時間をおいてから再度お試しください（Supabase 無料プランの制限）",
+      "invalidCredentials": "メールアドレスまたはパスワードが正しくありません",
+      "emailNotConfirmed": "確認メールのリンクをクリックしてから再度ログインしてください",
+      "userAlreadyRegistered": "このメールアドレスはすでに登録されています",
+      "passwordTooShort": "パスワードは8文字以上で入力してください",
+      "invalidEmail": "メールアドレスの形式が正しくありません"
+    }
+  },
+  "passwordReset": {
+    "title": "新しいパスワードを設定",
+    "newPassword": "新しいパスワード（8文字以上）",
+    "newPasswordConfirm": "新しいパスワード（確認）",
+    "submit": "パスワードを変更",
+    "successTitle": "パスワードを変更しました",
+    "resyncTitle": "自動同期の再セットアップが必要です",
+    "resyncBody": "MT4/MT5の自動同期（run-sync.vbs）にはパスワードが埋め込まれています。ダッシュボードから <strong>run-sync.vbs を再ダウンロード</strong> し、タスクスケジューラーのファイルを差し替えてください。",
+    "back": "ダッシュボードへ戻る"
+  },
+  "landing": {
+    "nav": {
+      "login": "ログイン",
+      "start": "無料で始める →"
+    },
+    "hero": {
+      "badge": "MT4 / MT5 対応 · データ分析ツール",
+      "titleLine1": "MT4/MT5 の取引履歴を、",
+      "titleLine2": "見やすく整理する",
+      "subtitle": "取引履歴ファイルをアップロードするだけ。勝率・損益・ドローダウンなどの統計情報を自動で集計・グラフ化し、過去の取引データを多角的に可視化します。",
+      "disclaimer": "※ 本ツールは取引履歴の整理・可視化のみを目的としています。投資助言・売買判断の提供は行いません。",
+      "ctaPrimary": "無料で始める",
+      "ctaSecondary": "ログイン",
+      "screenshotAlt": "MT Report Viewer Pro ダッシュボード画面"
+    },
+    "stats": {
+      "items": [
+        { "value": "MT4/MT5", "label": "両対応" },
+        { "value": "複数口座", "label": "一括管理" },
+        { "value": "自動集計", "label": "統計サマリー" }
+      ]
+    },
+    "about": {
+      "title": "取引履歴を、データとして整理する",
+      "body": "MT4/MT5 が出力する HTML / JSON 形式のレポートファイルを読み込むと、取引ごとの損益・保有時間・通貨ペア別の集計など、複数の視点から取引データを整理して表示します。複数口座のデータを同時に読み込んで比較したり、カレンダー形式で日別の損益推移を確認したりと、自身の取引履歴を多角的に把握するための機能を提供します。",
+      "footer": "本ツールは記録されたデータの整理・表示のみを目的としており、将来の取引成果に関するいかなる示唆・助言も行いません。"
+    },
+    "features": {
+      "title": "機能紹介",
+      "subtitle": "取引データの整理・可視化に必要な機能を揃えています",
+      "items": [
+        { "icon": "📂", "title": "複数口座の一括読み込み", "desc": "MT4/MT5 の複数口座から出力したレポートファイルをまとめて読み込み、口座ごと・全口座合算それぞれの統計を一覧表示します。" },
+        { "icon": "📊", "title": "統計サマリーの自動集計", "desc": "総取引数・損益合計・勝率・プロフィットファクター・最大ドローダウンなどの統計値を自動で算出し、表とグラフで表示します。" },
+        { "icon": "📈", "title": "エクイティカーブの表示", "desc": "取引履歴から資産推移グラフを生成します。過去のどの時期に損益が増減したかを時系列で確認できます。" },
+        { "icon": "📅", "title": "カレンダービュー", "desc": "日別・月別の損益をカレンダー形式で表示します。特定の曜日や時期ごとの傾向を視覚的に把握するのに役立ちます。" },
+        { "icon": "🔄", "title": "自動同期(オプション)", "desc": "PowerShell スクリプトとタスクスケジューラを組み合わせることで、MT4/MT5 の最新レポートを定期的に自動取り込みできます。" }
+      ]
+    },
+    "useCases": {
+      "title": "こんな方に",
+      "subtitle": "取引履歴の整理・確認に活用できます",
+      "items": [
+        { "label": "過去の取引を振り返りたい方", "desc": "損益推移やドローダウンの深さを時系列グラフで確認" },
+        { "label": "複数口座をまとめて把握したい方", "desc": "口座ごとの統計を横並びで比較・一覧表示" },
+        { "label": "取引履歴を整理・記録したい方", "desc": "月別・通貨ペア別の集計データを一元管理" },
+        { "label": "レポートをビジュアルで確認したい方", "desc": "MT4/MT5 の標準レポートをグラフ形式で可視化" }
+      ]
+    },
+    "steps": {
+      "title": "かんたんセットアップ",
+      "subtitle": "初回のみ。あとは自動で最新データを取り込みます。",
+      "items": [
+        { "step": "1", "title": "ファイルをダウンロード", "desc": "install.bat と EA ファイルをアプリ内からダウンロード" },
+        { "step": "2", "title": "MT4/MT5 にセットアップ", "desc": "install.bat を実行して EA を自動インストール" },
+        { "step": "3", "title": "自動同期を設定", "desc": "タスクスケジューラで 1 分ごとに自動取り込み" },
+        { "step": "4", "title": "データを確認", "desc": "全口座の取引履歴をブラウザで一括確認" }
+      ]
+    },
+    "cta": {
+      "title": "取引履歴の整理を、今すぐ始める",
+      "subtitle": "アカウント登録は無料です",
+      "button": "無料アカウントを作成 →"
+    },
+    "disclaimer": {
+      "heading": "免責事項",
+      "body": "MT Report Viewer Pro は、MT4/MT5 から出力された取引履歴データの整理・集計・可視化のみを目的としたデータ分析ツールです。本サービスは投資助言・投資推奨・売買シグナルの提供を一切行いません。表示されるすべての統計・グラフはユーザーがアップロードした過去の取引履歴データに基づく記録的な情報であり、将来の運用成果を保証するものではありません。取引に関するすべての判断はユーザー自身の責任において行ってください。本サービスは金融商品取引業者ではなく、金融商品取引法に基づく登録・届出を要する業務は行っておりません。"
+    }
+  },
+  "upload": {
+    "title": "MT4レポートをドロップ",
+    "subtitle": "または クリックしてファイルを選択",
+    "hint": "MT4 の「詳細レポート」HTML ファイル対応 · 複数ファイル同時読み込み可"
+  },
+  "dateRange": {
+    "presets": {
+      "1d": "1日",
+      "1w": "1週間",
+      "1m": "1ヶ月",
+      "3m": "3ヶ月",
+      "6m": "6ヶ月",
+      "1y": "1年",
+      "all": "全期間"
+    },
+    "filteredBadge": "絞り込み中",
+    "clearTitle": "絞り込みをクリア"
+  },
+  "account": {
+    "card": {
+      "tradesCount": "{{count}} 取引",
+      "rename": "名前を変更",
+      "delete": "削除",
+      "tradingActive": "稼働中",
+      "tradingPaused": "停止中",
+      "tradingStopHint": "自動取引を停止",
+      "tradingRunHint": "自動取引を稼働",
+      "metrics": {
+        "balance": "残高",
+        "credit": "クレジット",
+        "equity": "有効証拠金",
+        "floating": "含み損益",
+        "profit": "純益",
+        "grossProfit": "総利益",
+        "grossLoss": "総損失",
+        "profitFactor": "プロフィットファクター",
+        "winRate": "勝率",
+        "wins": "勝ちトレード",
+        "losses": "負けトレード",
+        "maxDrawdown": "最大DD"
+      }
+    },
+    "breakdown": {
+      "title": "口座別成績",
+      "barChartTitle": "口座別 損益比較",
+      "headers": {
+        "name": "口座名",
+        "trades": "取引数",
+        "profit": "純益",
+        "pf": "PF",
+        "winRate": "勝率",
+        "maxDrawdown": "最大DD",
+        "avgWin": "平均勝ち",
+        "avgLoss": "平均負け"
+      },
+      "profitTooltip": "損益",
+      "tabs": { "equity": "エクイティ", "trades": "取引一覧" },
+      "chartTitleSuffix": " — エクイティカーブ"
+    }
+  },
+  "trades": {
+    "table": {
+      "columns": {
+        "ticket": "チケット",
+        "openTime": "オープン (ブローカー)",
+        "closeTime": "クローズ (ブローカー)",
+        "type": "種別",
+        "symbol": "通貨ペア",
+        "size": "ロット",
+        "openPrice": "オープン価格",
+        "closePrice": "クローズ価格",
+        "swap": "スワップ",
+        "commission": "手数料",
+        "netProfit": "純益",
+        "account": "口座"
+      },
+      "filters": {
+        "symbolAll": "通貨ペア: すべて",
+        "typeAll": "種別: すべて",
+        "accountAll": "口座: すべて",
+        "reset": "リセット"
+      },
+      "commissionMobile": "手数料 {{value}}",
+      "swapMobile": "SW {{value}}",
+      "lotsMobile": "{{lots}} lot",
+      "page": "{{current}} / {{total}}"
+    }
+  },
+  "positions": {
+    "title": "保有ポジション",
+    "allAccounts": "全口座",
+    "buy": "買",
+    "sell": "売",
+    "openPriceLabel": "建値",
+    "currentPriceLabel": "現在値",
+    "columns": {
+      "account": "口座名",
+      "symbol": "通貨ペア",
+      "type": "種別",
+      "lots": "ロット",
+      "openPrice": "建値",
+      "currentPrice": "現在値",
+      "profit": "損益",
+      "swap": "スワップ",
+      "sl": "SL",
+      "tp": "TP",
+      "chart": "チャート"
+    }
+  },
+  "calendar": {
+    "weekdays": ["日", "月", "火", "水", "木", "金", "土"],
+    "accountFilterLabel": "口座：",
+    "allAccounts": "全口座",
+    "monthYear": "{{year}}年 {{month}}月",
+    "dayHeading": "{{year}}年{{month}}月{{day}}日",
+    "metrics": {
+      "monthProfit": "月間損益",
+      "trades": "取引数",
+      "tradingDays": "稼働日",
+      "winLossDays": "勝日/負日"
+    },
+    "tradingDaysValue": "{{count}}日",
+    "table": {
+      "time": "時刻 (ブローカー)",
+      "symbol": "通貨",
+      "type": "タイプ",
+      "lots": "ロット",
+      "profit": "損益",
+      "account": "口座"
+    }
+  },
+  "equityChart": {
+    "default": "エクイティカーブ",
+    "noData": "データなし",
+    "zoomIn": "拡大",
+    "zoomOut": "縮小",
+    "fitAll": "全体表示"
+  },
+  "chart": {
+    "noData": "データなし",
+    "empty": "チャートデータがありません。",
+    "emptyHint": "EA を再コンパイルして再アタッチしてください。",
+    "zoomIn": "拡大",
+    "zoomOut": "縮小",
+    "fitAll": "全体表示",
+    "legend": {
+      "entryBuy": "エントリー(買)",
+      "entrySell": "エントリー(売)",
+      "exit": "決済",
+      "holdLine": "保有中建値",
+      "hoverHint": "マーカーにホバーで詳細"
+    },
+    "tooltip": {
+      "buyEntries": "▲ 買エントリー",
+      "sellEntries": "▼ 売エントリー",
+      "exits": "● 決済",
+      "countSuffix": "{{count}}件"
+    }
+  },
+  "insight": {
+    "duration": {
+      "minutes": "{{count}}分",
+      "hours": "{{count}}時間",
+      "days": "{{count}}日"
+    },
+    "score": {
+      "trade": {
+        "title": "トレードスコア",
+        "subtitle": "品質 0〜100"
+      },
+      "risk": {
+        "title": "リスクスコア",
+        "subtitle": "高いほど危険"
+      },
+      "tradeGrades": {
+        "excellent": "優秀",
+        "good": "良好",
+        "average": "普通",
+        "needWork": "要改善"
+      },
+      "riskGrades": {
+        "low": "低リスク",
+        "medium": "中リスク",
+        "high": "高リスク",
+        "danger": "危険"
+      },
+      "insufficientData": "データ不足"
+    },
+    "ai": {
+      "title": "AI診断",
+      "freeBadge": "Free: 1件",
+      "proBadge": "Pro",
+      "insufficient": "取引データが少ないため診断できません(5件以上必要)",
+      "lockedRemainder": "Pro にアップグレードして残り{{count}}件を表示"
+    },
+    "suggestions": {
+      "title": "改善提案",
+      "proBadge": "Pro限定",
+      "unlockCta": "Pro にアップグレードして解放",
+      "noneNeeded": "改善提案なし(良好なパフォーマンスです)",
+      "perAccountTitle": "口座別改善提案",
+      "perAccountScore": "スコア {{score}}",
+      "perAccountNoneNeeded": "改善点なし(良好なパフォーマンスです)"
+    },
+    "winPatterns": {
+      "title": "勝ちパターン分析",
+      "topHours": "勝率の高い時間帯 TOP3",
+      "topSymbols": "勝率の高い通貨ペア TOP3",
+      "avgWinHoldTitle": "勝ちトレードの平均保有時間",
+      "avgWinHoldLabel": "勝ちトレード平均",
+      "noData": "データ不足"
+    },
+    "priority": {
+      "high": "高",
+      "medium": "中"
+    },
+    "rules": {
+      "negativeExpectancy": "この手法は長期的に負ける可能性があります(期待値がマイナスです)",
+      "lowWinRate": "勝率が低いためエントリー条件の見直しが必要です",
+      "highLossRatio": "平均損失({{avgLoss}})が平均利益({{avgWin}})を大きく上回っています",
+      "sessionUnderperform": "{{session}}時間のパフォーマンスに偏りがあります(勝率{{sessionRate}}% vs 全体{{overallRate}}%)",
+      "sessionOverperform": "{{session}}時間のパフォーマンスが高いです(勝率{{sessionRate}}%)",
+      "lossStreak": "最大{{streak}}連敗を記録しています。ポジションサイズを見直してください",
+      "symbolUnderperform": "{{symbol}}のパフォーマンスが低調です(勝率{{rate}}%・損益{{profit}})",
+      "holdingMismatch": "負けトレードの平均保有時間が勝ちトレードより長いです(損切りの遅れ)",
+      "drawdownLarge": "最大ドローダウンが{{value}}に達しています",
+      "excellentWinRate": "勝率 {{rate}}% は優秀です",
+      "pfGood": "プロフィットファクター {{pf}} は良好です",
+      "stableTrades": "ドローダウンが小さく安定したトレードです"
+    },
+    "suggestionRules": {
+      "pauseAndRecheck": "トレードを一時停止し、エントリー条件を再確認してください",
+      "reviewStrategy": "エントリー条件を根本から見直してください(現在の手法は期待値がマイナスです)",
+      "improveStopLoss": "ストップロスを見直し、リスクリワード比を改善してください(目標 1:1.5 以上)",
+      "tightenLossExit": "負けトレードを長く保有しすぎています。損切りルールを徹底してください",
+      "reduceSession": "{{session}}時間のトレードを削減または停止することを検討してください",
+      "skipSymbol": "{{symbol}}のトレードを停止し、他の通貨ペアに集中することを検討してください",
+      "reduceLot": "ドローダウンが大きいため、ロットサイズを下げることを検討してください"
+    },
+    "alertRules": {
+      "ongoingStreak": "現在 {{streak}} 連敗中です。トレードを一時停止することを検討してください",
+      "drawdownDanger": "ドローダウンが {{value}} に達しています",
+      "pfWarn": "プロフィットファクターが {{pf}} に低下しています"
+    },
+    "demo": {
+      "suggestions": [
+        { "priority": "high", "message": "ストップロスを見直し、リスクリワード比を改善してください" },
+        { "priority": "medium", "message": "ロンドン時間のトレードを削減することを検討してください" },
+        { "priority": "medium", "message": "ドローダウンが大きいため、ロットサイズを下げることを検討してください" }
+      ],
+      "perAccount": [
+        { "name": "口座A", "items": ["ストップロスを見直し、リスクリワード比を改善してください", "ドローダウンが大きいためロットサイズを下げてください"] },
+        { "name": "口座B", "items": ["エントリー条件を根本から見直してください", "ロンドン時間のトレードを削減することを検討してください"] }
+      ],
+      "winPatterns": [
+        { "title": "勝率の高い時間帯 TOP3", "items": ["09:00  68%  42件", "14:00  65%  31件", "21:00  62%  18件"] },
+        { "title": "勝率の高い通貨ペア TOP3", "items": ["XAUUSD  71%  88件", "USDJPY  64%  55件", "EURUSD  61%  43件"] },
+        { "title": "勝ちトレード平均保有時間", "items": ["2.4時間"] }
+      ]
+    }
+  },
+  "session": {
+    "asia": "アジア",
+    "london": "ロンドン",
+    "newyork": "ニューヨーク"
+  },
+  "feedback": {
+    "title": "お問い合わせ",
+    "body": "お問い合わせ内容を入力してください。送信ボタンを押すとメールアプリが開きます。",
+    "placeholder": "お問い合わせ内容を入力してください",
+    "send": "メールで送信",
+    "subject": "MT Report Viewer お問い合わせ",
+    "to": "送信先：{{email}}"
+  },
+  "deleteAccount": {
+    "title": "アカウントを削除",
+    "warning": "この操作は取り消せません。すべてのレポートデータおよび認証情報が完全に削除されます。",
+    "proWarning": "⚠ Pro サブスクリプションが有効です。アカウント削除と同時に自動でキャンセルされます。",
+    "confirmInstructionPart1": "確認のため",
+    "confirmInstructionPart2": "と入力してください",
+    "confirmKeyword": "削除",
+    "submit": "アカウントを削除",
+    "submitting": "削除中…"
+  },
+  "terms": {
+    "title": "利用規約",
+    "lastUpdated": "最終更新日：2025年5月1日",
+    "sections": [
+      { "title": "第1条(適用)", "body": "本利用規約(以下「本規約」)は、本サービス「MT Report Viewer」(以下「本サービス」)の利用に関する条件を定めるものです。ユーザーは本規約に同意した上で本サービスを利用するものとします。" },
+      { "title": "第2条(サービスの内容)", "body": "本サービスは、MT4 / MT5 の取引レポートをクラウドに保存・集約し、ブラウザ上で成績を可視化するウェブアプリケーションです。本サービスは投資助言・売買推奨を行うものではありません。" },
+      { "title": "第3条(アカウント)", "items": [
+        "ユーザーは正確な情報を用いてアカウントを登録するものとします。",
+        "アカウントおよびパスワードの管理はユーザー自身の責任とします。",
+        "第三者へのアカウントの譲渡・貸与は禁止します。",
+        "不正利用が発覚した場合、予告なくアカウントを停止することがあります。"
+      ] },
+      { "title": "第4条(禁止事項)", "body": "ユーザーは以下の行為を行ってはなりません。", "items": [
+        "法令または公序良俗に違反する行為",
+        "本サービスの運営を妨害する行為",
+        "不正アクセスやリバースエンジニアリング",
+        "他のユーザーのデータへの不正アクセスの試み",
+        "本サービスを商業目的で無断利用する行為"
+      ] },
+      { "title": "第5条(免責事項)", "items": [
+        "本サービスは現状有姿で提供されます。データの正確性・完全性・継続性を保証しません。",
+        "本サービスの利用により生じた損害(取引上の損失を含む)について、運営者は一切の責任を負いません。",
+        "サーバー障害・メンテナンス等によりサービスが停止する場合があります。",
+        "本サービスは投資判断の根拠として利用することを想定していません。"
+      ] },
+      { "title": "第6条(サービスの変更・終了)", "body": "運営者は予告なく本サービスの内容を変更、または提供を終了することがあります。終了の際はアプリ内または登録メールアドレス宛に可能な範囲でお知らせします。" },
+      { "title": "第7条(知的財産権)", "body": "本サービスに関する著作権・商標権その他の知的財産権は運営者に帰属します。ユーザーが本サービスにアップロードしたデータの権利はユーザー自身に帰属します。" },
+      { "title": "第8条(規約の変更)", "body": "本規約は予告なく変更される場合があります。変更後も本サービスを継続して利用した場合、変更後の規約に同意したものとみなします。" },
+      { "title": "第9条(準拠法・管轄裁判所)", "body": "本規約は日本法に準拠します。本サービスに関する紛争は、運営者の所在地を管轄する裁判所を第一審の専属的合意管轄裁判所とします。" }
+    ]
+  },
+  "privacy": {
+    "title": "プライバシーポリシー",
+    "lastUpdated": "最終更新日:2025年5月1日",
+    "sections": [
+      { "title": "1. はじめに", "body": "本サービス「MT Report Viewer」(以下「本サービス」)は、MT4/MT5 の取引レポートを集約・可視化するウェブアプリケーションです。本ポリシーは、本サービスがユーザーの情報をどのように収集・利用・管理するかを説明します。" },
+      { "title": "2. 収集する情報", "body": "本サービスは以下の情報を収集・保存します:", "items": [
+        "メールアドレス・パスワード(認証情報)",
+        "MT4/MT5 の取引履歴(取引日時・通貨ペア・損益など)",
+        "口座情報(残高・有効証拠金・クレジット)",
+        "保有ポジション情報"
+      ] },
+      { "title": "3. 情報の利用目的", "body": "収集した情報は以下の目的のみに使用します:", "items": [
+        "取引成績の集計・表示",
+        "ユーザー認証・ログイン管理",
+        "サービスの改善・不具合対応"
+      ], "note": "第三者への提供・販売は一切行いません。" },
+      { "title": "4. データの保管", "body": "データは Supabase(PostgreSQL)に保存されます。各ユーザーは自分のデータのみ閲覧・操作できます(Row Level Security により制御)。ただし、サービス運営者はサービス運営・障害対応の目的でデータにアクセスできます。" },
+      { "title": "5. データの保持・削除", "body": "アカウント削除を希望する場合は、アプリ内の設定またはサービス運営者へのご連絡によりデータを削除します。削除されたデータは復元できません。" },
+      { "title": "6. セキュリティ", "body": "データは暗号化された通信(HTTPS)で送受信されます。パスワードは暗号化して保存されます。ただし、インターネット上での完全なセキュリティを保証するものではありません。" },
+      { "title": "7. Cookie・ローカルストレージ", "body": "本サービスはセッション管理のためにブラウザのローカルストレージを使用します。広告目的のトラッキングは行いません。" },
+      { "title": "8. 本ポリシーの変更", "body": "本ポリシーは予告なく変更される場合があります。重要な変更がある場合はアプリ内でお知らせします。" },
+      { "title": "9. お問い合わせ", "body": "プライバシーに関するお問い合わせは、画面下部の「お問い合わせ」またはメール(devtomoki9@gmail.com)にてご連絡ください。" }
+    ]
+  },
+  "manual": {
+    "title": "操作マニュアル",
+    "intro": {
+      "heading": "MT Report Viewer とは",
+      "body": "MT4 / MT5 の取引レポートをクラウドに自動アップロードし、複数口座の成績をブラウザで一元管理するアプリです。PC 上の EA がデータを書き出し、PowerShell スクリプトが変更を検知して即時アップロードします。ブラウザ側は Supabase Realtime で変更を受け取りほぼリアルタイムに表示を更新します。",
+      "prerequisitesTitle": "前提構成",
+      "prerequisitesBody": "本アプリは <strong>MT4/MT5 インスタンス 1 つにつき口座 1 つ</strong>、<strong>口座 1 つにつき EA 1 つ</strong>を前提として設計・実装しています。1 つのインスタンスで複数口座への同時ログインや、同一口座への複数 EA の設置は想定していません。"
+    },
+    "section1": {
+      "heading": "1. アカウント登録・ログイン",
+      "signup": {
+        "title": "新規登録",
+        "steps": [
+          "ログイン画面の「新規登録」をクリック",
+          "メールアドレスとパスワード(8文字以上)を入力して「登録」",
+          "確認メールが届いたらリンクをクリックして登録完了",
+          "「ログイン画面へ戻る」からログイン"
+        ]
+      },
+      "login": {
+        "title": "ログイン",
+        "steps": [
+          "メールアドレスとパスワードを入力して「ログイン」"
+        ]
+      }
+    },
+    "section2": {
+      "heading": "2. 初回セットアップ(PC側)",
+      "intro": "ログイン後のセットアップ画面に表示されるダウンロードボタンから各ファイルを入手できます。",
+      "step1": {
+        "title": "EA のインストール",
+        "body": "<code>install.bat</code>・<code>MT4ReportExporter.mq4</code>・<code>MT5ReportExporter.mq5</code> を同じフォルダにダウンロードし、PowerShell で実行します。"
+      },
+      "step2": {
+        "title": "MT4/MT5 の初期設定",
+        "body": "install.bat が MT4/MT5 を自動起動します。開いた各ウィンドウで以下を行います。",
+        "mt4Title": "MT4 の場合",
+        "mt4Steps": [
+          "ファイル → 新規チャート → 任意のチャートを選択",
+          "ナビゲーター → Experts から <strong>MT4ReportExporter</strong> をチャートにドラッグ → OK",
+          "ファイル → チャートの組表示 → 名前を付けて保存 → <strong>MTExporter</strong> → OK",
+          "ファイル → 終了"
+        ],
+        "mt5Title": "MT5 の場合",
+        "mt5Steps": [
+          "ファイル → 新規チャート → 任意のチャートを選択",
+          "ナビゲーター → Experts から <strong>MT5ReportExporter</strong> をチャートにドラッグ → OK",
+          "ファイル → チャートのプロファイル → 保存 → <strong>MTExporter</strong> → OK",
+          "ファイル → 終了"
+        ],
+        "footnote": "※ MT4 と MT5 の両方をお使いの場合は、それぞれのウィンドウで実施してください。"
+      },
+      "step3": {
+        "title": "同期スクリプトの設定",
+        "body1": "<code>sync-to-supabase.ps1</code> と <code>run-sync.vbs</code> を同じフォルダ(例:Downloads)にダウンロードします。",
+        "body2": "run-sync.vbs ダウンロード時はパスワード入力ダイアログが表示されます。ログインパスワードを入力してください(接続情報がファイルに埋め込まれます)。",
+        "body3": "※ タスクスケジューラのコマンドは Downloads フォルダを前提としています。別の場所に保存した場合は次のコマンドのパスを変更してください。",
+        "body4": "次に PS1 ファイルのブロックを解除します。"
+      },
+      "step4": {
+        "title": "タスクスケジューラへの登録",
+        "body": "ファイル変更を検知してリアルタイムでアップロードするよう登録します。PowerShell で実行してください。"
+      }
+    },
+    "section3": {
+      "heading": "3. 通常の使い方",
+      "step1": {
+        "title": "MT4/MT5 の起動",
+        "body": "セットアップ後はデスクトップの <strong>MT_Exporter.bat</strong> から MT4/MT5 を起動してください。EA が自動でロードされ、<code>%USERPROFILE%\\MTExport\\</code> フォルダへ JSON を書き出します。"
+      },
+      "step2": {
+        "title": "レポートの確認",
+        "body": "ブラウザでアプリにアクセスし、ログインするとデータが自動で読み込まれます。データが表示されない場合は画面右上の <strong>↻ 更新</strong> ボタンを押してください。"
+      },
+      "step3": {
+        "title": "自動更新",
+        "body": "Supabase Realtime により、MT4/MT5 がデータを書き出すとほぼ即座にブラウザに反映されます。手動で即時更新したい場合は <strong>↻ 更新</strong> ボタンを使用してください。"
+      }
+    },
+    "section4": {
+      "heading": "4. 各画面の説明",
+      "screens": [
+        ["サマリー", "全口座合算の残高・含み損益・純益・勝率・PF・エクイティカーブ・保有ポジション"],
+        ["AIインサイト", "AI診断・スコアカード・改善提案・口座別改善提案・勝ちパターン分析。Free プランは診断1件のみ、その他は Pro 限定"],
+        ["口座別成績", "口座ごとの詳細な統計・エクイティカーブ・取引履歴"],
+        ["全取引", "全口座の取引履歴を一覧・検索・フィルタ"],
+        ["カレンダー", "月次カレンダー形式で日ごとの損益を確認"]
+      ],
+      "filterNote": "サマリー・AIインサイト・口座別成績・全取引タブでは画面上部の期間フィルターで集計対象期間を絞り込めます。",
+      "cardOpsTitle": "口座別成績タブの口座カード操作",
+      "cardOps": [
+        "<strong>口座名変更</strong>:口座カードにマウスを乗せると表示される ✎ ボタンをクリックして表示名を編集",
+        "<strong>自動売買 ON/OFF</strong>:口座カードのトグルスイッチで EA の自動売買を遠隔制御できます。変更は MT4/MT5 に Ctrl+E で反映されます",
+        "<strong>口座データ削除</strong>:口座カードの × ボタンでその口座のデータをクラウドから削除します"
+      ]
+    },
+    "section5": {
+      "heading": "5. アカウント管理",
+      "items": [
+        "<strong>ログアウト</strong>:画面右上のメールアドレス/プランバッジ → ドロップダウンメニューの「ログアウト」をクリック",
+        "<strong>アカウント削除</strong>:同ドロップダウンメニューの「アカウント削除」→「削除」と入力して確定。すべてのデータが完全に削除されます(取り消し不可)"
+      ]
+    },
+    "section6": {
+      "heading": "6. プラン・サブスクリプション",
+      "headers": { "feature": "機能", "free": "Free", "pro": "Pro" },
+      "rows": [
+        ["取引データの同期・閲覧", "○", "○"],
+        ["複数口座管理", "○", "○"],
+        ["カレンダー・エクイティカーブ", "○", "○"],
+        ["AI インサイト(診断)", "1件", "○"],
+        ["AI インサイト(改善提案・口座別・パターン分析)", "—", "○"]
+      ],
+      "notes": [
+        "<strong>Pro へのアップグレード</strong>:画面右上のドロップダウンメニューに表示される「アップグレード」をクリックすると決済ページへ移動します",
+        "<strong>サブスクリプション管理</strong>(Pro のみ):同ドロップダウンメニューの「サブスクリプション管理」から請求情報の確認・プランの変更・解約が行えます"
+      ]
+    },
+    "section7": {
+      "heading": "7. お問い合わせ",
+      "body": "ご不明な点や不具合は画面下部の「お問い合わせ」からご連絡ください。"
+    }
+  },
+  "help": {
+    "title": "ヘルプ / トラブルシューティング",
+    "topics": {
+      "sync": "データ・同期",
+      "ea": "EA・更新設定",
+      "auth": "ログイン・パスワード",
+      "plan": "プラン・支払い"
+    },
+    "sync": {
+      "intro": "データが表示されない・更新されない場合、以下の順に確認してください。",
+      "items": [
+        {
+          "n": "1",
+          "title": "↻ 更新ボタンを押す",
+          "body": "画面右上の <strong>↻ 更新</strong> ボタンを押すと、サーバーから最新データを即時取得します。まずこれを試してください。"
+        },
+        {
+          "n": "2",
+          "title": "MT4/MT5 を MT_Exporter.bat から起動しているか",
+          "body": "MT4/MT5 は通常のショートカットではなく、デスクトップの <strong>MT_Exporter.bat</strong> から起動する必要があります。",
+          "body2": "通常のショートカットから起動すると EA がロードされず、JSON ファイルが書き出されません。"
+        },
+        {
+          "n": "3",
+          "title": "JSON ファイルが生成されているか確認",
+          "body": "エクスプローラーで以下のフォルダを開き、JSON ファイルが存在するか確認してください。",
+          "body2": "ファイルがない場合、EA が正しく動作していません。MT4/MT5 の「エキスパート」タブでエラーログを確認してください。"
+        },
+        {
+          "n": "4",
+          "title": "タスクスケジューラーが動作しているか確認",
+          "body": "スタートメニューで「タスク スケジューラー」を検索して開き、<strong>MTExportSync</strong> タスクを探してください。",
+          "items": [
+            "「状態」が <strong>準備完了</strong> になっているか",
+            "「前回の実行結果」が <strong>操作が正常に完了しました。(0x0)</strong> になっているか"
+          ],
+          "body2": "タスクが存在しない場合は以下のコマンドで再登録してください。"
+        },
+        {
+          "n": "5",
+          "title": "パスワードを最近変更したか",
+          "body": "<strong>run-sync.vbs</strong> にはログインパスワードが埋め込まれています。パスワードを変更した場合、古いパスワードで認証が失敗し同期が止まります。",
+          "body2": "ダッシュボードのセットアップ画面から <strong>run-sync.vbs を再ダウンロード</strong> し、タスクスケジューラーで登録しているファイルを差し替えてください。"
+        },
+        {
+          "n": "6",
+          "title": "PowerShell スクリプトのブロックを解除する",
+          "body": "Windows のセキュリティ設定により、ダウンロードした PowerShell スクリプトが実行をブロックされる場合があります。PowerShell で以下を実行してください。",
+          "body2": "それでも動かない場合は、管理者権限の PowerShell で実行ポリシーを変更してください。"
+        },
+        {
+          "n": "Q",
+          "title": "詳細レポートに一部の取引しか表示されない",
+          "body": "MT4/MT5 の口座履歴タブの表示期間が制限されていると、EA がエクスポートできる取引件数も同じ期間に限られます。",
+          "body2": "<strong>解決手順:</strong>",
+          "items": [
+            "MT4/MT5 の下部パネルにある <strong>口座履歴</strong> タブを開く",
+            "タブ内の取引一覧を <strong>右クリック</strong>",
+            "メニューから <strong>全期間</strong> を選択"
+          ],
+          "body3": "全期間を選択すると、次の同期タイミングですべての取引が読み込まれます。"
+        },
+        {
+          "n": "Q",
+          "title": "口座カードを削除したのにまた表示される",
+          "body": "口座カード右上の <strong>✕ ボタン</strong> を押すと、サーバー上のレポートデータも削除されます。",
+          "body2": "ただし <strong>同期スクリプトが動作中の場合、MT4/MT5 が次にエクスポートしたタイミングで自動的に再アップロードされます。</strong>",
+          "body3": "口座を完全に表示しないようにするには、以下の手順を行ってください。",
+          "items": [
+            "MT4/MT5 側で該当口座の EA(MT4ReportExporter / MT5ReportExporter)を停止する",
+            "エクスプローラーで以下のフォルダを開き、該当口座番号の JSON ファイルを削除する"
+          ],
+          "body4": "JSON ファイル名は口座番号を含む形式(例: <code>12345678.json</code>)になっています。ファイルを削除した後、口座カードの <strong>✕ ボタン</strong> を押してサーバー上のデータも削除してください。"
+        }
+      ]
+    },
+    "ea": {
+      "intro": "EA の動作設定に関する項目です。",
+      "items": [
+        {
+          "n": "Q",
+          "title": "データの更新間隔を変更したい",
+          "body": "EA のパラメーター <strong>RealtimeSec</strong> で、ティック発生時の最小エクスポート間隔(秒)を変更できます。",
+          "options": [
+            ["5秒", "最短(下限)"],
+            ["10秒", "デフォルト・推奨"],
+            ["30秒", "負荷を抑えたい場合"],
+            ["60秒", "最低限の更新頻度"]
+          ],
+          "body2": "<strong>変更手順:</strong>MT4/MT5 でチャート上の EA をダブルクリック → 「入力パラメーター」タブ → <strong>RealtimeSec</strong> を変更して OK。5秒未満を設定しても内部的に5秒として動作します。"
+        },
+        {
+          "n": "Q",
+          "title": "定期エクスポートの間隔を変更したい",
+          "body": "ティックが発生しない時間帯でも、<strong>RefreshMinutes</strong> の間隔で定期エクスポートが実行されます。デフォルトは1分です。",
+          "body2": "<strong>変更手順:</strong>チャート上の EA をダブルクリック → 「入力パラメーター」タブ → <strong>RefreshMinutes</strong> を変更して OK。"
+        }
+      ]
+    },
+    "auth": {
+      "items": [
+        {
+          "n": "Q",
+          "title": "パスワードを忘れた",
+          "body": "ログイン画面の <strong>「パスワードをお忘れですか?」</strong> からメールアドレスを入力するとリセットメールが届きます。",
+          "body2": "メールが届かない場合は迷惑メールフォルダを確認してください。"
+        },
+        {
+          "n": "Q",
+          "title": "確認メールが届かない",
+          "body": "新規登録時の確認メールが届かない場合、迷惑メールフォルダを確認してください。それでも届かない場合はしばらく待ってから再度登録を試みてください。"
+        }
+      ]
+    },
+    "plan": {
+      "items": [
+        {
+          "n": "Q",
+          "title": "支払い後も Free のままになっている",
+          "body": "Webhook 処理に数秒かかる場合があります。画面右上の <strong>↻ 更新</strong> ボタンを押してプランが反映されるか確認してください。",
+          "body2": "数分経っても変わらない場合はお問い合わせください。"
+        },
+        {
+          "n": "Q",
+          "title": "サブスクリプションを解約したい",
+          "body": "画面右上のアカウントメニュー(メールアドレス) → <strong>サブスクリプション管理</strong> からキャンセル手続きができます。",
+          "body2": "現在の期間終了時に解約となり、それまでは Pro 機能をご利用いただけます。"
+        },
+        {
+          "n": "Q",
+          "title": "アカウントを削除したらサブスクも解約されるか",
+          "body": "はい。Pro プランのアカウント削除時は Lemon Squeezy のサブスクリプションも自動的にキャンセルされます。"
+        },
+        {
+          "n": "Q",
+          "title": "領収書・請求書を確認したい",
+          "body": "アカウントメニュー → <strong>サブスクリプション管理</strong> から Lemon Squeezy のカスタマーポータルにアクセスすると、過去の請求履歴や領収書を確認・ダウンロードできます。"
+        }
+      ]
+    }
   }
 }

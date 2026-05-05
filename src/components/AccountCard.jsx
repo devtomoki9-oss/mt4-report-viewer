@@ -1,22 +1,24 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const SORT_VALUE = {
-  profit:      (s) => ({ label: '純益',   value: (s.totalProfit >= 0 ? '+' : '') + s.totalProfit.toFixed(2), color: s.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400' }),
-  trades:      (s) => ({ label: '取引数', value: String(s.totalTrades),                                       color: 'text-slate-300' }),
-  pf:          (s) => ({ label: 'PF',     value: isFinite(s.profitFactor) ? s.profitFactor.toFixed(2) : '∞', color: 'text-blue-400'  }),
-  winRate:     (s) => ({ label: '勝率',   value: s.winRate.toFixed(1) + '%',                                  color: 'text-slate-300' }),
-  maxDrawdown: (s) => ({ label: '最大DD', value: s.maxDrawdown.toFixed(2),                                    color: 'text-amber-400' }),
-  name:        (s) => ({ label: '純益',   value: (s.totalProfit >= 0 ? '+' : '') + s.totalProfit.toFixed(2), color: s.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400' }),
+  profit:      (s, t) => ({ label: t('app.accountList.sort.profit'), value: (s.totalProfit >= 0 ? '+' : '') + s.totalProfit.toFixed(2), color: s.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400' }),
+  trades:      (s, t) => ({ label: t('app.accountList.sort.trades'), value: String(s.totalTrades),                                       color: 'text-slate-300' }),
+  pf:          (s, t) => ({ label: t('app.accountList.sort.pf'),     value: isFinite(s.profitFactor) ? s.profitFactor.toFixed(2) : '∞', color: 'text-blue-400'  }),
+  winRate:     (s, t) => ({ label: t('app.accountList.sort.winRate'),value: s.winRate.toFixed(1) + '%',                                  color: 'text-slate-300' }),
+  maxDrawdown: (s, t) => ({ label: t('app.accountList.sort.maxDrawdown'), value: s.maxDrawdown.toFixed(2),                              color: 'text-amber-400' }),
+  name:        (s, t) => ({ label: t('app.accountList.sort.profit'), value: (s.totalProfit >= 0 ? '+' : '') + s.totalProfit.toFixed(2), color: s.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400' }),
 }
 
 export default function AccountCard({ account, onRemove, aliases = {}, setAlias, sortKey = 'profit', tradingEnabled = true, onTradingToggle }) {
+  const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editValue, setEditValue] = useState('')
   const { account: info, stats } = account
   const isProfit = stats.totalProfit >= 0
   const displayName = aliases[info.name] || info.name
-  const sortVal = (SORT_VALUE[sortKey] || SORT_VALUE.profit)(stats)
+  const sortVal = (SORT_VALUE[sortKey] || SORT_VALUE.profit)(stats, t)
 
   const fmt = (n) => {
     const abs = Math.abs(n).toFixed(2)
@@ -74,13 +76,13 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
                 <button
                   onClick={startEdit}
                   className="text-slate-600 hover:text-blue-400 transition-colors text-xs leading-none opacity-0 group-hover:opacity-100"
-                  title="名前を変更"
+                  title={t('account.card.rename')}
                 >
                   ✎
                 </button>
               </div>
             )}
-            <div className="text-xs text-slate-500">{stats.totalTrades} 取引</div>
+            <div className="text-xs text-slate-500">{t('account.card.tradesCount', { count: stats.totalTrades })}</div>
           </div>
         </div>
         <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
@@ -103,7 +105,7 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
           {onTradingToggle && (
             <button
               onClick={e => { e.stopPropagation(); onTradingToggle(!tradingEnabled) }}
-              title={tradingEnabled ? '自動取引を停止' : '自動取引を稼働'}
+              title={tradingEnabled ? t('account.card.tradingStopHint') : t('account.card.tradingRunHint')}
               className={`flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full border transition-all
                 ${tradingEnabled
                   ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30'
@@ -111,13 +113,13 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
                 }`}
             >
               <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 transition-colors ${tradingEnabled ? 'bg-emerald-400' : 'bg-slate-600'}`} />
-              {tradingEnabled ? '稼働中' : '停止中'}
+              {tradingEnabled ? t('account.card.tradingActive') : t('account.card.tradingPaused')}
             </button>
           )}
           <button
             onClick={e => { e.stopPropagation(); onRemove() }}
             className="text-slate-600 hover:text-red-400 transition-colors text-sm px-1"
-            title="削除"
+            title={t('account.card.delete')}
           >
             ✕
           </button>
@@ -131,10 +133,10 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
           {/* 口座情報 */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {[
-              { label: '残高',      value: (info.balance || 0).toLocaleString('en', { maximumFractionDigits: 2 }) + ' ' + (info.currency || ''), color: 'text-slate-200' },
-              { label: 'クレジット', value: (info.credit || 0).toLocaleString('en', { maximumFractionDigits: 2 }) + ' ' + (info.currency || ''), color: 'text-blue-400' },
-              { label: '有効証拠金', value: (info.equity  || 0).toLocaleString('en', { maximumFractionDigits: 2 }) + ' ' + (info.currency || ''), color: (info.equity || 0) >= (info.balance || 0) ? 'text-emerald-400' : 'text-amber-400' },
-              { label: '含み損益',  value: ((info.equity || 0) - (info.balance || 0) - (info.credit || 0) >= 0 ? '+' : '') + ((info.equity || 0) - (info.balance || 0) - (info.credit || 0)).toFixed(2), color: (info.equity || 0) - (info.balance || 0) - (info.credit || 0) >= 0 ? 'text-emerald-400' : 'text-red-400' },
+              { label: t('account.card.metrics.balance'),  value: (info.balance || 0).toLocaleString('en', { maximumFractionDigits: 2 }) + ' ' + (info.currency || ''), color: 'text-slate-200' },
+              { label: t('account.card.metrics.credit'),   value: (info.credit || 0).toLocaleString('en', { maximumFractionDigits: 2 }) + ' ' + (info.currency || ''), color: 'text-blue-400' },
+              { label: t('account.card.metrics.equity'),   value: (info.equity  || 0).toLocaleString('en', { maximumFractionDigits: 2 }) + ' ' + (info.currency || ''), color: (info.equity || 0) >= (info.balance || 0) ? 'text-emerald-400' : 'text-amber-400' },
+              { label: t('account.card.metrics.floating'), value: ((info.equity || 0) - (info.balance || 0) - (info.credit || 0) >= 0 ? '+' : '') + ((info.equity || 0) - (info.balance || 0) - (info.credit || 0)).toFixed(2), color: (info.equity || 0) - (info.balance || 0) - (info.credit || 0) >= 0 ? 'text-emerald-400' : 'text-red-400' },
             ].map(item => (
               <div key={item.label} className="bg-[#0a0e17] rounded-lg p-2.5">
                 <div className="text-xs text-slate-600 mb-0.5">{item.label}</div>
@@ -145,14 +147,14 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
           {/* 取引成績 */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {[
-              { label: '純益', value: fmt(stats.totalProfit), color: isProfit ? 'text-emerald-400' : 'text-red-400' },
-              { label: '総利益', value: '+' + stats.grossProfit.toFixed(2), color: 'text-emerald-400' },
-              { label: '総損失', value: '-' + stats.grossLoss.toFixed(2), color: 'text-red-400' },
-              { label: 'プロフィットファクター', value: isFinite(stats.profitFactor) ? stats.profitFactor.toFixed(2) : '∞', color: 'text-blue-400' },
-              { label: '勝率', value: stats.winRate.toFixed(1) + '%', color: 'text-slate-300' },
-              { label: '勝ちトレード', value: stats.wins, color: 'text-emerald-400' },
-              { label: '負けトレード', value: stats.losses, color: 'text-red-400' },
-              { label: '最大DD', value: stats.maxDrawdown.toFixed(2), color: 'text-amber-400' },
+              { label: t('account.card.metrics.profit'),       value: fmt(stats.totalProfit), color: isProfit ? 'text-emerald-400' : 'text-red-400' },
+              { label: t('account.card.metrics.grossProfit'),  value: '+' + stats.grossProfit.toFixed(2), color: 'text-emerald-400' },
+              { label: t('account.card.metrics.grossLoss'),    value: '-' + stats.grossLoss.toFixed(2), color: 'text-red-400' },
+              { label: t('account.card.metrics.profitFactor'), value: isFinite(stats.profitFactor) ? stats.profitFactor.toFixed(2) : '∞', color: 'text-blue-400' },
+              { label: t('account.card.metrics.winRate'),      value: stats.winRate.toFixed(1) + '%', color: 'text-slate-300' },
+              { label: t('account.card.metrics.wins'),         value: stats.wins, color: 'text-emerald-400' },
+              { label: t('account.card.metrics.losses'),       value: stats.losses, color: 'text-red-400' },
+              { label: t('account.card.metrics.maxDrawdown'),  value: stats.maxDrawdown.toFixed(2), color: 'text-amber-400' },
             ].map(item => (
               <div key={item.label} className="bg-[#0a0e17] rounded-lg p-2.5">
                 <div className="text-xs text-slate-600 mb-0.5">{item.label}</div>

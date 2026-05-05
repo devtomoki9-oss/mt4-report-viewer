@@ -1,8 +1,11 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export default function DeleteAccountModal({ onConfirm, onClose, loading, isPro = false }) {
+  const { t } = useTranslation()
+  const confirmKeyword = t('deleteAccount.confirmKeyword')
   const [input, setInput] = useState('')
-  const confirmed = input === '削除'
+  const confirmed = input === confirmKeyword
 
   return (
     <div
@@ -16,26 +19,26 @@ export default function DeleteAccountModal({ onConfirm, onClose, loading, isPro 
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <span className="text-red-400 text-lg">⚠</span>
-            <h2 className="text-sm font-semibold text-red-400">アカウントを削除</h2>
+            <h2 className="text-sm font-semibold text-red-400">{t('deleteAccount.title')}</h2>
           </div>
           <p className="text-xs text-slate-400 leading-relaxed">
-            この操作は取り消せません。すべてのレポートデータおよび認証情報が完全に削除されます。
+            {t('deleteAccount.warning')}
           </p>
           {isPro && (
             <p className="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 leading-relaxed">
-              ⚠ Pro サブスクリプションが有効です。アカウント削除と同時に自動でキャンセルされます。
+              {t('deleteAccount.proWarning')}
             </p>
           )}
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs text-slate-500">確認のため <span className="text-slate-300 font-mono">削除</span> と入力してください</label>
+          <label className="text-xs text-slate-500">{t('deleteAccount.confirmInstructionPart1')} <span className="text-slate-300 font-mono">{confirmKeyword}</span> {t('deleteAccount.confirmInstructionPart2')}</label>
           <input
             type="text"
             value={input}
             onChange={e => setInput(e.target.value)}
             className="w-full bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-3 py-2.5 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:border-red-500/50"
-            placeholder="削除"
+            placeholder={confirmKeyword}
             autoComplete="off"
             autoFocus
           />
@@ -47,14 +50,14 @@ export default function DeleteAccountModal({ onConfirm, onClose, loading, isPro 
             disabled={loading}
             className="flex-1 bg-[#1a2235] border border-[#1f2d40] text-slate-400 hover:text-slate-200 disabled:opacity-50 text-xs font-medium px-4 py-2.5 rounded-lg transition-colors"
           >
-            キャンセル
+            {t('common.cancel')}
           </button>
           <button
             onClick={onConfirm}
             disabled={!confirmed || loading}
             className="flex-1 bg-red-900/30 border border-red-500/30 text-red-400 hover:bg-red-900/50 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-medium px-4 py-2.5 rounded-lg transition-colors"
           >
-            {loading ? '削除中…' : 'アカウントを削除'}
+            {loading ? t('deleteAccount.submitting') : t('deleteAccount.submit')}
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { buildEquityCurve } from '../lib/mt4Parser'
 import EquityChart from './EquityChart'
 import TradeTable from './TradeTable'
@@ -50,6 +51,7 @@ function SortTh({ label, col, sortKey, sortDir, onSort, className = '' }) {
 }
 
 export default function AccountBreakdown({ accounts, filteredTrades, aliases = {}, sortKey, sortDir, onSort }) {
+  const { t } = useTranslation()
   const [selected, setSelected] = useState(null)
   const [tab, setTab] = useState('equity')
 
@@ -79,7 +81,7 @@ export default function AccountBreakdown({ accounts, filteredTrades, aliases = {
     <div className="space-y-4">
       {accounts.length > 1 && (
         <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4">
-          <div className="text-sm font-semibold text-slate-300 mb-3">口座別 損益比較</div>
+          <div className="text-sm font-semibold text-slate-300 mb-3">{t('account.breakdown.barChartTitle')}</div>
           <ResponsiveContainer width="100%" height={160}>
             <BarChart data={barData} margin={{ top: 4, right: 8, bottom: 20, left: 0 }}>
               <XAxis dataKey="name" tick={{ fill: '#475569', fontSize: 10 }} axisLine={false} tickLine={false} />
@@ -87,7 +89,7 @@ export default function AccountBreakdown({ accounts, filteredTrades, aliases = {
               <Tooltip
                 contentStyle={{ background: '#111827', border: '1px solid #1f2d40', borderRadius: 8, fontSize: 12 }}
                 labelStyle={{ color: '#94a3b8' }}
-                formatter={v => [v >= 0 ? '+' + v : v, '損益']}
+                formatter={v => [v >= 0 ? '+' + v : v, t('account.breakdown.profitTooltip')]}
               />
               <Bar dataKey="profit" radius={[4, 4, 0, 0]}>
                 {barData.map((entry, i) => (
@@ -101,7 +103,7 @@ export default function AccountBreakdown({ accounts, filteredTrades, aliases = {
 
       <div className="bg-[#111827] border border-[#1f2d40] rounded-xl overflow-hidden">
         <div className="px-4 py-3 border-b border-[#1f2d40]">
-          <div className="text-sm font-semibold text-slate-300">口座別成績</div>
+          <div className="text-sm font-semibold text-slate-300">{t('account.breakdown.title')}</div>
         </div>
 
         {/* モバイルカードビュー */}
@@ -146,14 +148,14 @@ export default function AccountBreakdown({ accounts, filteredTrades, aliases = {
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-[#1f2d40] text-slate-500">
-                <SortTh label="口座名"   col="name"        sortKey={sortKey} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-2.5" />
-                <SortTh label="取引数"   col="trades"      sortKey={sortKey} sortDir={sortDir} onSort={onSort} className={thRight} />
-                <SortTh label="純益"     col="profit"      sortKey={sortKey} sortDir={sortDir} onSort={onSort} className={thRight} />
-                <SortTh label="PF"       col="pf"          sortKey={sortKey} sortDir={sortDir} onSort={onSort} className={`${thLeft} w-40`} />
-                <SortTh label="勝率"     col="winRate"     sortKey={sortKey} sortDir={sortDir} onSort={onSort} className={thLeft} />
-                <SortTh label="最大DD"   col="maxDrawdown" sortKey={sortKey} sortDir={sortDir} onSort={onSort} className={thRight} />
-                <SortTh label="平均勝ち" col="avgWin"      sortKey={sortKey} sortDir={sortDir} onSort={onSort} className={thRight} />
-                <SortTh label="平均負け" col="avgLoss"     sortKey={sortKey} sortDir={sortDir} onSort={onSort} className={thRight} />
+                <SortTh label={t('account.breakdown.headers.name')}        col="name"        sortKey={sortKey} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-2.5" />
+                <SortTh label={t('account.breakdown.headers.trades')}      col="trades"      sortKey={sortKey} sortDir={sortDir} onSort={onSort} className={thRight} />
+                <SortTh label={t('account.breakdown.headers.profit')}      col="profit"      sortKey={sortKey} sortDir={sortDir} onSort={onSort} className={thRight} />
+                <SortTh label={t('account.breakdown.headers.pf')}          col="pf"          sortKey={sortKey} sortDir={sortDir} onSort={onSort} className={`${thLeft} w-40`} />
+                <SortTh label={t('account.breakdown.headers.winRate')}     col="winRate"     sortKey={sortKey} sortDir={sortDir} onSort={onSort} className={thLeft} />
+                <SortTh label={t('account.breakdown.headers.maxDrawdown')} col="maxDrawdown" sortKey={sortKey} sortDir={sortDir} onSort={onSort} className={thRight} />
+                <SortTh label={t('account.breakdown.headers.avgWin')}      col="avgWin"      sortKey={sortKey} sortDir={sortDir} onSort={onSort} className={thRight} />
+                <SortTh label={t('account.breakdown.headers.avgLoss')}     col="avgLoss"     sortKey={sortKey} sortDir={sortDir} onSort={onSort} className={thRight} />
               </tr>
             </thead>
             <tbody>
@@ -203,20 +205,20 @@ export default function AccountBreakdown({ accounts, filteredTrades, aliases = {
           <div className="flex items-center gap-4 px-4 py-3 border-b border-[#1f2d40]">
             <div className="text-sm font-semibold text-slate-200 flex-1">
               {displayName(selectedAcc.account.name)}
-              <span className="ml-2 text-xs text-slate-500 font-normal">{selectedTrades.length} 取引</span>
+              <span className="ml-2 text-xs text-slate-500 font-normal">{t('account.card.tradesCount', { count: selectedTrades.length })}</span>
             </div>
             <div className="flex gap-1">
-              {['equity', 'trades'].map(t => (
-                <button key={t} onClick={() => setTab(t)}
-                  className={`px-3 py-1 text-xs rounded-lg transition-colors ${tab === t ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}>
-                  {t === 'equity' ? 'エクイティ' : '取引一覧'}
+              {['equity', 'trades'].map(tabKey => (
+                <button key={tabKey} onClick={() => setTab(tabKey)}
+                  className={`px-3 py-1 text-xs rounded-lg transition-colors ${tab === tabKey ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}>
+                  {t(`account.breakdown.tabs.${tabKey}`)}
                 </button>
               ))}
             </div>
           </div>
           <div className="p-4">
             <div className={tab === 'equity' ? '' : 'hidden'}>
-              <EquityChart data={equityCurve} title={`${displayName(selectedAcc.account.name)} — エクイティカーブ`} />
+              <EquityChart data={equityCurve} title={`${displayName(selectedAcc.account.name)}${t('account.breakdown.chartTitleSuffix')}`} />
             </div>
             <div className={tab !== 'equity' ? '' : 'hidden'}>
               <TradeTable trades={selectedTrades} aliases={aliases} />

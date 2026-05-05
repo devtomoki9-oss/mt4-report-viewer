@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/react'
 import {
@@ -55,13 +56,7 @@ import LandingPage from './components/LandingPage'
 import PasswordResetScreen from './components/PasswordResetScreen'
 import LanguageSwitcher from './components/LanguageSwitcher'
 
-const TABS = [
-  { id: 'overview',  label: 'サマリー'      },
-  { id: 'insight',   label: 'AIインサイト'  },
-  { id: 'ea',        label: '口座別成績'    },
-  { id: 'trades',    label: '全取引'        },
-  { id: 'calendar',  label: 'カレンダー'   },
-]
+const TAB_IDS = ['overview', 'insight', 'ea', 'trades', 'calendar']
 
 const EXPORT_INTERVAL_MS = 1 * 60 * 1000
 const SUPABASE_INTERVAL_MS = 1 * 60 * 1000
@@ -96,9 +91,9 @@ function fmt(n) {
   return abs >= 1000 ? abs.toLocaleString('en', { maximumFractionDigits: 2 }) : abs.toFixed(2)
 }
 function toDay(str) { return str?.slice(0, 10) || '' }
-function fmtTime(d) {
+function fmtTime(d, lang) {
   if (!d) return ''
-  return d.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  return d.toLocaleTimeString(lang || undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 function fmtCountdown(s) {
   if (s == null) return ''
@@ -107,6 +102,7 @@ function fmtCountdown(s) {
 }
 
 export default function App() {
+  const { t, i18n } = useTranslation()
   const [accounts,   setAccounts]   = useState([])
   const [tab,        setTab]        = useState('overview')
   const [dateRange,  setDateRange]  = useState({ from: '', to: '' })
@@ -249,7 +245,7 @@ export default function App() {
   // ── フォルダ登録 ─────────────────────────────────────
   const registerFolder = async () => {
     if (!supportsFileSystemAccess()) {
-      alert('Chrome / Edge をお使いください（File System Access API が必要です）')
+      alert(t('app.errors.fileSystemAccessRequired'))
       return
     }
     try {
@@ -423,9 +419,9 @@ export default function App() {
       window.location.href = json.url
     } catch (e) {
       console.error('[LemonSqueezy] portal error:', e)
-      alert(`エラーが発生しました。\n\n${e.message}`)
+      alert(t('app.errors.generic', { message: e.message }))
     }
-  }, [user])
+  }, [user, t])
 
   // ── Lemon Squeezy アップグレード ─────────────────────
   const handleUpgrade = useCallback(async () => {
@@ -437,13 +433,13 @@ export default function App() {
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`)
-      if (!json.url) throw new Error('Lemon Squeezy から URL が返されませんでした')
+      if (!json.url) throw new Error(t('app.errors.lemonNoUrl'))
       window.location.href = json.url
     } catch (e) {
       console.error('[LemonSqueezy] upgrade error:', e)
-      alert(`アップグレードの処理中にエラーが発生しました。\n\n${e.message}`)
+      alert(t('app.errors.upgradeFailed', { message: e.message }))
     }
-  }, [user])
+  }, [user, t])
 
   // ── Supabase Realtime 購読（reports テーブル変更を即時検知） ──
   useEffect(() => {
@@ -577,7 +573,7 @@ export default function App() {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-[#0a0e17] flex items-center justify-center">
-        <div className="text-slate-500 text-sm">読み込み中…</div>
+        <div className="text-slate-500 text-sm">{t('common.loading')}</div>
       </div>
     )
   }
@@ -606,17 +602,17 @@ export default function App() {
               <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center text-sm">
                 📈
               </div>
-              <span className="font-semibold text-slate-100 text-sm tracking-tight">MT4/MT5 Report Viewer</span>
-              {hasData && <span className="text-xs text-slate-600 ml-1 hidden sm:inline">{accounts.length} 口座</span>}
+              <span className="font-semibold text-slate-100 text-sm tracking-tight">{t('app.title')}</span>
+              {hasData && <span className="text-xs text-slate-600 ml-1 hidden sm:inline">{t('units.accounts', { count: accounts.length })}</span>}
             </div>
             <div className="flex items-center gap-1.5 sm:gap-2">
               {hasData && (
                 <nav className="hidden sm:flex gap-1 bg-[#111827] border border-[#1f2d40] rounded-lg p-1">
-                  {TABS.map(t => (
-                    <button key={t.id} onClick={() => setTab(t.id)}
+                  {TAB_IDS.map(id => (
+                    <button key={id} onClick={() => setTab(id)}
                       className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all
-                        ${tab === t.id ? 'bg-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>
-                      {t.label}
+                        ${tab === id ? 'bg-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>
+                      {t(`app.tabs.${id}`)}
                     </button>
                   ))}
                 </nav>
@@ -628,7 +624,7 @@ export default function App() {
                     onClick={requestRefresh}
                     disabled={refreshing}
                     className="text-xs text-blue-400 hover:text-blue-300 disabled:opacity-50 transition-colors bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg">
-                    {refreshing ? '…' : '↻ 更新'}
+                    {refreshing ? t('app.header.refreshShort') : t('app.header.refresh')}
                   </button>
                   {/* アカウントメニュー */}
                   <div className="relative" ref={userMenuRef}>
@@ -637,8 +633,8 @@ export default function App() {
                       className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#111827] border border-[#1f2d40] hover:border-slate-600 transition-colors">
                       <span className="text-xs text-slate-400 max-w-[120px] truncate hidden sm:inline">{user.email}</span>
                       {plan === 'pro'
-                        ? <span className="text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1.5 py-0.5 rounded font-semibold">Pro</span>
-                        : <span className="text-[10px] bg-slate-700/50 text-slate-500 border border-slate-700 px-1.5 py-0.5 rounded font-semibold">Free</span>
+                        ? <span className="text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1.5 py-0.5 rounded font-semibold">{t('app.header.userMenu.planPro')}</span>
+                        : <span className="text-[10px] bg-slate-700/50 text-slate-500 border border-slate-700 px-1.5 py-0.5 rounded font-semibold">{t('app.header.userMenu.planFree')}</span>
                       }
                       <span className="text-slate-600 text-[10px]">▾</span>
                     </button>
@@ -647,27 +643,27 @@ export default function App() {
                         <div className="px-4 py-2.5 border-b border-[#1f2d40]">
                           <div className="text-xs text-slate-400 truncate">{user.email}</div>
                           {plan === 'pro'
-                            ? <div className="text-[10px] text-blue-400 mt-0.5">Pro プラン</div>
-                            : <div className="text-[10px] text-slate-600 mt-0.5">Free プラン</div>
+                            ? <div className="text-[10px] text-blue-400 mt-0.5">{t('app.header.userMenu.planProLabel')}</div>
+                            : <div className="text-[10px] text-slate-600 mt-0.5">{t('app.header.userMenu.planFreeLabel')}</div>
                           }
                         </div>
                         {plan === 'pro' && (
                           <button
                             onClick={() => { handleManagePlan(); setShowUserMenu(false) }}
                             className="w-full text-left px-4 py-2.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-[#1a2235] transition-colors">
-                            サブスクリプション管理
+                            {t('app.header.userMenu.manageSubscription')}
                           </button>
                         )}
                         <button
                           onClick={async () => { setShowUserMenu(false); await signOut(); setAccounts([]); setUser(null) }}
                           className="w-full text-left px-4 py-2.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-[#1a2235] transition-colors">
-                          ログアウト
+                          {t('app.header.userMenu.logout')}
                         </button>
                         <div className="border-t border-[#1f2d40] mt-1 pt-1">
                           <button
                             onClick={() => { setShowDeleteAccount(true); setShowUserMenu(false) }}
                             className="w-full text-left px-4 py-2.5 text-xs text-red-400/60 hover:text-red-400 hover:bg-[#1a2235] transition-colors">
-                            アカウント削除
+                            {t('app.header.userMenu.deleteAccount')}
                           </button>
                         </div>
                       </div>
@@ -679,16 +675,16 @@ export default function App() {
           </div>
           {hasData && (
             <div className="sm:hidden flex gap-1 pb-2 overflow-x-auto">
-              {TABS.map(t => (
-                <button key={t.id} onClick={() => setTab(t.id)}
+              {TAB_IDS.map(id => (
+                <button key={id} onClick={() => setTab(id)}
                   className={`flex-1 flex-shrink-0 py-1.5 text-xs rounded-md font-medium transition-all whitespace-nowrap
-                    ${tab === t.id ? 'bg-blue-600 text-white shadow' : 'bg-[#111827] border border-[#1f2d40] text-slate-500'}`}>
-                  {t.label}
+                    ${tab === id ? 'bg-blue-600 text-white shadow' : 'bg-[#111827] border border-[#1f2d40] text-slate-500'}`}>
+                  {t(`app.tabs.${id}`)}
                 </button>
               ))}
               <button onClick={clearAll}
                 className="flex-shrink-0 px-2.5 py-1.5 text-xs rounded-md font-medium bg-[#111827] border border-[#1f2d40] text-slate-600 hover:text-red-400 transition-colors">
-                クリア
+                {t('app.header.clear')}
               </button>
             </div>
           )}
@@ -700,30 +696,30 @@ export default function App() {
 {!hasData && manualCleared ? (
           /* ── クリア後の空状態（セットアップ画面へ遷移しない） ── */
           <div className="flex flex-col items-center justify-center min-h-[55vh] gap-4">
-            <p className="text-slate-500 text-sm">データがクリアされました</p>
+            <p className="text-slate-500 text-sm">{t('app.cleared.message')}</p>
             <div className="w-full max-w-2xl">
               <UploadZone onFiles={handleFiles} />
             </div>
             <button
               onClick={() => setManualCleared(false)}
               className="text-xs text-slate-600 hover:text-slate-400 transition-colors underline">
-              セットアップ手順を表示
+              {t('app.cleared.showSetup')}
             </button>
           </div>
         ) : !hasData ? (
           /* ── セットアップ画面 ── */
           <div className="flex flex-col items-center justify-center min-h-[55vh] gap-5 py-4">
             <div className="text-center">
-              <h1 className="text-xl font-bold text-slate-100 mb-1.5">はじめに</h1>
-              <p className="text-slate-500 text-sm">MT4/MT5 の取引データをクラウドに同期する初回設定</p>
+              <h1 className="text-xl font-bold text-slate-100 mb-1.5">{t('app.setup.title')}</h1>
+              <p className="text-slate-500 text-sm">{t('app.setup.subtitle')}</p>
             </div>
 
             {syncDone && (
               <div className="w-full max-w-lg bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 flex items-start gap-3 text-xs text-amber-400">
                 <span className="flex-shrink-0 mt-0.5">⚠</span>
                 <div>
-                  <div className="font-semibold">Supabase にレポートデータが見つかりません</div>
-                  <div className="text-amber-500/80 mt-0.5">MT4/MT5 が起動しているか、タスクスケジューラが動作しているか確認してください。</div>
+                  <div className="font-semibold">{t('app.syncWarn.title')}</div>
+                  <div className="text-amber-500/80 mt-0.5">{t('app.syncWarn.body')}</div>
                 </div>
               </div>
             )}
@@ -733,9 +729,9 @@ export default function App() {
               <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4 space-y-2.5">
                 <div className="flex items-center gap-2.5">
                   <span className="w-6 h-6 rounded-full bg-blue-600/30 text-blue-400 flex items-center justify-center flex-shrink-0 font-bold text-xs">1</span>
-                  <span className="text-sm font-semibold text-slate-200">EA のインストール</span>
+                  <span className="text-sm font-semibold text-slate-200">{t('app.setup.step1.title')}</span>
                 </div>
-                <p className="text-xs text-slate-500 ml-[34px]">3つのファイルをダウンロードして同じフォルダに保存し、<code className="font-mono bg-[#1a2235] px-1 rounded">install.bat</code> を実行します。</p>
+                <p className="text-xs text-slate-500 ml-[34px]">{t('app.setup.step1.description', { file: 'install.bat' })}</p>
                 <div className="flex flex-wrap gap-2 ml-[34px]">
                   <button onClick={() => downloadText(INSTALL_BAT, 'install.bat')}
                     className="text-xs text-blue-400 hover:text-blue-300 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg transition-colors">
@@ -753,7 +749,7 @@ export default function App() {
                 <div className="ml-[34px] flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded px-2.5 py-1.5 overflow-x-auto">
                   <code className="text-green-400 font-mono text-[11px] whitespace-nowrap flex-1 select-all">{'Unblock-File "$env:USERPROFILE\\Downloads\\install.bat"; & "$env:USERPROFILE\\Downloads\\install.bat"'}</code>
                   <button onClick={() => navigator.clipboard.writeText('Unblock-File "$env:USERPROFILE\\Downloads\\install.bat"; & "$env:USERPROFILE\\Downloads\\install.bat"')}
-                    className="text-slate-600 hover:text-slate-300 flex-shrink-0 transition-colors" title="コピー">⎘</button>
+                    className="text-slate-600 hover:text-slate-300 flex-shrink-0 transition-colors" title={t('common.copy')}>⎘</button>
                 </div>
               </div>
 
@@ -761,9 +757,9 @@ export default function App() {
               <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4 space-y-2.5">
                 <div className="flex items-center gap-2.5">
                   <span className="w-6 h-6 rounded-full bg-blue-600/30 text-blue-400 flex items-center justify-center flex-shrink-0 font-bold text-xs">2</span>
-                  <span className="text-sm font-semibold text-slate-200">同期スクリプトの設定</span>
+                  <span className="text-sm font-semibold text-slate-200">{t('app.setup.step2.title')}</span>
                 </div>
-                <p className="text-xs text-slate-500 ml-[34px]">2つのファイルを EA と同じフォルダにダウンロードし、ブロックを解除します。</p>
+                <p className="text-xs text-slate-500 ml-[34px]">{t('app.setup.step2.description')}</p>
                 <div className="flex flex-wrap gap-2 ml-[34px]">
                   <a href="/sync-to-supabase.ps1" download="sync-to-supabase.ps1"
                     className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition-colors">
@@ -777,7 +773,7 @@ export default function App() {
                 <div className="ml-[34px] flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded px-2.5 py-1.5 overflow-x-auto">
                   <code className="text-green-400 font-mono text-[11px] whitespace-nowrap flex-1 select-all">{'Unblock-File "$env:USERPROFILE\\Downloads\\sync-to-supabase.ps1"'}</code>
                   <button onClick={() => navigator.clipboard.writeText('Unblock-File "$env:USERPROFILE\\Downloads\\sync-to-supabase.ps1"')}
-                    className="text-slate-600 hover:text-slate-300 flex-shrink-0 transition-colors" title="コピー">⎘</button>
+                    className="text-slate-600 hover:text-slate-300 flex-shrink-0 transition-colors" title={t('common.copy')}>⎘</button>
                 </div>
               </div>
 
@@ -785,24 +781,24 @@ export default function App() {
               <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4 space-y-2.5">
                 <div className="flex items-center gap-2.5">
                   <span className="w-6 h-6 rounded-full bg-blue-600/30 text-blue-400 flex items-center justify-center flex-shrink-0 font-bold text-xs">3</span>
-                  <span className="text-sm font-semibold text-slate-200">タスクスケジューラへの登録</span>
+                  <span className="text-sm font-semibold text-slate-200">{t('app.setup.step3.title')}</span>
                 </div>
-                <p className="text-xs text-slate-500 ml-[34px]">ファイル変更を検知してリアルタイムでアップロードします。PowerShell で実行してください。</p>
+                <p className="text-xs text-slate-500 ml-[34px]">{t('app.setup.step3.description')}</p>
                 <div className="ml-[34px] flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded px-2.5 py-1.5 overflow-x-auto">
                   <code className="text-green-400 font-mono text-[11px] whitespace-nowrap flex-1 select-all">{'schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"'}</code>
                   <button onClick={() => navigator.clipboard.writeText('schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"')}
-                    className="text-slate-600 hover:text-slate-300 flex-shrink-0 transition-colors" title="コピー">⎘</button>
+                    className="text-slate-600 hover:text-slate-300 flex-shrink-0 transition-colors" title={t('common.copy')}>⎘</button>
                 </div>
               </div>
             </div>
 
             <button onClick={() => setShowManual(true)}
               className="text-xs text-slate-600 hover:text-slate-400 transition-colors underline">
-              詳細な手順（MT4/MT5 の設定含む）はマニュアルを参照
+              {t('app.setup.manualLink')}
             </button>
 
             <div className="w-full max-w-lg">
-              <div className="text-xs text-slate-600 text-center mb-2">または HTML / JSON レポートを手動でアップロード</div>
+              <div className="text-xs text-slate-600 text-center mb-2">{t('app.setup.orUploadManual')}</div>
               <UploadZone onFiles={handleFiles} />
             </div>
           </div>
@@ -815,17 +811,17 @@ export default function App() {
                 {lastUpdated && (
                   <span className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 flex-shrink-0" />
-                    {fmtTime(lastUpdated)}
+                    {fmtTime(lastUpdated, i18n.language)}
                   </span>
                 )}
                 <button onClick={clearAll} className="hidden sm:inline text-slate-600 hover:text-red-400 transition-colors">
-                  クリア
+                  {t('app.toolbar.clear')}
                 </button>
               </div>
               <label className="cursor-pointer text-xs text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg">
                 <input type="file" accept=".htm,.html,.json" multiple className="hidden"
                   onChange={e => handleFiles(e.target.files)} />
-                + ファイルを追加
+                {t('app.toolbar.addFiles')}
               </label>
             </div>
 
@@ -842,10 +838,10 @@ export default function App() {
               <TradeCalendar trades={allTrades} aliases={aliases} />
             ) : filteredTrades.length === 0 ? (
               <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-8 text-center text-slate-500 text-sm">
-                選択期間に取引がありません
+                {t('app.noTradesInRange.message')}
                 <button onClick={() => setDateRange({ from: '', to: '' })}
                   className="block mx-auto mt-2 text-xs text-blue-400 hover:text-blue-300">
-                  絞り込みを解除
+                  {t('app.noTradesInRange.clearFilter')}
                 </button>
               </div>
             ) : (
@@ -860,7 +856,7 @@ export default function App() {
                         <span className="bg-blue-500/15 text-blue-400 px-2 py-0.5 rounded font-medium">
                           {dateRange.from || dataMin} 〜 {dateRange.to || dataMax}
                         </span>
-                        <span>の集計</span>
+                        <span>{t('app.filteredRange.of')}</span>
                       </div>
                     )}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -871,40 +867,40 @@ export default function App() {
                         const totalFloat   = totalEquity - totalBalance - totalCredit
                         const currency = accounts[0]?.account.currency || ''
                         return (<>
-                          <StatCard label="残高合計"       value={totalBalance.toLocaleString('en', { maximumFractionDigits: 2 }) + ' ' + currency} color="white" size="lg" />
-                          <StatCard label="クレジット合計"  value={totalCredit.toLocaleString('en',  { maximumFractionDigits: 2 }) + ' ' + currency} color="white" size="lg" />
-                          <StatCard label="有効証拠金合計"  value={totalEquity.toLocaleString('en',  { maximumFractionDigits: 2 }) + ' ' + currency} color={totalEquity >= totalBalance ? 'profit' : 'warn'} size="lg" />
-                          <StatCard label="含み損益合計"    value={(totalFloat >= 0 ? '+' : '') + totalFloat.toFixed(2) + ' ' + currency} color={totalFloat >= 0 ? 'profit' : 'loss'} size="lg" />
+                          <StatCard label={t('app.stats.balanceTotal')}     value={totalBalance.toLocaleString('en', { maximumFractionDigits: 2 }) + ' ' + currency} color="white" size="lg" />
+                          <StatCard label={t('app.stats.creditTotal')}      value={totalCredit.toLocaleString('en',  { maximumFractionDigits: 2 }) + ' ' + currency} color="white" size="lg" />
+                          <StatCard label={t('app.stats.equityTotal')}      value={totalEquity.toLocaleString('en',  { maximumFractionDigits: 2 }) + ' ' + currency} color={totalEquity >= totalBalance ? 'profit' : 'warn'} size="lg" />
+                          <StatCard label={t('app.stats.floatPnlTotal')}    value={(totalFloat >= 0 ? '+' : '') + totalFloat.toFixed(2) + ' ' + currency} color={totalFloat >= 0 ? 'profit' : 'loss'} size="lg" />
                         </>)
                       })()}
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:grid-cols-7">
-                      <StatCard label="純益合計"
+                      <StatCard label={t('app.stats.netProfitTotal')}
                         value={(agg.totalProfit >= 0 ? '+' : '-') + fmt(agg.totalProfit)}
                         color={agg.totalProfit >= 0 ? 'profit' : 'loss'} size="lg" />
-                      <StatCard label="総取引数" value={agg.totalTrades.toLocaleString()} color="white" />
-                      <StatCard label="勝率" value={agg.winRate.toFixed(1) + '%'}
+                      <StatCard label={t('app.stats.totalTrades')} value={agg.totalTrades.toLocaleString()} color="white" />
+                      <StatCard label={t('app.stats.winRate')} value={agg.winRate.toFixed(1) + '%'}
                         color={agg.winRate >= 50 ? 'profit' : 'warn'} />
-                      <StatCard label="プロフィットファクター"
+                      <StatCard label={t('app.stats.profitFactor')}
                         value={isFinite(agg.profitFactor) ? agg.profitFactor.toFixed(2) : '∞'}
                         color={agg.profitFactor >= 1.5 ? 'profit' : agg.profitFactor >= 1 ? 'warn' : 'loss'} />
-                      <StatCard label="総利益" value={'+' + fmt(agg.grossProfit)} color="profit" />
-                      <StatCard label="総損失" value={'-' + fmt(agg.grossLoss)} color="loss" />
-                      <StatCard label="最大DD" value={fmt(agg.maxDrawdown)} color="warn" />
+                      <StatCard label={t('app.stats.grossProfit')} value={'+' + fmt(agg.grossProfit)} color="profit" />
+                      <StatCard label={t('app.stats.grossLoss')} value={'-' + fmt(agg.grossLoss)} color="loss" />
+                      <StatCard label={t('app.stats.maxDrawdown')} value={fmt(agg.maxDrawdown)} color="warn" />
                     </div>
-                    <EquityChart data={equityCurve} title="全口座合算 エクイティカーブ" />
+                    <EquityChart data={equityCurve} title={t('app.equityChart.allCombined')} />
                     <OpenPositions positions={allPositions} aliases={aliases} charts={allCharts} trades={filteredTrades} />
                     <div>
                       <div className="flex items-center justify-between mb-3">
-                        <div className="text-sm font-semibold text-slate-400">口座別成績</div>
+                        <div className="text-sm font-semibold text-slate-400">{t('app.accountList.title')}</div>
                         <div className="flex items-center gap-1 text-xs text-slate-500">
                           {[
-                            { key: 'profit',      label: '純益'   },
-                            { key: 'name',        label: '口座名' },
-                            { key: 'trades',      label: '取引数' },
-                            { key: 'pf',          label: 'PF'     },
-                            { key: 'winRate',     label: '勝率'   },
-                            { key: 'maxDrawdown', label: '最大DD' },
+                            { key: 'profit',      label: t('app.accountList.sort.profit')      },
+                            { key: 'name',        label: t('app.accountList.sort.name')        },
+                            { key: 'trades',      label: t('app.accountList.sort.trades')      },
+                            { key: 'pf',          label: t('app.accountList.sort.pf')          },
+                            { key: 'winRate',     label: t('app.accountList.sort.winRate')     },
+                            { key: 'maxDrawdown', label: t('app.accountList.sort.maxDrawdown') },
                           ].map(({ key, label }) => {
                             const active = accSort.key === key
                             return (
@@ -953,13 +949,13 @@ export default function App() {
       {/* フッター */}
       <footer className="text-center py-6 text-xs text-slate-600 space-y-2">
         <div className="flex items-center justify-center gap-4 flex-wrap">
-          <button onClick={() => setShowManual(true)} className="hover:text-slate-300 transition-colors">操作マニュアル</button>
-          <button onClick={() => setShowHelp(true)} className="hover:text-slate-300 transition-colors">ヘルプ</button>
-          <button onClick={() => setShowTerms(true)} className="hover:text-slate-300 transition-colors">利用規約</button>
-          <button onClick={() => setShowPrivacy(true)} className="hover:text-slate-300 transition-colors">プライバシーポリシー</button>
-          <button onClick={() => setShowFeedback(true)} className="hover:text-slate-300 transition-colors">お問い合わせ</button>
+          <button onClick={() => setShowManual(true)} className="hover:text-slate-300 transition-colors">{t('app.footer.manual')}</button>
+          <button onClick={() => setShowHelp(true)} className="hover:text-slate-300 transition-colors">{t('app.footer.help')}</button>
+          <button onClick={() => setShowTerms(true)} className="hover:text-slate-300 transition-colors">{t('app.footer.terms')}</button>
+          <button onClick={() => setShowPrivacy(true)} className="hover:text-slate-300 transition-colors">{t('app.footer.privacy')}</button>
+          <button onClick={() => setShowFeedback(true)} className="hover:text-slate-300 transition-colors">{t('app.footer.contact')}</button>
         </div>
-        <div className="text-slate-700">© {new Date().getFullYear()} MT Report Viewer</div>
+        <div className="text-slate-700">{t('app.footer.copyright', { year: new Date().getFullYear() })}</div>
       </footer>
 
       {showManual   && <ManualModal     onClose={() => setShowManual(false)} onDownloadVbs={() => { setShowManual(false); setVbsPass(''); setShowVbsModal(true) }} />}
@@ -974,18 +970,15 @@ export default function App() {
           <div className="bg-[#111827] border border-[#1f2d40] rounded-2xl w-full max-w-sm p-6 space-y-4"
             onClick={e => e.stopPropagation()}>
             <div className="space-y-1">
-              <h2 className="text-sm font-semibold text-slate-200">run-sync.vbs を生成</h2>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                パスワードを入力すると接続情報が埋め込まれた VBS ファイルをダウンロードします。<br />
-                sync-to-supabase.ps1 と同じフォルダに置いてください。
-              </p>
+              <h2 className="text-sm font-semibold text-slate-200">{t('app.vbsModal.title')}</h2>
+              <p className="text-xs text-slate-500 leading-relaxed whitespace-pre-line">{t('app.vbsModal.body')}</p>
             </div>
             <div className="space-y-1">
-              <div className="text-xs text-slate-500">メールアドレス</div>
+              <div className="text-xs text-slate-500">{t('app.vbsModal.email')}</div>
               <div className="text-xs text-slate-400 bg-[#0a0e17] border border-[#1f2d40] rounded px-3 py-2">{user?.email}</div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs text-slate-500">パスワード</label>
+              <label className="text-xs text-slate-500">{t('app.vbsModal.password')}</label>
               <input
                 type="password"
                 value={vbsPass}
@@ -997,14 +990,14 @@ export default function App() {
                   }
                 }}
                 className="w-full bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-3 py-2.5 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:border-blue-500/50"
-                placeholder="ログインパスワード"
+                placeholder={t('app.vbsModal.passwordPlaceholder')}
                 autoFocus
               />
             </div>
             <div className="flex gap-2">
               <button onClick={() => setShowVbsModal(false)}
                 className="flex-1 bg-[#1a2235] border border-[#1f2d40] text-slate-400 hover:text-slate-200 text-xs px-4 py-2.5 rounded-lg transition-colors">
-                キャンセル
+                {t('common.cancel')}
               </button>
               <button
                 disabled={!vbsPass}
@@ -1013,7 +1006,7 @@ export default function App() {
                   setShowVbsModal(false)
                 }}
                 className="flex-1 bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-600/30 disabled:opacity-30 disabled:cursor-not-allowed text-xs px-4 py-2.5 rounded-lg transition-colors">
-                ↓ ダウンロード
+                {t('common.downloadAction')}
               </button>
             </div>
           </div>
@@ -1037,7 +1030,7 @@ export default function App() {
                 })
                 if (!res.ok) {
                   const json = await res.json().catch(() => ({}))
-                  throw new Error(json.error || 'サブスクリプションのキャンセルに失敗しました')
+                  throw new Error(json.error || t('app.errors.subscriptionCancelFailed'))
                 }
               }
               await deleteAccount()
@@ -1046,7 +1039,7 @@ export default function App() {
               setAccounts([])
               setShowDeleteAccount(false)
             } catch (e) {
-              alert('削除に失敗しました: ' + e.message)
+              alert(t('app.errors.deleteFailed', { message: e.message }))
             } finally {
               setDeletingAccount(false)
             }

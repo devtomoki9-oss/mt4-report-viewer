@@ -4,5 +4,889 @@
       "label": "Language",
       "current": "{{name}}"
     }
+  },
+  "common": {
+    "loading": "Loading…",
+    "processing": "Working…",
+    "cancel": "Cancel",
+    "close": "Close",
+    "save": "Save",
+    "delete": "Delete",
+    "back": "Back",
+    "prev": "← Prev",
+    "next": "Next →",
+    "rename": "Rename",
+    "copy": "Copy",
+    "ok": "OK",
+    "all": "All",
+    "noData": "No data",
+    "empty": "No data to display",
+    "search": "Search",
+    "filterReset": "Reset",
+    "downloadAction": "↓ Download",
+    "ariaPrev": "Previous",
+    "ariaNext": "Next"
+  },
+  "units": {
+    "trades_one": "{{count}} trade",
+    "trades_other": "{{count}} trades",
+    "items_one": "{{count}} item",
+    "items_other": "{{count}} items",
+    "itemsShort": "{{count}}",
+    "accounts_one": "{{count}} account",
+    "accounts_other": "{{count}} accounts",
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
+    "candles_one": "{{count}} bar",
+    "candles_other": "{{count}} bars",
+    "bars_one": "{{count}} bar",
+    "bars_other": "{{count}} bars"
+  },
+  "app": {
+    "title": "MT4/MT5 Report Viewer",
+    "productName": "MT Report Viewer",
+    "productNamePro": "MT Report Viewer Pro",
+    "tabs": {
+      "overview": "Summary",
+      "insight": "AI Insights",
+      "ea": "By Account",
+      "trades": "All Trades",
+      "calendar": "Calendar"
+    },
+    "header": {
+      "refresh": "↻ Refresh",
+      "refreshShort": "…",
+      "userMenu": {
+        "planPro": "Pro",
+        "planFree": "Free",
+        "planProLabel": "Pro plan",
+        "planFreeLabel": "Free plan",
+        "manageSubscription": "Manage subscription",
+        "logout": "Sign out",
+        "deleteAccount": "Delete account"
+      },
+      "clear": "Clear"
+    },
+    "toolbar": {
+      "addFiles": "+ Add files",
+      "clear": "Clear"
+    },
+    "syncWarn": {
+      "title": "No reports found in Supabase",
+      "body": "Make sure MT4/MT5 is running and that the scheduled sync task is active."
+    },
+    "setup": {
+      "title": "Get started",
+      "subtitle": "One-time setup to sync your MT4/MT5 trade data to the cloud",
+      "step1": {
+        "title": "Install the EA",
+        "description": "Download all three files into the same folder, then run {{file}}."
+      },
+      "step2": {
+        "title": "Configure the sync script",
+        "description": "Download both files into the same folder as the EA, then unblock them."
+      },
+      "step3": {
+        "title": "Register the scheduled task",
+        "description": "Watches for file changes and uploads them in real time. Run the command in PowerShell."
+      },
+      "manualLink": "See the manual for the full walkthrough (including MT4/MT5 setup)",
+      "orUploadManual": "Or upload an HTML / JSON report by hand"
+    },
+    "cleared": {
+      "message": "Data cleared",
+      "showSetup": "Show setup steps"
+    },
+    "filteredRange": {
+      "of": "summary"
+    },
+    "noTradesInRange": {
+      "message": "No trades in the selected range",
+      "clearFilter": "Clear filter"
+    },
+    "stats": {
+      "balanceTotal": "Total balance",
+      "creditTotal": "Total credit",
+      "equityTotal": "Total equity",
+      "floatPnlTotal": "Floating P/L",
+      "netProfitTotal": "Net profit",
+      "totalTrades": "Total trades",
+      "winRate": "Win rate",
+      "profitFactor": "Profit factor",
+      "grossProfit": "Gross profit",
+      "grossLoss": "Gross loss",
+      "maxDrawdown": "Max DD"
+    },
+    "equityChart": {
+      "allCombined": "Equity curve — all accounts combined",
+      "default": "Equity curve"
+    },
+    "accountList": {
+      "title": "Accounts",
+      "sort": {
+        "profit": "Profit",
+        "name": "Name",
+        "trades": "Trades",
+        "pf": "PF",
+        "winRate": "Win rate",
+        "maxDrawdown": "Max DD"
+      }
+    },
+    "vbsModal": {
+      "title": "Generate run-sync.vbs",
+      "body": "Enter your password to download a VBS file with your connection details embedded.\nPlace it in the same folder as sync-to-supabase.ps1.",
+      "email": "Email",
+      "password": "Password",
+      "passwordPlaceholder": "Login password"
+    },
+    "errors": {
+      "generic": "Something went wrong.\n\n{{message}}",
+      "upgradeFailed": "The upgrade couldn't be completed.\n\n{{message}}",
+      "lemonNoUrl": "Lemon Squeezy didn't return a URL",
+      "deleteFailed": "Couldn't delete: {{message}}",
+      "subscriptionCancelFailed": "Couldn't cancel the subscription",
+      "fileSystemAccessRequired": "Use Chrome or Edge — the File System Access API is required."
+    },
+    "footer": {
+      "manual": "Manual",
+      "help": "Help",
+      "terms": "Terms",
+      "privacy": "Privacy",
+      "contact": "Contact",
+      "copyright": "© {{year}} MT Report Viewer"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in to your account",
+      "submit": "Sign in",
+      "noAccountPrompt": "Don't have an account?",
+      "signupLink": "Sign up",
+      "forgotLink": "Forgot your password?"
+    },
+    "signup": {
+      "title": "Create an account",
+      "submit": "Create account",
+      "hasAccountPrompt": "Already have an account?",
+      "loginLink": "Sign in"
+    },
+    "forgot": {
+      "title": "Reset your password",
+      "submit": "Send reset email",
+      "backToLogin": "Back to sign in"
+    },
+    "fields": {
+      "email": "Email",
+      "password": "Password (8+ characters)",
+      "passwordConfirm": "Confirm password"
+    },
+    "done": {
+      "signupTitle": "Confirmation email sent",
+      "forgotTitle": "Password reset email sent",
+      "signupBody": "Click the link we sent to {{email}} to finish signing up.",
+      "forgotBody": "Click the link we sent to {{email}} to choose a new password.",
+      "backToLogin": "Back to sign in"
+    },
+    "agree": "By signing up you agree to our {{privacyLink}} and {{termsLink}}",
+    "agreePrivacy": "Privacy Policy",
+    "agreeTerms": "Terms of Service",
+    "errors": {
+      "passwordsMismatch": "Passwords don't match",
+      "unknown": "Something went wrong",
+      "rateLimit": "Too many emails — please wait a few minutes and try again (Supabase free-tier limit).",
+      "invalidCredentials": "Email or password is incorrect",
+      "emailNotConfirmed": "Click the link in the confirmation email, then sign in again",
+      "userAlreadyRegistered": "An account with this email already exists",
+      "passwordTooShort": "Password must be at least 8 characters",
+      "invalidEmail": "That doesn't look like a valid email address"
+    }
+  },
+  "passwordReset": {
+    "title": "Set a new password",
+    "newPassword": "New password (8+ characters)",
+    "newPasswordConfirm": "Confirm new password",
+    "submit": "Update password",
+    "successTitle": "Password updated",
+    "resyncTitle": "Re-set up the auto-sync",
+    "resyncBody": "Your auto-sync (run-sync.vbs) has the old password baked in. <strong>Re-download run-sync.vbs</strong> from the dashboard and replace the file in Task Scheduler.",
+    "back": "Back to dashboard"
+  },
+  "landing": {
+    "nav": {
+      "login": "Sign in",
+      "start": "Get started free →"
+    },
+    "hero": {
+      "badge": "MT4 / MT5 supported · Data analysis tool",
+      "titleLine1": "Make sense of your",
+      "titleLine2": "MT4/MT5 trade history",
+      "subtitle": "Just upload your reports. Win rate, P/L, drawdown and more — all charted automatically so you can see your trading from every angle.",
+      "disclaimer": "* This tool only organizes and visualizes your trade history. It does not provide investment advice or trading signals.",
+      "ctaPrimary": "Get started free",
+      "ctaSecondary": "Sign in",
+      "screenshotAlt": "MT Report Viewer Pro dashboard"
+    },
+    "stats": {
+      "items": [
+        { "value": "MT4/MT5", "label": "Both supported" },
+        { "value": "Multi-account", "label": "All in one view" },
+        { "value": "Auto stats", "label": "Built-in summary" }
+      ]
+    },
+    "about": {
+      "title": "Your trade history, finally organized",
+      "body": "Drop in MT4/MT5's HTML or JSON reports and the app breaks them down by P/L, holding time, currency pair, and more. Compare multiple accounts side by side, view daily P/L on a calendar, and get a much clearer picture of how you actually trade.",
+      "footer": "This tool only organizes and displays the data you provide. It makes no implications about future trading outcomes."
+    },
+    "features": {
+      "title": "What it does",
+      "subtitle": "Everything you need to organize and review your trading",
+      "items": [
+        { "icon": "📂", "title": "Bulk-load multiple accounts", "desc": "Pull in reports from any number of MT4/MT5 accounts at once. View per-account stats and a combined total side by side." },
+        { "icon": "📊", "title": "Automatic statistics", "desc": "Total trades, P/L, win rate, profit factor, max drawdown, and more — calculated automatically and shown in tables and charts." },
+        { "icon": "📈", "title": "Equity curve", "desc": "See how your account balance moved over time. Spot the periods that drove your gains — or your drawdowns." },
+        { "icon": "📅", "title": "Calendar view", "desc": "P/L laid out by day and month. Useful for spotting which days of the week or times of year tend to work for you." },
+        { "icon": "🔄", "title": "Auto-sync (optional)", "desc": "Combine the PowerShell script and Task Scheduler to pull in your latest MT4/MT5 reports on a schedule." }
+      ]
+    },
+    "useCases": {
+      "title": "Built for traders who",
+      "subtitle": "use the data you already have",
+      "items": [
+        { "label": "Want to review past trades", "desc": "Track P/L and drawdown over time on a single chart" },
+        { "label": "Trade across multiple accounts", "desc": "Compare account stats side by side" },
+        { "label": "Keep records of their trading", "desc": "Centralize monthly and per-symbol breakdowns" },
+        { "label": "Prefer visuals over raw reports", "desc": "Turn MT4/MT5's standard reports into clear charts" }
+      ]
+    },
+    "steps": {
+      "title": "Quick setup",
+      "subtitle": "Set it up once. New data flows in automatically from then on.",
+      "items": [
+        { "step": "1", "title": "Download the files", "desc": "Grab install.bat and the EA from inside the app" },
+        { "step": "2", "title": "Set up MT4/MT5", "desc": "Run install.bat to install the EA automatically" },
+        { "step": "3", "title": "Schedule the sync", "desc": "Task Scheduler picks up new data every minute" },
+        { "step": "4", "title": "View your data", "desc": "Browse all your accounts in one place" }
+      ]
+    },
+    "cta": {
+      "title": "Start organizing your trade history today",
+      "subtitle": "Sign-up is free.",
+      "button": "Create a free account →"
+    },
+    "disclaimer": {
+      "heading": "Disclaimer",
+      "body": "MT Report Viewer Pro is a data analysis tool whose only purpose is to organize, aggregate, and visualize trade history exported from MT4/MT5. It does not provide investment advice, recommendations, or trading signals of any kind. All statistics and charts shown are records derived from the historical trade data you upload, and are not a guarantee of future results. All trading decisions remain solely your responsibility. This service is not a financial instruments business operator and does not engage in any activity that requires registration or notification under Japan's Financial Instruments and Exchange Act."
+    }
+  },
+  "upload": {
+    "title": "Drop your MT4 report here",
+    "subtitle": "Or click to choose a file",
+    "hint": "Works with MT4 \"Detailed Report\" HTML files · Multiple files OK"
+  },
+  "dateRange": {
+    "presets": {
+      "1d": "1D",
+      "1w": "1W",
+      "1m": "1M",
+      "3m": "3M",
+      "6m": "6M",
+      "1y": "1Y",
+      "all": "All"
+    },
+    "filteredBadge": "Filtered",
+    "clearTitle": "Clear filter"
+  },
+  "account": {
+    "card": {
+      "tradesCount_one": "{{count}} trade",
+      "tradesCount_other": "{{count}} trades",
+      "rename": "Rename",
+      "delete": "Delete",
+      "tradingActive": "Live",
+      "tradingPaused": "Paused",
+      "tradingStopHint": "Stop auto-trading",
+      "tradingRunHint": "Resume auto-trading",
+      "metrics": {
+        "balance": "Balance",
+        "credit": "Credit",
+        "equity": "Equity",
+        "floating": "Floating P/L",
+        "profit": "Net profit",
+        "grossProfit": "Gross profit",
+        "grossLoss": "Gross loss",
+        "profitFactor": "Profit factor",
+        "winRate": "Win rate",
+        "wins": "Winning trades",
+        "losses": "Losing trades",
+        "maxDrawdown": "Max DD"
+      }
+    },
+    "breakdown": {
+      "title": "By account",
+      "barChartTitle": "P/L by account",
+      "headers": {
+        "name": "Account",
+        "trades": "Trades",
+        "profit": "Net P/L",
+        "pf": "PF",
+        "winRate": "Win rate",
+        "maxDrawdown": "Max DD",
+        "avgWin": "Avg win",
+        "avgLoss": "Avg loss"
+      },
+      "profitTooltip": "P/L",
+      "tabs": { "equity": "Equity", "trades": "Trades" },
+      "chartTitleSuffix": " — Equity curve"
+    }
+  },
+  "trades": {
+    "table": {
+      "columns": {
+        "ticket": "Ticket",
+        "openTime": "Open (broker time)",
+        "closeTime": "Close (broker time)",
+        "type": "Type",
+        "symbol": "Symbol",
+        "size": "Lots",
+        "openPrice": "Open price",
+        "closePrice": "Close price",
+        "swap": "Swap",
+        "commission": "Commission",
+        "netProfit": "Net P/L",
+        "account": "Account"
+      },
+      "filters": {
+        "symbolAll": "Symbol: All",
+        "typeAll": "Type: All",
+        "accountAll": "Account: All",
+        "reset": "Reset"
+      },
+      "commissionMobile": "Comm. {{value}}",
+      "swapMobile": "SW {{value}}",
+      "lotsMobile": "{{lots}} lot",
+      "page": "{{current}} / {{total}}"
+    }
+  },
+  "positions": {
+    "title": "Open positions",
+    "allAccounts": "All accounts",
+    "buy": "BUY",
+    "sell": "SELL",
+    "openPriceLabel": "Open",
+    "currentPriceLabel": "Now",
+    "columns": {
+      "account": "Account",
+      "symbol": "Symbol",
+      "type": "Side",
+      "lots": "Lots",
+      "openPrice": "Open",
+      "currentPrice": "Current",
+      "profit": "P/L",
+      "swap": "Swap",
+      "sl": "SL",
+      "tp": "TP",
+      "chart": "Chart"
+    }
+  },
+  "calendar": {
+    "weekdays": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "accountFilterLabel": "Account:",
+    "allAccounts": "All accounts",
+    "monthYear": "{{monthName}} {{year}}",
+    "dayHeading": "{{monthName}} {{day}}, {{year}}",
+    "metrics": {
+      "monthProfit": "Monthly P/L",
+      "trades": "Trades",
+      "tradingDays": "Trading days",
+      "winLossDays": "Win / Loss days"
+    },
+    "tradingDaysValue_one": "{{count}} day",
+    "tradingDaysValue_other": "{{count}} days",
+    "table": {
+      "time": "Time (broker)",
+      "symbol": "Symbol",
+      "type": "Side",
+      "lots": "Lots",
+      "profit": "P/L",
+      "account": "Account"
+    }
+  },
+  "equityChart": {
+    "default": "Equity curve",
+    "noData": "No data",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "fitAll": "Fit all"
+  },
+  "chart": {
+    "noData": "No data",
+    "empty": "No chart data available.",
+    "emptyHint": "Recompile the EA and re-attach it to a chart.",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "fitAll": "Fit all",
+    "legend": {
+      "entryBuy": "Entry (Buy)",
+      "entrySell": "Entry (Sell)",
+      "exit": "Exit",
+      "holdLine": "Open position price",
+      "hoverHint": "Hover a marker for details"
+    },
+    "tooltip": {
+      "buyEntries": "▲ Buy entries",
+      "sellEntries": "▼ Sell entries",
+      "exits": "● Exits",
+      "countSuffix_one": "{{count}}",
+      "countSuffix_other": "{{count}}"
+    }
+  },
+  "insight": {
+    "duration": {
+      "minutes_one": "{{count}} min",
+      "minutes_other": "{{count}} min",
+      "hours_one": "{{count}} hr",
+      "hours_other": "{{count}} hrs",
+      "days_one": "{{count}} day",
+      "days_other": "{{count}} days"
+    },
+    "score": {
+      "trade": {
+        "title": "Trade score",
+        "subtitle": "Quality, 0–100"
+      },
+      "risk": {
+        "title": "Risk score",
+        "subtitle": "Higher means more risky"
+      },
+      "tradeGrades": {
+        "excellent": "Excellent",
+        "good": "Solid",
+        "average": "Average",
+        "needWork": "Needs work"
+      },
+      "riskGrades": {
+        "low": "Low risk",
+        "medium": "Moderate",
+        "high": "High risk",
+        "danger": "Danger"
+      },
+      "insufficientData": "Not enough data"
+    },
+    "ai": {
+      "title": "AI Diagnosis",
+      "freeBadge": "Free: 1 item",
+      "proBadge": "Pro",
+      "insufficient": "Need at least 5 trades for a diagnosis",
+      "lockedRemainder_one": "Upgrade to Pro to see {{count}} more",
+      "lockedRemainder_other": "Upgrade to Pro to see {{count}} more"
+    },
+    "suggestions": {
+      "title": "Recommendations",
+      "proBadge": "Pro only",
+      "unlockCta": "Upgrade to Pro to unlock",
+      "noneNeeded": "No recommendations — your performance is solid",
+      "perAccountTitle": "Recommendations by account",
+      "perAccountScore": "Score {{score}}",
+      "perAccountNoneNeeded": "Nothing to flag — performance looks good"
+    },
+    "winPatterns": {
+      "title": "Winning patterns",
+      "topHours": "Top 3 hours by win rate",
+      "topSymbols": "Top 3 symbols by win rate",
+      "avgWinHoldTitle": "Average winning hold time",
+      "avgWinHoldLabel": "Average winner",
+      "noData": "Not enough data"
+    },
+    "priority": {
+      "high": "High",
+      "medium": "Med"
+    },
+    "rules": {
+      "negativeExpectancy": "Your edge is negative — this strategy is likely to lose over time.",
+      "lowWinRate": "Win rate is low. Take a hard look at your entry criteria.",
+      "highLossRatio": "Average losses ({{avgLoss}}) are much larger than average wins ({{avgWin}}).",
+      "sessionUnderperform": "{{session}} session underperforms ({{sessionRate}}% win rate vs. {{overallRate}}% overall).",
+      "sessionOverperform": "{{session}} session is your strong spot ({{sessionRate}}% win rate).",
+      "lossStreak": "Hit a {{streak}}-loss streak. Consider shrinking position size.",
+      "symbolUnderperform": "{{symbol}} is underperforming ({{rate}}% win rate, P/L {{profit}}).",
+      "holdingMismatch": "Losers are held longer than winners — likely a stop-loss discipline issue.",
+      "drawdownLarge": "Max drawdown reached {{value}}.",
+      "excellentWinRate": "Win rate of {{rate}}% is excellent.",
+      "pfGood": "Profit factor of {{pf}} is healthy.",
+      "stableTrades": "Drawdown stays small — your trading looks stable."
+    },
+    "suggestionRules": {
+      "pauseAndRecheck": "Pause and review your entry criteria before placing the next trade.",
+      "reviewStrategy": "Rebuild your entry rules from the ground up — current edge is negative.",
+      "improveStopLoss": "Tighten your stops and aim for at least 1:1.5 risk:reward.",
+      "tightenLossExit": "You're holding losers too long. Stick to your stop-loss rules.",
+      "reduceSession": "Cut back or stop trading the {{session}} session.",
+      "skipSymbol": "Stop trading {{symbol}} and focus on pairs that are working.",
+      "reduceLot": "Drawdown is too high — reduce your lot size."
+    },
+    "alertRules": {
+      "ongoingStreak": "{{streak}} losses in a row — consider pausing for a bit.",
+      "drawdownDanger": "Drawdown has hit {{value}}.",
+      "pfWarn": "Profit factor has dropped to {{pf}}."
+    },
+    "demo": {
+      "suggestions": [
+        { "priority": "high", "message": "Tighten your stops and improve your risk:reward ratio." },
+        { "priority": "medium", "message": "Consider cutting back on London-session trades." },
+        { "priority": "medium", "message": "Drawdown is high — reduce your lot size." }
+      ],
+      "perAccount": [
+        { "name": "Account A", "items": ["Tighten your stops and improve your risk:reward ratio.", "Reduce lot size — drawdown is too high."] },
+        { "name": "Account B", "items": ["Rebuild your entry rules from the ground up.", "Consider cutting back on London-session trades."] }
+      ],
+      "winPatterns": [
+        { "title": "Top 3 hours by win rate", "items": ["09:00  68%  42 trades", "14:00  65%  31 trades", "21:00  62%  18 trades"] },
+        { "title": "Top 3 symbols by win rate", "items": ["XAUUSD  71%  88 trades", "USDJPY  64%  55 trades", "EURUSD  61%  43 trades"] },
+        { "title": "Avg. winning hold time", "items": ["2.4 hrs"] }
+      ]
+    }
+  },
+  "session": {
+    "asia": "Asia",
+    "london": "London",
+    "newyork": "New York"
+  },
+  "feedback": {
+    "title": "Contact us",
+    "body": "Type your message below. The Send button will open your mail app.",
+    "placeholder": "What's on your mind?",
+    "send": "Send via email",
+    "subject": "MT Report Viewer — Inquiry",
+    "to": "To: {{email}}"
+  },
+  "deleteAccount": {
+    "title": "Delete account",
+    "warning": "This can't be undone. All your reports and login info will be permanently removed.",
+    "proWarning": "⚠ You have an active Pro subscription. It will be canceled automatically when you delete your account.",
+    "confirmInstructionPart1": "Type",
+    "confirmInstructionPart2": "to confirm",
+    "confirmKeyword": "DELETE",
+    "submit": "Delete account",
+    "submitting": "Deleting…"
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "lastUpdated": "Last updated: May 1, 2025",
+    "sections": [
+      { "title": "1. Application", "body": "These Terms of Service (the \"Terms\") set out the conditions for using \"MT Report Viewer\" (the \"Service\"). By using the Service you agree to be bound by these Terms." },
+      { "title": "2. Service description", "body": "The Service is a web application that uploads MT4 / MT5 trade reports to the cloud and visualizes performance in your browser. It does not provide investment advice or trading recommendations." },
+      { "title": "3. Accounts", "items": [
+        "You must register with accurate information.",
+        "You are responsible for safeguarding your account and password.",
+        "You may not transfer or lend your account to a third party.",
+        "We may suspend accounts found to be in violation, without notice."
+      ] },
+      { "title": "4. Prohibited conduct", "body": "You agree not to:", "items": [
+        "Violate applicable law or public order and morals",
+        "Interfere with the operation of the Service",
+        "Attempt unauthorized access or reverse engineering",
+        "Attempt to access another user's data",
+        "Use the Service for unauthorized commercial purposes"
+      ] },
+      { "title": "5. Disclaimers", "items": [
+        "The Service is provided as-is. We do not guarantee accuracy, completeness, or continuity of data.",
+        "We are not liable for any damage (including trading losses) arising from use of the Service.",
+        "The Service may be interrupted due to server outages, maintenance, or other causes.",
+        "The Service is not intended to be relied upon as a basis for investment decisions."
+      ] },
+      { "title": "6. Changes and termination", "body": "We may change or terminate the Service at any time, without notice. Where reasonable, we will announce changes in the app or via email." },
+      { "title": "7. Intellectual property", "body": "All copyrights, trademarks, and other intellectual property rights related to the Service belong to the operator. Data you upload to the Service remains yours." },
+      { "title": "8. Changes to these Terms", "body": "These Terms may be changed at any time without notice. Continued use of the Service after a change constitutes acceptance of the updated Terms." },
+      { "title": "9. Governing law and jurisdiction", "body": "These Terms are governed by the laws of Japan. Any disputes shall be subject to the exclusive jurisdiction of the court with jurisdiction over the operator's location, as the court of first instance." }
+    ]
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated: May 1, 2025",
+    "sections": [
+      { "title": "1. Introduction", "body": "\"MT Report Viewer\" (the \"Service\") is a web application that aggregates and visualizes MT4/MT5 trade reports. This policy explains what user information we collect, how we use it, and how we manage it." },
+      { "title": "2. Information we collect", "body": "The Service collects and stores:", "items": [
+        "Email address and password (for authentication)",
+        "MT4/MT5 trade history (timestamps, symbols, P/L, etc.)",
+        "Account information (balance, equity, credit)",
+        "Open position information"
+      ] },
+      { "title": "3. How we use your information", "body": "We only use the information for:", "items": [
+        "Aggregating and displaying your trading results",
+        "Authentication and login management",
+        "Improving the Service and fixing issues"
+      ], "note": "We never share or sell your data to third parties." },
+      { "title": "4. Data storage", "body": "Data is stored in Supabase (PostgreSQL). Each user can only view and modify their own data, enforced via Row Level Security. The operator may access data for service operation and incident response." },
+      { "title": "5. Retention and deletion", "body": "If you wish to delete your account, you can do so from inside the app or by contacting us. Deleted data cannot be recovered." },
+      { "title": "6. Security", "body": "Data is transmitted over encrypted (HTTPS) connections, and passwords are stored encrypted. We cannot, however, guarantee absolute security on the internet." },
+      { "title": "7. Cookies and local storage", "body": "The Service uses browser local storage for session management. We do not use tracking for advertising." },
+      { "title": "8. Changes to this policy", "body": "This policy may be changed without prior notice. We will announce material changes inside the app." },
+      { "title": "9. Contact", "body": "For privacy-related questions, use the \"Contact\" link at the bottom of the page or email devtomoki9@gmail.com." }
+    ]
+  },
+  "manual": {
+    "title": "User guide",
+    "intro": {
+      "heading": "What MT Report Viewer is",
+      "body": "An app that automatically uploads your MT4 / MT5 trade reports to the cloud, so you can manage multiple accounts from a single browser. An EA on your PC writes the data, a PowerShell script picks up changes and uploads instantly, and the browser receives updates over Supabase Realtime — making the dashboard near-real-time.",
+      "prerequisitesTitle": "Setup assumptions",
+      "prerequisitesBody": "This app assumes <strong>one account per MT4/MT5 instance</strong> and <strong>one EA per account</strong>. Logging multiple accounts into a single instance, or attaching multiple EAs to the same account, is not supported."
+    },
+    "section1": {
+      "heading": "1. Sign up & sign in",
+      "signup": {
+        "title": "Create an account",
+        "steps": [
+          "Click \"Sign up\" on the login screen",
+          "Enter your email and a password (8+ characters), then click \"Create account\"",
+          "Click the link in the confirmation email to finish signing up",
+          "Click \"Back to sign in\" and sign in"
+        ]
+      },
+      "login": {
+        "title": "Sign in",
+        "steps": [
+          "Enter your email and password and click \"Sign in\""
+        ]
+      }
+    },
+    "section2": {
+      "heading": "2. First-time setup (PC side)",
+      "intro": "After signing in, the setup screen shows download buttons for each file you'll need.",
+      "step1": {
+        "title": "Install the EA",
+        "body": "Download <code>install.bat</code>, <code>MT4ReportExporter.mq4</code>, and <code>MT5ReportExporter.mq5</code> into the same folder, then run them in PowerShell."
+      },
+      "step2": {
+        "title": "Configure MT4/MT5",
+        "body": "install.bat will launch MT4/MT5 automatically. In each window that opens, do the following:",
+        "mt4Title": "For MT4",
+        "mt4Steps": [
+          "File → New Chart → choose any symbol",
+          "Navigator → Experts → drag <strong>MT4ReportExporter</strong> onto the chart → OK",
+          "File → Profiles → Save As → name it <strong>MTExporter</strong> → OK",
+          "File → Exit"
+        ],
+        "mt5Title": "For MT5",
+        "mt5Steps": [
+          "File → New Chart → choose any symbol",
+          "Navigator → Experts → drag <strong>MT5ReportExporter</strong> onto the chart → OK",
+          "File → Profiles → Save As → name it <strong>MTExporter</strong> → OK",
+          "File → Exit"
+        ],
+        "footnote": "* If you use both MT4 and MT5, repeat this in each window."
+      },
+      "step3": {
+        "title": "Set up the sync script",
+        "body1": "Download <code>sync-to-supabase.ps1</code> and <code>run-sync.vbs</code> into the same folder (e.g. Downloads).",
+        "body2": "When you download run-sync.vbs you'll be prompted for a password. Enter your login password — it gets embedded in the file along with your connection details.",
+        "body3": "* The Task Scheduler command below assumes Downloads. If you saved the files elsewhere, update the path in the command.",
+        "body4": "Then unblock the PS1 file:"
+      },
+      "step4": {
+        "title": "Register the scheduled task",
+        "body": "Set up a task that watches for file changes and uploads them in real time. Run this in PowerShell:"
+      }
+    },
+    "section3": {
+      "heading": "3. Day-to-day use",
+      "step1": {
+        "title": "Launching MT4/MT5",
+        "body": "After setup, always launch MT4/MT5 from the desktop's <strong>MT_Exporter.bat</strong>. The EA loads automatically and writes JSON files to <code>%USERPROFILE%\\MTExport\\</code>."
+      },
+      "step2": {
+        "title": "Viewing reports",
+        "body": "Open the app in your browser and sign in — your data loads automatically. If nothing shows up, click <strong>↻ Refresh</strong> in the top right."
+      },
+      "step3": {
+        "title": "Live updates",
+        "body": "Thanks to Supabase Realtime, the dashboard updates almost instantly when MT4/MT5 writes new data. Click <strong>↻ Refresh</strong> if you want to force an immediate update."
+      }
+    },
+    "section4": {
+      "heading": "4. The screens",
+      "screens": [
+        ["Summary", "Combined balance, floating P/L, net profit, win rate, PF, equity curve, and open positions across all accounts"],
+        ["AI Insights", "AI diagnosis, score cards, recommendations, per-account recommendations, and winning-pattern analysis. Free plan shows 1 diagnosis item; the rest is Pro-only"],
+        ["By Account", "Per-account stats, equity curves, and trade history"],
+        ["All Trades", "Browse, search, and filter every trade across all accounts"],
+        ["Calendar", "Daily P/L laid out on a monthly calendar"]
+      ],
+      "filterNote": "On the Summary, AI Insights, By Account, and All Trades tabs, the date range filter at the top narrows everything to the selected period.",
+      "cardOpsTitle": "Account-card actions on the By Account tab",
+      "cardOps": [
+        "<strong>Rename account</strong>: hover over the card and click ✎ to edit the display name",
+        "<strong>Auto-trading on/off</strong>: the toggle on the card remotely controls the EA's auto-trading. Changes are picked up by MT4/MT5 via Ctrl+E",
+        "<strong>Delete account data</strong>: the × button removes that account's data from the cloud"
+      ]
+    },
+    "section5": {
+      "heading": "5. Account management",
+      "items": [
+        "<strong>Sign out</strong>: top-right email/plan badge → dropdown → \"Sign out\"",
+        "<strong>Delete account</strong>: same dropdown → \"Delete account\" → type \"DELETE\" to confirm. All your data is permanently removed (no undo)"
+      ]
+    },
+    "section6": {
+      "heading": "6. Plans & subscriptions",
+      "headers": { "feature": "Feature", "free": "Free", "pro": "Pro" },
+      "rows": [
+        ["Sync & view trade data", "○", "○"],
+        ["Multiple accounts", "○", "○"],
+        ["Calendar & equity curve", "○", "○"],
+        ["AI Insights (diagnosis)", "1", "○"],
+        ["AI Insights (recommendations, per-account, patterns)", "—", "○"]
+      ],
+      "notes": [
+        "<strong>Upgrade to Pro</strong>: top-right dropdown → \"Upgrade\" opens the checkout page",
+        "<strong>Manage subscription</strong> (Pro only): same dropdown → \"Manage subscription\" lets you view billing, change plan, or cancel"
+      ]
+    },
+    "section7": {
+      "heading": "7. Contact",
+      "body": "For questions or bug reports, use the \"Contact\" link at the bottom of the page."
+    }
+  },
+  "help": {
+    "title": "Help / Troubleshooting",
+    "topics": {
+      "sync": "Data & sync",
+      "ea": "EA settings",
+      "auth": "Sign-in & passwords",
+      "plan": "Plans & billing"
+    },
+    "sync": {
+      "intro": "If data isn't showing up or isn't updating, try the steps below in order.",
+      "items": [
+        {
+          "n": "1",
+          "title": "Click the ↻ Refresh button",
+          "body": "<strong>↻ Refresh</strong> in the top right pulls the latest data from the server immediately. Try this first."
+        },
+        {
+          "n": "2",
+          "title": "Are you launching MT4/MT5 from MT_Exporter.bat?",
+          "body": "MT4/MT5 needs to be launched from <strong>MT_Exporter.bat</strong> on the desktop — not from a regular shortcut.",
+          "body2": "Launching from the regular shortcut skips the EA, so no JSON files are written."
+        },
+        {
+          "n": "3",
+          "title": "Check whether JSON files are being written",
+          "body": "Open the folder below in Explorer and confirm JSON files exist:",
+          "body2": "If nothing's there, the EA isn't running correctly. Check the \"Experts\" tab in MT4/MT5 for error logs."
+        },
+        {
+          "n": "4",
+          "title": "Check that Task Scheduler is running",
+          "body": "From the Start menu, search for \"Task Scheduler\" and look for a task named <strong>MTExportSync</strong>.",
+          "items": [
+            "Status should be <strong>Ready</strong>",
+            "Last Run Result should be <strong>The operation completed successfully. (0x0)</strong>"
+          ],
+          "body2": "If the task doesn't exist, recreate it with this command:"
+        },
+        {
+          "n": "5",
+          "title": "Did you change your password recently?",
+          "body": "<strong>run-sync.vbs</strong> has your login password baked in. If you change your password, the old one stops working and the sync stalls.",
+          "body2": "From the dashboard's setup screen, <strong>re-download run-sync.vbs</strong> and replace the file in Task Scheduler."
+        },
+        {
+          "n": "6",
+          "title": "Unblock the PowerShell script",
+          "body": "Windows security may block downloaded PowerShell scripts. Run this in PowerShell:",
+          "body2": "If it still won't run, change the execution policy from an elevated PowerShell:"
+        },
+        {
+          "n": "Q",
+          "title": "Only some trades show up in the detailed report",
+          "body": "If the Account History tab in MT4/MT5 is limited to a date range, the EA can only export trades within that range.",
+          "body2": "<strong>Fix:</strong>",
+          "items": [
+            "Open the <strong>Account History</strong> tab in MT4/MT5's bottom panel",
+            "<strong>Right-click</strong> the trade list",
+            "Choose <strong>All History</strong> from the menu"
+          ],
+          "body3": "Once you select All History, the next sync will pick up everything."
+        },
+        {
+          "n": "Q",
+          "title": "I deleted an account card but it keeps coming back",
+          "body": "The <strong>✕ button</strong> on a card deletes the account's data on the server too.",
+          "body2": "However, <strong>if the sync script is still running, MT4/MT5 will re-upload it next time it exports.</strong>",
+          "body3": "To stop a specific account from showing up entirely:",
+          "items": [
+            "Stop that account's EA (MT4ReportExporter / MT5ReportExporter) inside MT4/MT5",
+            "Delete the JSON file for that account number from the folder below"
+          ],
+          "body4": "JSON filenames include the account number (e.g. <code>12345678.json</code>). After deleting the file, click the <strong>✕ button</strong> on the card to remove the data on the server."
+        }
+      ]
+    },
+    "ea": {
+      "intro": "Settings related to how the EA runs.",
+      "items": [
+        {
+          "n": "Q",
+          "title": "Change the data update interval",
+          "body": "The EA parameter <strong>RealtimeSec</strong> sets the minimum export interval (in seconds) when ticks come in.",
+          "options": [
+            ["5s", "Minimum (lower bound)"],
+            ["10s", "Default · recommended"],
+            ["30s", "If you want to reduce load"],
+            ["60s", "Lightest update frequency"]
+          ],
+          "body2": "<strong>How to change:</strong> double-click the EA on the chart in MT4/MT5 → Inputs tab → edit <strong>RealtimeSec</strong> → OK. Values below 5 seconds are clamped to 5 internally."
+        },
+        {
+          "n": "Q",
+          "title": "Change the periodic export interval",
+          "body": "Even when no ticks come in, the EA exports periodically based on <strong>RefreshMinutes</strong>. Default is 1 minute.",
+          "body2": "<strong>How to change:</strong> double-click the EA on the chart → Inputs tab → edit <strong>RefreshMinutes</strong> → OK."
+        }
+      ]
+    },
+    "auth": {
+      "items": [
+        {
+          "n": "Q",
+          "title": "Forgot my password",
+          "body": "Click <strong>\"Forgot your password?\"</strong> on the sign-in screen and enter your email — a reset email will be sent.",
+          "body2": "If it doesn't arrive, check your spam folder."
+        },
+        {
+          "n": "Q",
+          "title": "Confirmation email never arrived",
+          "body": "If the sign-up confirmation email isn't arriving, check your spam folder. If it's still missing, wait a bit and try signing up again."
+        }
+      ]
+    },
+    "plan": {
+      "items": [
+        {
+          "n": "Q",
+          "title": "Still showing as Free after paying",
+          "body": "Webhook processing can take a few seconds. Click <strong>↻ Refresh</strong> in the top right to see if your plan has updated.",
+          "body2": "If nothing changes after a few minutes, please contact us."
+        },
+        {
+          "n": "Q",
+          "title": "How do I cancel my subscription?",
+          "body": "Top-right account menu (your email) → <strong>Manage subscription</strong> lets you cancel.",
+          "body2": "Cancellation takes effect at the end of the current billing period — you keep Pro features until then."
+        },
+        {
+          "n": "Q",
+          "title": "If I delete my account, does the subscription cancel too?",
+          "body": "Yes. When you delete a Pro account, your Lemon Squeezy subscription is canceled automatically."
+        },
+        {
+          "n": "Q",
+          "title": "Where can I find receipts and invoices?",
+          "body": "Account menu → <strong>Manage subscription</strong> opens the Lemon Squeezy customer portal, where you can view and download past invoices and receipts."
+        }
+      ]
+    }
   }
 }

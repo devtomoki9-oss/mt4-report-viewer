@@ -1,18 +1,19 @@
 import { useState, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 
-const COLS = [
-  { key: 'ticket', label: 'チケット', align: 'left' },
-  { key: 'openTime', label: 'オープン (ブローカー)', align: 'left' },
-  { key: 'closeTime', label: 'クローズ (ブローカー)', align: 'left' },
-  { key: 'type', label: '種別', align: 'left' },
-  { key: 'symbol', label: '通貨ペア', align: 'left' },
-  { key: 'size', label: 'ロット', align: 'right' },
-  { key: 'openPrice', label: 'オープン価格', align: 'right' },
-  { key: 'closePrice', label: 'クローズ価格', align: 'right' },
-  { key: 'swap', label: 'スワップ', align: 'right' },
-  { key: 'commission', label: '手数料', align: 'right' },
-  { key: 'netProfit', label: '純益', align: 'right' },
-  { key: 'account', label: '口座', align: 'left' },
+const COL_KEYS = [
+  { key: 'ticket',     align: 'left' },
+  { key: 'openTime',   align: 'left' },
+  { key: 'closeTime',  align: 'left' },
+  { key: 'type',       align: 'left' },
+  { key: 'symbol',     align: 'left' },
+  { key: 'size',       align: 'right' },
+  { key: 'openPrice',  align: 'right' },
+  { key: 'closePrice', align: 'right' },
+  { key: 'swap',       align: 'right' },
+  { key: 'commission', align: 'right' },
+  { key: 'netProfit',  align: 'right' },
+  { key: 'account',    align: 'left' },
 ]
 
 const PAGE_SIZE = 50
@@ -20,6 +21,8 @@ const PAGE_SIZE = 50
 const ALL = '__all__'
 
 export default function TradeTable({ trades = [], showSearch = true, aliases = {} }) {
+  const { t } = useTranslation()
+  const COLS = COL_KEYS.map(c => ({ ...c, label: t(`trades.table.columns.${c.key}`) }))
   const [sort, setSort] = useState({ key: 'closeTime', dir: 'desc' })
   const [symbolFilter, setSymbolFilter] = useState(ALL)
   const [typeFilter, setTypeFilter] = useState(ALL)
@@ -100,7 +103,7 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
             onChange={e => updateFilter(setSymbolFilter)(e.target.value)}
             className="bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-2.5 py-2 text-xs text-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20"
           >
-            <option value={ALL}>通貨ペア: すべて</option>
+            <option value={ALL}>{t('trades.table.filters.symbolAll')}</option>
             {symbolOptions.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
           <select
@@ -108,15 +111,15 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
             onChange={e => updateFilter(setTypeFilter)(e.target.value)}
             className="bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-2.5 py-2 text-xs text-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20"
           >
-            <option value={ALL}>種別: すべて</option>
-            {typeOptions.map(t => <option key={t} value={t}>{t}</option>)}
+            <option value={ALL}>{t('trades.table.filters.typeAll')}</option>
+            {typeOptions.map(typeOpt => <option key={typeOpt} value={typeOpt}>{typeOpt}</option>)}
           </select>
           <select
             value={accountFilter}
             onChange={e => updateFilter(setAccountFilter)(e.target.value)}
             className="bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-2.5 py-2 text-xs text-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 max-w-[200px]"
           >
-            <option value={ALL}>口座: すべて</option>
+            <option value={ALL}>{t('trades.table.filters.accountAll')}</option>
             {accountOptions.map(a => <option key={a} value={a}>{aliases[a] || a}</option>)}
           </select>
           {hasActiveFilter && (
@@ -124,43 +127,43 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
               onClick={resetFilters}
               className="px-2.5 py-2 text-xs rounded-lg bg-[#1a2235] text-slate-400 hover:bg-[#1f2d40] hover:text-slate-200 transition-colors"
             >
-              リセット
+              {t('trades.table.filters.reset')}
             </button>
           )}
-          <div className="text-xs text-slate-600 ml-auto">{sorted.length} 件</div>
+          <div className="text-xs text-slate-600 ml-auto">{t('units.items', { count: sorted.length })}</div>
         </div>
       )}
 
       {/* モバイルカードビュー */}
       <div className="sm:hidden space-y-2">
         {paged.length === 0 ? (
-          <div className="text-center py-8 text-slate-600 text-xs">データがありません</div>
-        ) : paged.map((t, i) => {
-          const isProfit = t.netProfit >= 0
-          const isBuy = t.type?.toLowerCase().startsWith('buy')
+          <div className="text-center py-8 text-slate-600 text-xs">{t('common.empty')}</div>
+        ) : paged.map((tr, i) => {
+          const isProfit = tr.netProfit >= 0
+          const isBuy = tr.type?.toLowerCase().startsWith('buy')
           return (
-            <div key={t.ticket + i} className="bg-[#111827] border border-[#1f2d40] rounded-xl p-3">
+            <div key={tr.ticket + i} className="bg-[#111827] border border-[#1f2d40] rounded-xl p-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className={`px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0 ${isBuy ? 'bg-emerald-900/40 text-emerald-400' : 'bg-red-900/40 text-red-400'}`}>
-                      {t.type}
+                      {tr.type}
                     </span>
-                    <span className="text-sm font-semibold text-slate-200">{t.symbol || '—'}</span>
-                    <span className="text-xs text-slate-500 font-mono">{t.size?.toFixed(2)} lot</span>
+                    <span className="text-sm font-semibold text-slate-200">{tr.symbol || '—'}</span>
+                    <span className="text-xs text-slate-500 font-mono">{t('trades.table.lotsMobile', { lots: tr.size?.toFixed(2) })}</span>
                   </div>
-                  <div className="text-xs text-slate-500 mt-1">{t.closeTime?.slice(0, 10) || '—'}</div>
-                  <div className="text-xs text-slate-600 font-mono mt-0.5">{fmtPrice(t.openPrice)} → {fmtPrice(t.closePrice)}</div>
+                  <div className="text-xs text-slate-500 mt-1">{tr.closeTime?.slice(0, 10) || '—'}</div>
+                  <div className="text-xs text-slate-600 font-mono mt-0.5">{fmtPrice(tr.openPrice)} → {fmtPrice(tr.closePrice)}</div>
                 </div>
                 <div className={`font-mono text-sm font-bold flex-shrink-0 ${isProfit ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {isProfit ? '+' : ''}{t.netProfit.toFixed(2)}
+                  {isProfit ? '+' : ''}{tr.netProfit.toFixed(2)}
                 </div>
               </div>
-              {(t.account || t.swap || t.commission) && (
+              {(tr.account || tr.swap || tr.commission) && (
                 <div className="flex items-center gap-3 mt-1.5 text-xs">
-                  {t.account && <span className="text-slate-600 truncate">{aliases[t.account] || t.account}</span>}
-                  {!!t.swap && <span className={t.swap < 0 ? 'text-red-400/70' : 'text-emerald-400/70'}>SW {t.swap.toFixed(2)}</span>}
-                  {!!t.commission && <span className="text-slate-600">手数料 {t.commission.toFixed(2)}</span>}
+                  {tr.account && <span className="text-slate-600 truncate">{aliases[tr.account] || tr.account}</span>}
+                  {!!tr.swap && <span className={tr.swap < 0 ? 'text-red-400/70' : 'text-emerald-400/70'}>{t('trades.table.swapMobile', { value: tr.swap.toFixed(2) })}</span>}
+                  {!!tr.commission && <span className="text-slate-600">{t('trades.table.commissionMobile', { value: tr.commission.toFixed(2) })}</span>}
                 </div>
               )}
             </div>
@@ -191,35 +194,35 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
           <tbody>
             {paged.length === 0 ? (
               <tr>
-                <td colSpan={COLS.length} className="text-center py-8 text-slate-600">データがありません</td>
+                <td colSpan={COLS.length} className="text-center py-8 text-slate-600">{t('common.empty')}</td>
               </tr>
-            ) : paged.map((t, i) => {
-              const isProfit = t.netProfit >= 0
-              const isBuy = t.type?.toLowerCase().startsWith('buy')
+            ) : paged.map((tr, i) => {
+              const isProfit = tr.netProfit >= 0
+              const isBuy = tr.type?.toLowerCase().startsWith('buy')
               return (
-                <tr key={t.ticket + i} className="border-b border-[#1f2d40]/40 hover:bg-[#1a2235]/60 transition-colors">
-                  <td className="px-3 py-2 text-slate-500 font-mono">{t.ticket || '—'}</td>
-                  <td className="px-3 py-2 text-slate-500">{t.openTime?.slice(0, 16) || '—'}</td>
-                  <td className="px-3 py-2 text-slate-500">{t.closeTime?.slice(0, 16) || '—'}</td>
+                <tr key={tr.ticket + i} className="border-b border-[#1f2d40]/40 hover:bg-[#1a2235]/60 transition-colors">
+                  <td className="px-3 py-2 text-slate-500 font-mono">{tr.ticket || '—'}</td>
+                  <td className="px-3 py-2 text-slate-500">{tr.openTime?.slice(0, 16) || '—'}</td>
+                  <td className="px-3 py-2 text-slate-500">{tr.closeTime?.slice(0, 16) || '—'}</td>
                   <td className="px-3 py-2">
                     <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${isBuy ? 'bg-emerald-900/40 text-emerald-400' : 'bg-red-900/40 text-red-400'}`}>
-                      {t.type}
+                      {tr.type}
                     </span>
                   </td>
-                  <td className="px-3 py-2 text-slate-300 font-medium">{t.symbol || '—'}</td>
-                  <td className="px-3 py-2 text-right font-mono text-slate-400">{t.size?.toFixed(2) || '—'}</td>
-                  <td className="px-3 py-2 text-right font-mono text-slate-500">{fmtPrice(t.openPrice)}</td>
-                  <td className="px-3 py-2 text-right font-mono text-slate-500">{fmtPrice(t.closePrice)}</td>
-                  <td className={`px-3 py-2 text-right font-mono ${t.swap < 0 ? 'text-red-400/70' : t.swap > 0 ? 'text-emerald-400/70' : 'text-slate-600'}`}>
-                    {t.swap ? (t.swap >= 0 ? '+' : '') + t.swap.toFixed(2) : '—'}
+                  <td className="px-3 py-2 text-slate-300 font-medium">{tr.symbol || '—'}</td>
+                  <td className="px-3 py-2 text-right font-mono text-slate-400">{tr.size?.toFixed(2) || '—'}</td>
+                  <td className="px-3 py-2 text-right font-mono text-slate-500">{fmtPrice(tr.openPrice)}</td>
+                  <td className="px-3 py-2 text-right font-mono text-slate-500">{fmtPrice(tr.closePrice)}</td>
+                  <td className={`px-3 py-2 text-right font-mono ${tr.swap < 0 ? 'text-red-400/70' : tr.swap > 0 ? 'text-emerald-400/70' : 'text-slate-600'}`}>
+                    {tr.swap ? (tr.swap >= 0 ? '+' : '') + tr.swap.toFixed(2) : '—'}
                   </td>
-                  <td className={`px-3 py-2 text-right font-mono ${t.commission < 0 ? 'text-red-400/70' : 'text-slate-600'}`}>
-                    {t.commission ? t.commission.toFixed(2) : '—'}
+                  <td className={`px-3 py-2 text-right font-mono ${tr.commission < 0 ? 'text-red-400/70' : 'text-slate-600'}`}>
+                    {tr.commission ? tr.commission.toFixed(2) : '—'}
                   </td>
                   <td className={`px-3 py-2 text-right font-mono font-bold ${isProfit ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {isProfit ? '+' : ''}{t.netProfit.toFixed(2)}
+                    {isProfit ? '+' : ''}{tr.netProfit.toFixed(2)}
                   </td>
-                  <td className="px-3 py-2 text-slate-500 truncate max-w-[100px]" title={t.account}>{aliases[t.account] || t.account || '—'}</td>
+                  <td className="px-3 py-2 text-slate-500 truncate max-w-[100px]" title={tr.account}>{aliases[tr.account] || tr.account || '—'}</td>
                 </tr>
               )
             })}
@@ -234,7 +237,7 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
             onClick={() => goToPage(p => p - 1)}
             className="px-3 py-1.5 text-xs rounded-lg bg-[#1a2235] text-slate-400 disabled:opacity-30 hover:bg-[#1f2d40] transition-colors"
           >
-            ← 前
+            {t('common.prev')}
           </button>
           <span className="text-xs text-slate-500">{page + 1} / {pages}</span>
           <button
@@ -242,7 +245,7 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
             onClick={() => goToPage(p => p + 1)}
             className="px-3 py-1.5 text-xs rounded-lg bg-[#1a2235] text-slate-400 disabled:opacity-30 hover:bg-[#1f2d40] transition-colors"
           >
-            次 →
+            {t('common.next')}
           </button>
         </div>
       )}

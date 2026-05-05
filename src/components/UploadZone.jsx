@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export default function UploadZone({ onFiles }) {
+  const { t } = useTranslation()
   const inputRef = useRef(null)
   const [dragging, setDragging] = useState(false)
 
@@ -39,9 +41,9 @@ export default function UploadZone({ onFiles }) {
         📊
       </div>
       <div className="text-center">
-        <div className="text-slate-300 font-semibold mb-1">MT4レポートをドロップ</div>
-        <div className="text-slate-500 text-sm">または クリックしてファイルを選択</div>
-        <div className="text-slate-600 text-xs mt-2">MT4 の「詳細レポート」HTML ファイル対応 · 複数ファイル同時読み込み可</div>
+        <div className="text-slate-300 font-semibold mb-1">{t('upload.title')}</div>
+        <div className="text-slate-500 text-sm">{t('upload.subtitle')}</div>
+        <div className="text-slate-600 text-xs mt-2">{t('upload.hint')}</div>
       </div>
     </div>
   )

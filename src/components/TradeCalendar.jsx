@@ -1,6 +1,5 @@
 import { useState, useMemo, useRef } from 'react'
-
-const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土']
+import { useTranslation } from 'react-i18next'
 
 function fmt2(n) {
   if (n == null) return '—'
@@ -16,6 +15,8 @@ function toLocalDateKey(d) {
 }
 
 export default function TradeCalendar({ trades = [], aliases = {} }) {
+  const { t, i18n } = useTranslation()
+  const WEEKDAYS = t('calendar.weekdays', { returnObjects: true })
   const today = new Date()
   const todayKey = toLocalDateKey(today)
   const [year,  setYear]  = useState(today.getFullYear())
@@ -109,14 +110,14 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
       {/* 口座フィルタ */}
       {accountNames.length > 1 && (
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-xs text-slate-500 mr-1">口座：</span>
+          <span className="text-xs text-slate-500 mr-1">{t('calendar.accountFilterLabel')}</span>
           <button
             onClick={() => { setSelectedAccount(null); setSelectedDay(null) }}
             className={`px-3 py-1 text-xs rounded-full border transition-colors
               ${!selectedAccount
                 ? 'bg-blue-600/30 border-blue-500/50 text-blue-300'
                 : 'border-[#1f2d40] text-slate-500 hover:text-slate-300'}`}>
-            全口座
+            {t('calendar.allAccounts')}
           </button>
           {accountNames.map(name => {
             const active = selectedAccount === name
@@ -145,7 +146,7 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
             ‹
           </button>
           <div className="text-base font-semibold text-slate-100">
-            {year}年 {month + 1}月
+            {t('calendar.monthYear', { year, month: month + 1, monthName: new Date(year, month).toLocaleString(i18n.language, { month: 'long' }) })}
           </div>
           <button
             onClick={nextMonth}
@@ -157,21 +158,21 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
         {/* 月集計バー */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs border-t border-[#1f2d40] pt-3">
           <div>
-            <div className="text-slate-500 mb-0.5">月間損益</div>
+            <div className="text-slate-500 mb-0.5">{t('calendar.metrics.monthProfit')}</div>
             <div className={`font-semibold text-sm ${monthStats.profit > 0 ? 'text-emerald-400' : monthStats.profit < 0 ? 'text-red-400' : 'text-slate-400'}`}>
               {monthStats.profit === 0 ? '—' : fmt2(monthStats.profit)}
             </div>
           </div>
           <div>
-            <div className="text-slate-500 mb-0.5">取引数</div>
+            <div className="text-slate-500 mb-0.5">{t('calendar.metrics.trades')}</div>
             <div className="font-semibold text-sm text-slate-300">{monthStats.tradeCount}</div>
           </div>
           <div>
-            <div className="text-slate-500 mb-0.5">稼働日</div>
-            <div className="font-semibold text-sm text-slate-300">{monthStats.tradingDays}日</div>
+            <div className="text-slate-500 mb-0.5">{t('calendar.metrics.tradingDays')}</div>
+            <div className="font-semibold text-sm text-slate-300">{t('calendar.tradingDaysValue', { count: monthStats.tradingDays })}</div>
           </div>
           <div>
-            <div className="text-slate-500 mb-0.5">勝日/負日</div>
+            <div className="text-slate-500 mb-0.5">{t('calendar.metrics.winLossDays')}</div>
             <div className="font-semibold text-sm">
               <span className="text-emerald-400">{monthStats.wins}</span>
               <span className="text-slate-600"> / </span>
@@ -224,7 +225,7 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
                       {fmt2(data.profit)}
                     </div>
                     <div className="text-[9px] text-slate-600 leading-tight">
-                      {data.trades.length}件
+                      {t('units.items', { count: data.trades.length })}
                     </div>
                   </div>
                 )}
@@ -243,8 +244,8 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
           <div ref={tradeTableRef} className="bg-[#111827] border border-[#1f2d40] rounded-xl overflow-hidden">
             <div className="px-4 py-3 border-b border-[#1f2d40] flex items-center justify-between">
               <div className="text-sm font-semibold text-slate-300">
-                {year}年{month + 1}月{selectedDay}日
-                <span className="ml-2 text-xs font-normal text-slate-500">{sorted.length}件</span>
+                {t('calendar.dayHeading', { year, month: month + 1, day: selectedDay, monthName: new Date(year, month).toLocaleString(i18n.language, { month: 'long' }) })}
+                <span className="ml-2 text-xs font-normal text-slate-500">{t('units.items', { count: sorted.length })}</span>
               </div>
               <div className={`text-sm font-bold ${selectedData.profit > 0 ? 'text-emerald-400' : selectedData.profit < 0 ? 'text-red-400' : 'text-slate-400'}`}>
                 {fmt2(selectedData.profit)}
@@ -254,12 +255,12 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
               <table className="w-full text-xs">
                 <thead>
                   <tr className="text-slate-500 border-b border-[#1f2d40]">
-                    <th className="px-3 py-2 text-left font-medium">時刻 (ブローカー)</th>
-                    <th className="px-3 py-2 text-left font-medium">通貨</th>
-                    <th className="px-3 py-2 text-left font-medium">タイプ</th>
-                    <th className="px-3 py-2 text-right font-medium">ロット</th>
-                    <th className="px-3 py-2 text-right font-medium">損益</th>
-                    <th className="px-3 py-2 text-left font-medium hidden sm:table-cell">口座</th>
+                    <th className="px-3 py-2 text-left font-medium">{t('calendar.table.time')}</th>
+                    <th className="px-3 py-2 text-left font-medium">{t('calendar.table.symbol')}</th>
+                    <th className="px-3 py-2 text-left font-medium">{t('calendar.table.type')}</th>
+                    <th className="px-3 py-2 text-right font-medium">{t('calendar.table.lots')}</th>
+                    <th className="px-3 py-2 text-right font-medium">{t('calendar.table.profit')}</th>
+                    <th className="px-3 py-2 text-left font-medium hidden sm:table-cell">{t('calendar.table.account')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -293,7 +294,7 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
                   disabled={tradePage === 0}
                   onClick={() => { setTradePage(p => p - 1); if (tradeTableRef.current) { const y = tradeTableRef.current.getBoundingClientRect().top + window.scrollY - 72; window.scrollTo({ top: y, behavior: 'smooth' }) } }}
                   className="px-3 py-1.5 text-xs rounded-lg bg-[#1a2235] text-slate-400 disabled:opacity-30 hover:bg-[#1f2d40] transition-colors">
-                  ← 前
+                  {t('common.prev')}
                 </button>
                 <span className="text-xs text-slate-500 tabular-nums">
                   {tradePage + 1} / {pages}
@@ -302,7 +303,7 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
                   disabled={tradePage >= pages - 1}
                   onClick={() => { setTradePage(p => p + 1); if (tradeTableRef.current) { const y = tradeTableRef.current.getBoundingClientRect().top + window.scrollY - 72; window.scrollTo({ top: y, behavior: 'smooth' }) } }}
                   className="px-3 py-1.5 text-xs rounded-lg bg-[#1a2235] text-slate-400 disabled:opacity-30 hover:bg-[#1f2d40] transition-colors">
-                  次 →
+                  {t('common.next')}
                 </button>
               </div>
             )}

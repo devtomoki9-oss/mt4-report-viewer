@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   calcTradeScore, calcRiskScore,
   generateAlerts, generateInsights, generateSuggestions, analyzeWinPatterns,
@@ -6,29 +7,45 @@ import {
 
 // ── ユーティリティ ──────────────────────────────────
 
-function fmtHold(minutes) {
-  if (minutes < 60)   return `${Math.round(minutes)}分`
-  if (minutes < 1440) return `${(minutes / 60).toFixed(1)}時間`
-  return `${(minutes / 1440).toFixed(1)}日`
+function fmtHold(minutes, t) {
+  if (minutes < 60)   return t('insight.duration.minutes', { count: Math.round(minutes) })
+  if (minutes < 1440) return t('insight.duration.hours',   { count: Number((minutes / 60).toFixed(1)) })
+  return t('insight.duration.days', { count: Number((minutes / 1440).toFixed(1)) })
 }
 
-function tradeScoreStyle(score) {
-  if (score >= 80) return { color: 'text-emerald-400', border: 'border-emerald-500/30', bg: 'bg-emerald-500/10', label: '優秀' }
-  if (score >= 60) return { color: 'text-blue-400',    border: 'border-blue-500/30',    bg: 'bg-blue-500/10',    label: '良好' }
-  if (score >= 40) return { color: 'text-amber-400',   border: 'border-amber-500/30',   bg: 'bg-amber-500/10',   label: '普通' }
-  return               { color: 'text-red-400',     border: 'border-red-500/30',     bg: 'bg-red-500/10',     label: '要改善' }
+// rules messages emitted by tradeAnalytics carry { i18nKey, i18nParams? } —
+// resolve them through t(), translating sessionId into a localized label first.
+function resolveMessage(item, t) {
+  if (!item.i18nKey) return item.message ?? ''
+  const params = { ...(item.i18nParams ?? {}) }
+  if (params.sessionId) {
+    params.session = t(`session.${params.sessionId}`)
+    delete params.sessionId
+  }
+  return t(item.i18nKey, params)
 }
 
-function riskScoreStyle(score) {
-  if (score < 30) return { color: 'text-emerald-400', border: 'border-emerald-500/30', bg: 'bg-emerald-500/10', label: '低リスク' }
-  if (score < 60) return { color: 'text-amber-400',   border: 'border-amber-500/30',   bg: 'bg-amber-500/10',   label: '中リスク' }
-  if (score < 80) return { color: 'text-orange-400',  border: 'border-orange-500/30',  bg: 'bg-orange-500/10',  label: '高リスク' }
-  return               { color: 'text-red-400',     border: 'border-red-500/30',     bg: 'bg-red-500/10',     label: '危険' }
+function makeTradeScoreStyle(t) {
+  return (score) => {
+    if (score >= 80) return { color: 'text-emerald-400', border: 'border-emerald-500/30', bg: 'bg-emerald-500/10', label: t('insight.score.tradeGrades.excellent') }
+    if (score >= 60) return { color: 'text-blue-400',    border: 'border-blue-500/30',    bg: 'bg-blue-500/10',    label: t('insight.score.tradeGrades.good') }
+    if (score >= 40) return { color: 'text-amber-400',   border: 'border-amber-500/30',   bg: 'bg-amber-500/10',   label: t('insight.score.tradeGrades.average') }
+    return               { color: 'text-red-400',     border: 'border-red-500/30',     bg: 'bg-red-500/10',     label: t('insight.score.tradeGrades.needWork') }
+  }
+}
+
+function makeRiskScoreStyle(t) {
+  return (score) => {
+    if (score < 30) return { color: 'text-emerald-400', border: 'border-emerald-500/30', bg: 'bg-emerald-500/10', label: t('insight.score.riskGrades.low') }
+    if (score < 60) return { color: 'text-amber-400',   border: 'border-amber-500/30',   bg: 'bg-amber-500/10',   label: t('insight.score.riskGrades.medium') }
+    if (score < 80) return { color: 'text-orange-400',  border: 'border-orange-500/30',  bg: 'bg-orange-500/10',  label: t('insight.score.riskGrades.high') }
+    return               { color: 'text-red-400',     border: 'border-red-500/30',     bg: 'bg-red-500/10',     label: t('insight.score.riskGrades.danger') }
+  }
 }
 
 // ── 小コンポーネント ────────────────────────────────
 
-function AlertBanner({ alert }) {
+function AlertBanner({ alert, t }) {
   const isDanger = alert.level === 'danger'
   return (
     <div className={`flex items-start gap-3 px-4 py-3 rounded-xl border text-xs
@@ -36,18 +53,18 @@ function AlertBanner({ alert }) {
         ? 'bg-red-500/10 border-red-500/30 text-red-300'
         : 'bg-amber-500/10 border-amber-500/30 text-amber-300'}`}>
       <span className="text-base flex-shrink-0 mt-0.5">{isDanger ? '🚨' : '⚡'}</span>
-      <span>{alert.message}</span>
+      <span>{resolveMessage(alert, t)}</span>
     </div>
   )
 }
 
-function ScoreCard({ label, score, styleFn, subtitle }) {
+function ScoreCard({ label, score, styleFn, subtitle, t }) {
   if (score === null) {
     return (
       <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4 flex flex-col items-center justify-center gap-1">
         <div className="text-xs text-slate-500">{label}</div>
         <div className="text-2xl font-bold text-slate-600 font-mono">—</div>
-        <div className="text-[10px] text-slate-600">データ不足</div>
+        <div className="text-[10px] text-slate-600">{t('insight.score.insufficientData')}</div>
       </div>
     )
   }
@@ -62,15 +79,15 @@ function ScoreCard({ label, score, styleFn, subtitle }) {
   )
 }
 
-function PriorityBadge({ priority }) {
+function PriorityBadge({ priority, t }) {
   if (priority === 'high')
-    return <span className="text-[9px] bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.5 rounded font-bold">高</span>
+    return <span className="text-[9px] bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.5 rounded font-bold">{t('insight.priority.high')}</span>
   if (priority === 'medium')
-    return <span className="text-[9px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded font-bold">中</span>
+    return <span className="text-[9px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded font-bold">{t('insight.priority.medium')}</span>
   return null
 }
 
-function InsightRow({ insight }) {
+function InsightRow({ insight, t }) {
   const isWarn = insight.type === 'warning'
   return (
     <div className={`flex items-start gap-3 px-3 py-2.5 rounded-lg border text-xs
@@ -78,13 +95,13 @@ function InsightRow({ insight }) {
         ? 'bg-amber-500/5 border-amber-500/20 text-amber-200'
         : 'bg-emerald-500/5 border-emerald-500/20 text-emerald-200'}`}>
       <span className="flex-shrink-0 mt-0.5">{isWarn ? '⚠' : '✅'}</span>
-      <span className="flex-1">{insight.message}</span>
-      <PriorityBadge priority={insight.priority} />
+      <span className="flex-1">{resolveMessage(insight, t)}</span>
+      <PriorityBadge priority={insight.priority} t={t} />
     </div>
   )
 }
 
-function SuggestionRow({ item, index }) {
+function SuggestionRow({ item, index, t }) {
   const isHigh = item.priority === 'high'
   return (
     <div className="flex items-start gap-3 px-3 py-2.5 rounded-lg border border-[#1f2d40] bg-[#0d1520] text-xs">
@@ -92,13 +109,13 @@ function SuggestionRow({ item, index }) {
         ${isHigh ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'}`}>
         {index + 1}
       </span>
-      <span className="flex-1 text-slate-300">{item.message}</span>
-      <PriorityBadge priority={item.priority} />
+      <span className="flex-1 text-slate-300">{resolveMessage(item, t)}</span>
+      <PriorityBadge priority={item.priority} t={t} />
     </div>
   )
 }
 
-function LockedSection({ count, onUpgrade, children, label }) {
+function LockedSection({ count, onUpgrade, children, label, t }) {
   return (
     <div className="relative mt-1">
       <div className="space-y-2 blur-[3px] pointer-events-none select-none opacity-60">
@@ -108,48 +125,48 @@ function LockedSection({ count, onUpgrade, children, label }) {
         <button
           onClick={onUpgrade}
           className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 py-2 rounded-lg font-semibold shadow-lg transition-colors">
-          {label ?? `Pro にアップグレードして残り${count}件を表示`}
+          {label ?? t('insight.ai.lockedRemainder', { count })}
         </button>
       </div>
     </div>
   )
 }
 
-function WinPatternsContent({ patterns }) {
+function WinPatternsContent({ patterns, t }) {
   if (!patterns) return null
   const { topHours, topSymbols, avgWinHold } = patterns
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
       <div>
-        <div className="text-slate-500 mb-2 font-medium">勝率の高い時間帯 TOP3</div>
+        <div className="text-slate-500 mb-2 font-medium">{t('insight.winPatterns.topHours')}</div>
         {topHours.length === 0
-          ? <div className="text-slate-600">データ不足</div>
+          ? <div className="text-slate-600">{t('insight.winPatterns.noData')}</div>
           : topHours.map((h, i) => (
             <div key={i} className="flex items-center justify-between py-1 border-b border-[#1a2235]">
               <span className="text-slate-300 font-mono">{h.label}</span>
               <span className="text-emerald-400 font-semibold">{(h.winRate * 100).toFixed(0)}%</span>
-              <span className="text-slate-600">{h.total}件</span>
+              <span className="text-slate-600">{t('units.items', { count: h.total })}</span>
             </div>
           ))}
       </div>
       <div>
-        <div className="text-slate-500 mb-2 font-medium">勝率の高い通貨ペア TOP3</div>
+        <div className="text-slate-500 mb-2 font-medium">{t('insight.winPatterns.topSymbols')}</div>
         {topSymbols.length === 0
-          ? <div className="text-slate-600">データ不足</div>
+          ? <div className="text-slate-600">{t('insight.winPatterns.noData')}</div>
           : topSymbols.map((s, i) => (
             <div key={i} className="flex items-center justify-between py-1 border-b border-[#1a2235]">
               <span className="text-slate-300 font-medium">{s.name}</span>
               <span className="text-emerald-400 font-semibold">{(s.winRate * 100).toFixed(0)}%</span>
-              <span className="text-slate-600">{s.total}件</span>
+              <span className="text-slate-600">{t('units.items', { count: s.total })}</span>
             </div>
           ))}
       </div>
       <div>
-        <div className="text-slate-500 mb-2 font-medium">勝ちトレードの平均保有時間</div>
+        <div className="text-slate-500 mb-2 font-medium">{t('insight.winPatterns.avgWinHoldTitle')}</div>
         <div className="text-2xl font-bold text-emerald-400 font-mono mt-3">
-          {avgWinHold > 0 ? fmtHold(avgWinHold) : '—'}
+          {avgWinHold > 0 ? fmtHold(avgWinHold, t) : '—'}
         </div>
-        <div className="text-slate-600 mt-1">勝ちトレード平均</div>
+        <div className="text-slate-600 mt-1">{t('insight.winPatterns.avgWinHoldLabel')}</div>
       </div>
     </div>
   )
@@ -158,6 +175,9 @@ function WinPatternsContent({ patterns }) {
 // ── メインコンポーネント ────────────────────────────
 
 export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgrade, perAccountData = [] }) {
+  const { t } = useTranslation()
+  const tradeScoreStyle = useMemo(() => makeTradeScoreStyle(t), [t])
+  const riskScoreStyle  = useMemo(() => makeRiskScoreStyle(t),  [t])
   const alerts      = useMemo(() => generateAlerts(trades, stats),     [trades, stats])
   const insights    = useMemo(() => generateInsights(trades, stats),   [trades, stats])
   const suggestions = useMemo(() => generateSuggestions(trades, stats),[trades, stats])
@@ -186,21 +206,23 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
     <div className="space-y-3">
 
       {/* アラートバナー */}
-      {alerts.map((a, i) => <AlertBanner key={i} alert={a} />)}
+      {alerts.map((a, i) => <AlertBanner key={i} alert={a} t={t} />)}
 
       {/* スコアカード */}
       <div className="grid grid-cols-2 gap-3">
         <ScoreCard
-          label="トレードスコア"
+          label={t('insight.score.trade.title')}
           score={tradeScore}
           styleFn={tradeScoreStyle}
-          subtitle="品質 0〜100"
+          subtitle={t('insight.score.trade.subtitle')}
+          t={t}
         />
         <ScoreCard
-          label="リスクスコア"
+          label={t('insight.score.risk.title')}
           score={riskScore}
           styleFn={riskScoreStyle}
-          subtitle="高いほど危険"
+          subtitle={t('insight.score.risk.subtitle')}
+          t={t}
         />
       </div>
 
@@ -209,17 +231,17 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span>🤖</span>
-            <span className="text-sm font-semibold text-slate-200">AI診断</span>
+            <span className="text-sm font-semibold text-slate-200">{t('insight.ai.title')}</span>
           </div>
           <div className="flex items-center gap-2">
             {plan === 'free' && (
               <span className="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded font-medium">
-                Free: 1件
+                {t('insight.ai.freeBadge')}
               </span>
             )}
             {plan === 'pro' && (
               <span className="text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1.5 py-0.5 rounded font-medium">
-                Pro
+                {t('insight.ai.proBadge')}
               </span>
             )}
           </div>
@@ -227,18 +249,18 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
 
         {insights.length === 0 ? (
           <div className="text-xs text-slate-600 py-2">
-            取引データが少ないため診断できません（5件以上必要）
+            {t('insight.ai.insufficient')}
           </div>
         ) : (
           <div className="space-y-2">
-            {visibleInsights.map((ins, i) => <InsightRow key={i} insight={ins} />)}
+            {visibleInsights.map((ins, i) => <InsightRow key={i} insight={ins} t={t} />)}
 
             {lockedInsightCount > 0 && (
               <LockedSection
                 count={lockedInsightCount}
                 onUpgrade={onUpgrade}
-                label={`Pro にアップグレードして残り${lockedInsightCount}件を表示`}>
-                {insights.slice(1).map((ins, i) => <InsightRow key={i} insight={ins} />)}
+                t={t}>
+                {insights.slice(1).map((ins, i) => <InsightRow key={i} insight={ins} t={t} />)}
               </LockedSection>
             )}
           </div>
@@ -250,11 +272,11 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span>💡</span>
-            <span className="text-sm font-semibold text-slate-200">改善提案</span>
+            <span className="text-sm font-semibold text-slate-200">{t('insight.suggestions.title')}</span>
           </div>
           {plan === 'free' && (
             <span className="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded font-medium">
-              Pro限定
+              {t('insight.suggestions.proBadge')}
             </span>
           )}
         </div>
@@ -262,25 +284,21 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
         {plan === 'free' ? (
           <div className="relative">
             <div className="space-y-2 blur-[3px] pointer-events-none select-none opacity-40">
-              {[
-                { priority: 'high',   message: 'ストップロスを見直し、リスクリワード比を改善してください' },
-                { priority: 'medium', message: 'ロンドン時間のトレードを削減することを検討してください' },
-                { priority: 'medium', message: 'ドローダウンが大きいため、ロットサイズを下げることを検討してください' },
-              ].map((item, i) => <SuggestionRow key={i} item={item} index={i} />)}
+              {(t('insight.demo.suggestions', { returnObjects: true }) || []).map((item, i) => <SuggestionRow key={i} item={item} index={i} t={t} />)}
             </div>
             <div className="absolute inset-0 flex items-center justify-center">
               <button
                 onClick={onUpgrade}
                 className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 py-2 rounded-lg font-semibold shadow-lg transition-colors">
-                Pro にアップグレードして解放
+                {t('insight.suggestions.unlockCta')}
               </button>
             </div>
           </div>
         ) : suggestions.length === 0 ? (
-          <div className="text-xs text-slate-600 py-2">改善提案なし（良好なパフォーマンスです）</div>
+          <div className="text-xs text-slate-600 py-2">{t('insight.suggestions.noneNeeded')}</div>
         ) : (
           <div className="space-y-2">
-            {suggestions.map((item, i) => <SuggestionRow key={i} item={item} index={i} />)}
+            {suggestions.map((item, i) => <SuggestionRow key={i} item={item} index={i} t={t} />)}
           </div>
         )}
       </div>
@@ -291,11 +309,11 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <span>📋</span>
-              <span className="text-sm font-semibold text-slate-200">口座別改善提案</span>
+              <span className="text-sm font-semibold text-slate-200">{t('insight.suggestions.perAccountTitle')}</span>
             </div>
             {plan === 'free' && (
               <span className="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded font-medium">
-                Pro限定
+                {t('insight.suggestions.proBadge')}
               </span>
             )}
           </div>
@@ -303,15 +321,12 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
           {plan === 'free' ? (
             <div className="relative">
               <div className="space-y-3 blur-[3px] pointer-events-none select-none opacity-40">
-                {[
-                  { name: '口座A', items: ['ストップロスを見直し、リスクリワード比を改善してください', 'ドローダウンが大きいためロットサイズを下げてください'] },
-                  { name: '口座B', items: ['エントリー条件を根本から見直してください', 'ロンドン時間のトレードを削減することを検討してください'] },
-                ].map(({ name, items }) => (
+                {(t('insight.demo.perAccount', { returnObjects: true }) || []).map(({ name, items }) => (
                   <div key={name} className="border border-[#1f2d40] rounded-lg p-3">
                     <div className="text-xs font-semibold text-slate-400 mb-2">{name}</div>
                     <div className="space-y-1.5">
                       {items.map((msg, i) => (
-                        <SuggestionRow key={i} item={{ priority: i === 0 ? 'high' : 'medium', message: msg }} index={i} />
+                        <SuggestionRow key={i} item={{ priority: i === 0 ? 'high' : 'medium', message: msg }} index={i} t={t} />
                       ))}
                     </div>
                   </div>
@@ -321,7 +336,7 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
                 <button
                   onClick={onUpgrade}
                   className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 py-2 rounded-lg font-semibold shadow-lg transition-colors">
-                  Pro にアップグレードして解放
+                  {t('insight.suggestions.unlockCta')}
                 </button>
               </div>
             </div>
@@ -335,15 +350,15 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
                     </span>
                     {accScore !== null && (
                       <span className={`text-xs font-mono ${tradeScoreStyle(accScore).color}`}>
-                        スコア {accScore}
+                        {t('insight.suggestions.perAccountScore', { score: accScore })}
                       </span>
                     )}
                   </div>
                   {accSuggestions.length === 0 ? (
-                    <div className="text-xs text-emerald-400/70 py-1">改善点なし（良好なパフォーマンスです）</div>
+                    <div className="text-xs text-emerald-400/70 py-1">{t('insight.suggestions.perAccountNoneNeeded')}</div>
                   ) : (
                     <div className="space-y-1.5">
-                      {accSuggestions.map((item, i) => <SuggestionRow key={i} item={item} index={i} />)}
+                      {accSuggestions.map((item, i) => <SuggestionRow key={i} item={item} index={i} t={t} />)}
                     </div>
                   )}
                 </div>
@@ -358,11 +373,11 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span>🏆</span>
-            <span className="text-sm font-semibold text-slate-200">勝ちパターン分析</span>
+            <span className="text-sm font-semibold text-slate-200">{t('insight.winPatterns.title')}</span>
           </div>
           {plan === 'free' && (
             <span className="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded font-medium">
-              Pro限定
+              {t('insight.suggestions.proBadge')}
             </span>
           )}
         </div>
@@ -371,11 +386,7 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
           <div className="relative">
             <div className="blur-[3px] pointer-events-none select-none opacity-40">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                {[
-                  ['勝率の高い時間帯 TOP3', ['09:00  68%  42件', '14:00  65%  31件', '21:00  62%  18件']],
-                  ['勝率の高い通貨ペア TOP3', ['XAUUSD  71%  88件', 'USDJPY  64%  55件', 'EURUSD  61%  43件']],
-                  ['勝ちトレード平均保有時間', ['2.4時間']],
-                ].map(([title, items]) => (
+                {(t('insight.demo.winPatterns', { returnObjects: true }) || []).map(({ title, items }) => (
                   <div key={title}>
                     <div className="text-slate-500 mb-2 font-medium">{title}</div>
                     {items.map((item, i) => (
@@ -389,12 +400,12 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
               <button
                 onClick={onUpgrade}
                 className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 py-2 rounded-lg font-semibold shadow-lg transition-colors">
-                Pro にアップグレードして解放
+                {t('insight.suggestions.unlockCta')}
               </button>
             </div>
           </div>
         ) : (
-          <WinPatternsContent patterns={patterns} />
+          <WinPatternsContent patterns={patterns} t={t} />
         )}
       </div>
 

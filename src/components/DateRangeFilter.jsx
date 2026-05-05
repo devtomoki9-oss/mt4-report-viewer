@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
-const PRESETS = [
-  { label: '1日',   days: 1 },
-  { label: '1週間', days: 7 },
-  { label: '1ヶ月', days: 30 },
-  { label: '3ヶ月', days: 90 },
-  { label: '6ヶ月', days: 180 },
-  { label: '1年',   days: 365 },
-  { label: '全期間', days: null },
+const PRESET_KEYS = [
+  { key: '1d', days: 1 },
+  { key: '1w', days: 7 },
+  { key: '1m', days: 30 },
+  { key: '3m', days: 90 },
+  { key: '6m', days: 180 },
+  { key: '1y', days: 365 },
+  { key: 'all', days: null },
 ]
 
 function subtractDays(dateStr, days) {
@@ -17,6 +18,7 @@ function subtractDays(dateStr, days) {
 }
 
 export default function DateRangeFilter({ from, to, onChange, dataMin, dataMax, totalCount, filteredCount }) {
+  const { t } = useTranslation()
   const [activeKey, setActiveKey] = useState(null)
 
   useEffect(() => {
@@ -40,9 +42,9 @@ export default function DateRangeFilter({ from, to, onChange, dataMin, dataMax, 
     <div className="bg-[#111827] border border-[#1f2d40] rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3">
       {/* プリセットボタン */}
       <div className="flex items-center gap-1 flex-wrap">
-        {PRESETS.map(p => (
+        {PRESET_KEYS.map(p => (
           <button
-            key={p.days ?? 'all'}
+            key={p.key}
             onClick={() => applyPreset(p.days)}
             className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-all
               ${activeKey === p.days
@@ -50,7 +52,7 @@ export default function DateRangeFilter({ from, to, onChange, dataMin, dataMax, 
                 : 'text-slate-500 hover:text-slate-300 hover:bg-[#1a2235]'
               }`}
           >
-            {p.label}
+            {t(`dateRange.presets.${p.key}`)}
           </button>
         ))}
       </div>
@@ -70,7 +72,7 @@ export default function DateRangeFilter({ from, to, onChange, dataMin, dataMax, 
           className="bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-2 py-1 text-slate-300 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 [color-scheme:dark]"
         />
         {isFiltered && (
-          <button onClick={handleClear} className="text-slate-600 hover:text-slate-400 transition-colors" title="絞り込みをクリア">
+          <button onClick={handleClear} className="text-slate-600 hover:text-slate-400 transition-colors" title={t('dateRange.clearTitle')}>
             ✕
           </button>
         )}
@@ -79,11 +81,11 @@ export default function DateRangeFilter({ from, to, onChange, dataMin, dataMax, 
             {isFiltered && filteredCount !== totalCount ? (
               <>
                 <span className="font-mono text-blue-400 font-semibold">{filteredCount.toLocaleString()}</span>
-                <span className="text-slate-600">/ {totalCount.toLocaleString()} 件</span>
-                <span className="hidden sm:inline bg-blue-500/15 text-blue-400 px-1.5 py-0.5 rounded font-medium">絞り込み中</span>
+                <span className="text-slate-600">/ {t('units.items', { count: totalCount })}</span>
+                <span className="hidden sm:inline bg-blue-500/15 text-blue-400 px-1.5 py-0.5 rounded font-medium">{t('dateRange.filteredBadge')}</span>
               </>
             ) : (
-              <span className="text-slate-500 font-mono">{totalCount.toLocaleString()} 件</span>
+              <span className="text-slate-500 font-mono">{t('units.items', { count: totalCount })}</span>
             )}
           </div>
         )}

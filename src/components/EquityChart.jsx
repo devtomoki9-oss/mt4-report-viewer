@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine, Brush
@@ -39,7 +40,9 @@ const CustomTooltip = ({ active, payload, label }) => {
   )
 }
 
-export default function EquityChart({ data, title = 'エクイティカーブ' }) {
+export default function EquityChart({ data, title }) {
+  const { t } = useTranslation()
+  const chartTitle = title ?? t('equityChart.default')
   const [range, setRange] = useState({ startIndex: 0, endIndex: 0 })
   const [brushKey, setBrushKey] = useState(0)
   const rangeRef = useRef(range)
@@ -86,7 +89,7 @@ export default function EquityChart({ data, title = 'エクイティカーブ' }
   if (!data || data.length === 0) {
     return (
       <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4 flex items-center justify-center h-48 text-slate-600 text-sm">
-        データなし
+        {t('equityChart.noData')}
       </div>
     )
   }
@@ -142,12 +145,12 @@ export default function EquityChart({ data, title = 'エクイティカーブ' }
   return (
     <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4" ref={containerRef}>
       <div className="flex items-center justify-between mb-3">
-        <div className="text-sm font-semibold text-slate-300">{title}</div>
+        <div className="text-sm font-semibold text-slate-300">{chartTitle}</div>
         <div className="flex items-center gap-2">
           <div className="flex gap-1">
-            <button onClick={() => handleZoom(true)}  className={btnCls} title="拡大"><span className="text-base">+</span></button>
-            <button onClick={resetZoom}               className={btnCls} title="全体表示"><span className="text-xs">⊡</span></button>
-            <button onClick={() => handleZoom(false)} className={btnCls} title="縮小"><span className="text-base">−</span></button>
+            <button onClick={() => handleZoom(true)}  className={btnCls} title={t('equityChart.zoomIn')}><span className="text-base">+</span></button>
+            <button onClick={resetZoom}               className={btnCls} title={t('equityChart.fitAll')}><span className="text-xs">⊡</span></button>
+            <button onClick={() => handleZoom(false)} className={btnCls} title={t('equityChart.zoomOut')}><span className="text-base">−</span></button>
           </div>
           <div className={`font-mono text-sm font-bold ${isProfit ? 'text-emerald-400' : 'text-red-400'}`}>
             {isProfit ? '+' : ''}{final.toFixed(2)}

@@ -218,6 +218,8 @@ create policy "delete own ea_params"
   using (auth.uid() = user_id);
 
 -- upsert_ea_param_manifest: MT 側からマニフェストと現在値をアップサート
+-- 「desired が actual より古い or 未設定」なら、MT 側手動変更とみなして
+-- desired を actual で追従させる（Web の表示値が MT 側の真値に揃う）。
 create or replace function upsert_ea_param_manifest(
   p_account_number bigint,
   p_chart_id       text,
@@ -235,11 +237,11 @@ as $$
 begin
   insert into ea_params (
     user_id, account_number, chart_id, ea_name, symbol, timeframe,
-    manifest, actual, manifest_at, actual_at, updated_at
+    manifest, actual, desired, manifest_at, actual_at, desired_at, updated_at
   )
   values (
     auth.uid(), p_account_number, p_chart_id, p_ea_name, p_symbol, p_timeframe,
-    p_manifest, p_actual, now(), now(), now()
+    p_manifest, p_actual, p_actual, now(), now(), now(), now()
   )
   on conflict (user_id, account_number, chart_id)
   do update set
@@ -248,6 +250,20 @@ begin
     timeframe   = excluded.timeframe,
     manifest    = excluded.manifest,
     actual      = excluded.actual,
+    desired     = case
+                    when ea_params.desired_at is null
+                      or ea_params.actual_at  is null
+                      or ea_params.desired_at <= ea_params.actual_at
+                    then excluded.actual
+                    else ea_params.desired
+                  end,
+    desired_at  = case
+                    when ea_params.desired_at is null
+                      or ea_params.actual_at  is null
+                      or ea_params.desired_at <= ea_params.actual_at
+                    then now()
+                    else ea_params.desired_at
+                  end,
     manifest_at = now(),
     actual_at   = now(),
     updated_at  = now();
@@ -255,6 +271,7 @@ end;
 $$;
 
 -- upsert_ea_param_actual: MT 側から現在値のみをアップサート（マニフェスト不変時）
+-- desired が actual より古い場合は手動変更とみなし、desired も追従させる。
 create or replace function upsert_ea_param_actual(
   p_account_number bigint,
   p_chart_id       text,
@@ -268,6 +285,20 @@ as $$
 begin
   update ea_params
      set actual     = p_actual,
+         desired    = case
+                        when desired_at is null
+                          or actual_at  is null
+                          or desired_at <= actual_at
+                        then p_actual
+                        else desired
+                      end,
+         desired_at = case
+                        when desired_at is null
+                          or actual_at  is null
+                          or desired_at <= actual_at
+                        then now()
+                        else desired_at
+                      end,
          actual_at  = now(),
          updated_at = now()
    where user_id        = auth.uid()

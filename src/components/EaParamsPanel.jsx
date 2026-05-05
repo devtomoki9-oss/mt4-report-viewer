@@ -139,11 +139,6 @@ function EaInstanceCard({ row, onSave, onDelete, disabled, t }) {
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState(null)
 
-  if (prevKey !== initialKey) {
-    setPrevKey(initialKey)
-    setValues(initialValues)
-  }
-
   const dirty = useMemo(() => {
     return params.some((p) => {
       const cur = values[p.name]
@@ -151,6 +146,13 @@ function EaInstanceCard({ row, onSave, onDelete, disabled, t }) {
       return String(cur) !== String(ref)
     })
   }, [params, values, row.desired, row.actual])
+
+  // MT 側で値が変わったら表示も追従させる。ただしユーザーが編集中（dirty）
+  // のときは入力を奪わないため、その回はスキップする。
+  if (prevKey !== initialKey) {
+    setPrevKey(initialKey)
+    if (!dirty) setValues(initialValues)
+  }
 
   const handleSave = async () => {
     setSaving(true)

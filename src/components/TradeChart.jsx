@@ -248,14 +248,16 @@ const TradeChart = forwardRef(function TradeChart(
     })
 
     // クロスヘアでホバー時にツールチップ表示
-    // 非表示はデバウンスしてチラつきを防ぐ
+    // time が変わったときだけ位置・内容を更新してチラつきを防ぐ
+    let activeMarkerTime = null
     chart.subscribeCrosshairMove((param) => {
       if (!param.point || !param.time || !detailMapRef.current.has(param.time)) {
         if (!hideTimerRef.current) {
           hideTimerRef.current = setTimeout(() => {
             setTooltip(null)
             hideTimerRef.current = null
-          }, 80)
+            activeMarkerTime = null
+          }, 120)
         }
         return
       }
@@ -263,6 +265,9 @@ const TradeChart = forwardRef(function TradeChart(
         clearTimeout(hideTimerRef.current)
         hideTimerRef.current = null
       }
+      // 同じバー上でのマウス移動では再描画しない
+      if (param.time === activeMarkerTime) return
+      activeMarkerTime = param.time
       setTooltip({ x: param.point.x, y: param.point.y, data: detailMapRef.current.get(param.time) })
     })
 

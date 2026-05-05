@@ -80,7 +80,7 @@ function StatusPill({ status, t }) {
 
 // ── 単一パラメータの入力 UI ──────────────────────────
 
-const BASE_INPUT = 'bg-[#0a0e17] border border-[#1f2d40] rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500 disabled:opacity-50 transition-colors'
+const BASE_INPUT = 'bg-bg border border-border rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500 disabled:opacity-50 transition-colors'
 
 function ParamField({ spec, value, onChange, disabled }) {
   const id = `pf-${spec.name}`
@@ -207,9 +207,9 @@ function EaInstanceCard({ row, onSave, onDelete, disabled, t }) {
   const eaName = row.ea_name || row.manifest?.eaName || '—'
 
   return (
-    <div className="bg-[#0a0e17] border border-[#1f2d40] rounded-lg overflow-hidden">
+    <div className="bg-bg border border-border rounded-lg overflow-hidden">
       {/* ヘッダ */}
-      <div className="flex items-start justify-between gap-3 px-3.5 py-2.5 border-b border-[#1f2d40]/70 bg-[#0d1320]">
+      <div className="flex items-start justify-between gap-3 px-3.5 py-2.5 border-b border-border/70 bg-[#0d1320]">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="text-blue-400/70 text-xs">⚙</span>
@@ -240,7 +240,7 @@ function EaInstanceCard({ row, onSave, onDelete, disabled, t }) {
             {params.map((p) => {
               const range = rangeText(p)
               return (
-                <div key={p.name} className="bg-[#111827]/40 border border-[#1f2d40]/60 rounded-md px-2.5 py-2 space-y-1">
+                <div key={p.name} className="bg-surface/40 border border-border/60 rounded-md px-2.5 py-2 space-y-1">
                   <div className="flex items-baseline justify-between gap-2">
                     <label
                       htmlFor={`pf-${p.name}`}
@@ -377,7 +377,7 @@ export default function EaParamsPanel({ accountNumber, isPro, onUpgrade }) {
     return (
       <div className="space-y-2">
         <PanelHeader t={t} />
-        <div className="bg-[#0a0e17] border border-[#1f2d40] rounded-lg p-4 space-y-3">
+        <div className="bg-bg border border-border rounded-lg p-4 space-y-3">
           <div className="text-[11px] text-slate-400 leading-relaxed">{t('eaParams.proOnly')}</div>
           <SourceWarning t={t} />
           <div className="flex justify-center">
@@ -407,7 +407,7 @@ export default function EaParamsPanel({ accountNumber, isPro, onUpgrade }) {
       {rows == null ? (
         <div className="text-[11px] text-slate-500 py-2">{t('eaParams.loading')}</div>
       ) : rows.length === 0 ? (
-        <div className="bg-[#0a0e17] border border-dashed border-[#1f2d40] rounded-lg p-4 space-y-2">
+        <div className="bg-bg border border-dashed border-border rounded-lg p-4 space-y-2">
           <SourceWarning t={t} />
           <div
             className="text-[11px] text-slate-500 leading-relaxed"

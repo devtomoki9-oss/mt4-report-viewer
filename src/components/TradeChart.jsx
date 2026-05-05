@@ -44,7 +44,7 @@ function MarkerTooltip({ tooltip, containerRef, t }) {
 
   return (
     <div
-      className="absolute z-20 bg-[#1a2235] border border-[#1f2d40] rounded-lg p-2.5 text-xs pointer-events-none shadow-xl"
+      className="absolute z-20 bg-surface2 border border-border rounded-lg p-2.5 text-xs pointer-events-none shadow-xl"
       style={{
         left:      isRight ? tooltip.x - 8 : tooltip.x + 12,
         top:       Math.max(4, tooltip.y - 20),
@@ -54,7 +54,7 @@ function MarkerTooltip({ tooltip, containerRef, t }) {
       }}
     >
       {rows.map((row, i) => (
-        <div key={i} className={i > 0 ? 'mt-1.5 pt-1.5 border-t border-[#1f2d40]' : ''}>
+        <div key={i} className={i > 0 ? 'mt-1.5 pt-1.5 border-t border-border' : ''}>
           <div className={`font-semibold ${row.cls} mb-1`}>{row.label} {t('units.items', { count: row.items.length })}</div>
           <div className="space-y-0.5 pl-2">
             {row.items.map((item, j) => (

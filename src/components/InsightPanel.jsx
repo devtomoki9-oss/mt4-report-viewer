@@ -61,7 +61,7 @@ function AlertBanner({ alert, t }) {
 function ScoreCard({ label, score, styleFn, subtitle, t }) {
   if (score === null) {
     return (
-      <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4 flex flex-col items-center justify-center gap-1">
+      <div className="bg-surface border border-border rounded-xl p-4 flex flex-col items-center justify-center gap-1">
         <div className="text-xs text-slate-500">{label}</div>
         <div className="text-2xl font-bold text-slate-600 font-mono">—</div>
         <div className="text-[10px] text-slate-600">{t('insight.score.insufficientData')}</div>
@@ -104,7 +104,7 @@ function InsightRow({ insight, t }) {
 function SuggestionRow({ item, index, t }) {
   const isHigh = item.priority === 'high'
   return (
-    <div className="flex items-start gap-3 px-3 py-2.5 rounded-lg border border-[#1f2d40] bg-[#0d1520] text-xs">
+    <div className="flex items-start gap-3 px-3 py-2.5 rounded-lg border border-border bg-[#0d1520] text-xs">
       <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold mt-0.5
         ${isHigh ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'}`}>
         {index + 1}
@@ -142,7 +142,7 @@ function WinPatternsContent({ patterns, t }) {
         {topHours.length === 0
           ? <div className="text-slate-600">{t('insight.winPatterns.noData')}</div>
           : topHours.map((h, i) => (
-            <div key={i} className="flex items-center justify-between py-1 border-b border-[#1a2235]">
+            <div key={i} className="flex items-center justify-between py-1 border-b border-surface2">
               <span className="text-slate-300 font-mono">{h.label}</span>
               <span className="text-emerald-400 font-semibold">{(h.winRate * 100).toFixed(0)}%</span>
               <span className="text-slate-600">{t('units.items', { count: h.total })}</span>
@@ -154,7 +154,7 @@ function WinPatternsContent({ patterns, t }) {
         {topSymbols.length === 0
           ? <div className="text-slate-600">{t('insight.winPatterns.noData')}</div>
           : topSymbols.map((s, i) => (
-            <div key={i} className="flex items-center justify-between py-1 border-b border-[#1a2235]">
+            <div key={i} className="flex items-center justify-between py-1 border-b border-surface2">
               <span className="text-slate-300 font-medium">{s.name}</span>
               <span className="text-emerald-400 font-semibold">{(s.winRate * 100).toFixed(0)}%</span>
               <span className="text-slate-600">{t('units.items', { count: s.total })}</span>
@@ -227,7 +227,7 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
       </div>
 
       {/* AI診断カード */}
-      <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4">
+      <div className="bg-surface border border-border rounded-xl p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span>🤖</span>
@@ -268,7 +268,7 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
       </div>
 
       {/* 改善提案 */}
-      <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4">
+      <div className="bg-surface border border-border rounded-xl p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span>💡</span>
@@ -305,7 +305,7 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
 
       {/* 口座別改善提案 */}
       {perAccountSuggestions.length > 0 && (
-        <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4">
+        <div className="bg-surface border border-border rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <span>📋</span>
@@ -322,7 +322,7 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
             <div className="relative">
               <div className="space-y-3 blur-[3px] pointer-events-none select-none opacity-40">
                 {(t('insight.demo.perAccount', { returnObjects: true }) || []).map(({ name, items }) => (
-                  <div key={name} className="border border-[#1f2d40] rounded-lg p-3">
+                  <div key={name} className="border border-border rounded-lg p-3">
                     <div className="text-xs font-semibold text-slate-400 mb-2">{name}</div>
                     <div className="space-y-1.5">
                       {items.map((msg, i) => (
@@ -343,7 +343,7 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
           ) : (
             <div className="space-y-4">
               {perAccountSuggestions.map(({ name, suggestions: accSuggestions, tradeScore: accScore }) => (
-                <div key={name} className="border border-[#1f2d40] rounded-lg p-3">
+                <div key={name} className="border border-border rounded-lg p-3">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-xs font-semibold text-slate-300 bg-[#0d1520] px-2 py-0.5 rounded border border-[#2a3a50]">
                       {name}
@@ -369,7 +369,7 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
       )}
 
       {/* 勝ちパターン分析 */}
-      <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4">
+      <div className="bg-surface border border-border rounded-xl p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span>🏆</span>
@@ -390,7 +390,7 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
                   <div key={title}>
                     <div className="text-slate-500 mb-2 font-medium">{title}</div>
                     {items.map((item, i) => (
-                      <div key={i} className="py-1 text-slate-400 font-mono border-b border-[#1a2235]">{item}</div>
+                      <div key={i} className="py-1 text-slate-400 font-mono border-b border-surface2">{item}</div>
                     ))}
                   </div>
                 ))}

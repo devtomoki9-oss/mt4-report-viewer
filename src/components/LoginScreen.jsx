@@ -69,7 +69,7 @@ export default function LoginScreen({ onLogin, initialMode = 'login' }) {
   if (done) {
     const isForgot = mode === 'forgot'
     return (
-      <div className="min-h-screen bg-[#0a0e17] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-bg flex items-center justify-center px-4">
         <div className="w-full max-w-sm text-center space-y-4">
           <div className="text-4xl">✉️</div>
           <h2 className="text-slate-200 font-semibold">
@@ -92,7 +92,7 @@ export default function LoginScreen({ onLogin, initialMode = 'login' }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0e17] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-bg flex items-center justify-center px-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-1">
           <div className="text-2xl font-bold text-slate-100 tracking-tight">{t('app.productName')}</div>
@@ -110,7 +110,7 @@ export default function LoginScreen({ onLogin, initialMode = 'login' }) {
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
-            className="w-full bg-[#111827] border border-[#1f2d40] rounded-lg px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-blue-500"
+            className="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-blue-500"
           />
           {mode !== 'forgot' && (
             <input
@@ -120,7 +120,7 @@ export default function LoginScreen({ onLogin, initialMode = 'login' }) {
               onChange={e => setPassword(e.target.value)}
               required
               minLength={8}
-              className="w-full bg-[#111827] border border-[#1f2d40] rounded-lg px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-blue-500"
+              className="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-blue-500"
             />
           )}
           {mode === 'signup' && (
@@ -131,10 +131,10 @@ export default function LoginScreen({ onLogin, initialMode = 'login' }) {
               onChange={e => setConfirm(e.target.value)}
               required
               minLength={8}
-              className={`w-full bg-[#111827] border rounded-lg px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none transition-colors
+              className={`w-full bg-surface border rounded-lg px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none transition-colors
                 ${confirm && password !== confirm
                   ? 'border-red-500/50 focus:border-red-500'
-                  : 'border-[#1f2d40] focus:border-blue-500'}`}
+                  : 'border-border focus:border-blue-500'}`}
             />
           )}
 

@@ -38,8 +38,8 @@ export default function OpenPositions({ positions, aliases = {}, charts = {}, tr
 
   return (
     <>
-      <div className="bg-[#111827] border border-[#1f2d40] rounded-xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-[#1f2d40] flex items-center justify-between gap-3 flex-wrap">
+      <div className="bg-surface border border-border rounded-xl overflow-hidden">
+        <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-sm font-semibold text-slate-300">{t('positions.title')}</span>
@@ -73,7 +73,7 @@ export default function OpenPositions({ positions, aliases = {}, charts = {}, tr
         </div>
 
         {/* モバイルカードビュー */}
-        <div className="sm:hidden divide-y divide-[#1f2d40]">
+        <div className="sm:hidden divide-y divide-border">
           {filtered.map((p, i) => {
             const net = p.profit + p.swap
             const isLong = p.type === 'buy'
@@ -116,7 +116,7 @@ export default function OpenPositions({ positions, aliases = {}, charts = {}, tr
         <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-[#1f2d40] text-slate-500">
+              <tr className="border-b border-border text-slate-500">
                 <th className="px-4 py-2.5 text-left font-medium">{t('positions.columns.account')}</th>
                 <th className="px-4 py-2.5 text-left font-medium">{t('positions.columns.symbol')}</th>
                 <th className="px-3 py-2.5 text-left font-medium">{t('positions.columns.type')}</th>
@@ -135,7 +135,7 @@ export default function OpenPositions({ positions, aliases = {}, charts = {}, tr
                 const isLong   = p.type === 'buy'
                 const hasChart = chartSymbols.includes(p.symbol)
                 return (
-                  <tr key={i} className="border-b border-[#1f2d40]/50 hover:bg-[#1a2235]/40 transition-colors">
+                  <tr key={i} className="border-b border-border/50 hover:bg-surface2/40 transition-colors">
                     <td className="px-4 py-2.5 text-slate-400 max-w-[150px] truncate" title={displayName(p.account)}>
                       {displayName(p.account)}
                     </td>

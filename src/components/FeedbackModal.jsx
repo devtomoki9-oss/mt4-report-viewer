@@ -16,16 +16,16 @@ export default function FeedbackModal({ onClose }) {
 
   return (
     <div
-      className="fixed inset-0 bg-[#0a0e17]/90 backdrop-blur flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-bg/90 backdrop-blur flex items-center justify-center z-50 p-4"
       onClick={onClose}
     >
       <div
-        className="bg-[#111827] border border-[#1f2d40] rounded-2xl w-full max-w-sm p-6 space-y-4"
+        className="bg-surface border border-border rounded-2xl w-full max-w-sm p-6 space-y-4"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-slate-200">{t('feedback.title')}</h2>
-          <button onClick={onClose} className="text-slate-500 hover:text-slate-300 text-lg px-1">✕</button>
+          <button onClick={onClose} className="text-slate-500 hover:text-slate-300 text-lg px-1" aria-label={t('common.close')}>✕</button>
         </div>
 
         <p className="text-xs text-slate-500 leading-relaxed">
@@ -37,14 +37,14 @@ export default function FeedbackModal({ onClose }) {
           onChange={e => setMessage(e.target.value)}
           rows={5}
           placeholder={t('feedback.placeholder')}
-          className="w-full bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-3 py-2.5 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:border-blue-500/50 resize-none"
+          className="w-full bg-bg border border-border rounded-lg px-3 py-2.5 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:border-blue-500/50 resize-none"
           autoFocus
         />
 
         <div className="flex gap-2">
           <button
             onClick={onClose}
-            className="flex-1 bg-[#1a2235] border border-[#1f2d40] text-slate-400 hover:text-slate-200 text-xs px-4 py-2.5 rounded-lg transition-colors"
+            className="flex-1 bg-surface2 border border-border text-slate-400 hover:text-slate-200 text-xs px-4 py-2.5 rounded-lg transition-colors"
           >
             {t('common.cancel')}
           </button>

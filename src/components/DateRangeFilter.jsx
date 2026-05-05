@@ -41,7 +41,7 @@ export default function DateRangeFilter({ from, to, onChange, dataMin, dataMax, 
   const isFiltered = from || to
 
   return (
-    <div className="bg-[#111827] border border-[#1f2d40] rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3">
+    <div className="bg-surface border border-border rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3">
       {/* プリセットボタン */}
       <div className="flex items-center gap-1 flex-wrap">
         {PRESET_KEYS.map(p => (
@@ -51,7 +51,7 @@ export default function DateRangeFilter({ from, to, onChange, dataMin, dataMax, 
             className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-all
               ${activeKey === p.days
                 ? 'bg-blue-600 text-white shadow'
-                : 'text-slate-500 hover:text-slate-300 hover:bg-[#1a2235]'
+                : 'text-slate-500 hover:text-slate-300 hover:bg-surface2'
               }`}
           >
             {t(`dateRange.presets.${p.key}`)}
@@ -61,17 +61,17 @@ export default function DateRangeFilter({ from, to, onChange, dataMin, dataMax, 
 
       {/* 日付入力 + 件数バッジ（モバイルは横並び 1行、デスクトップはインライン） */}
       <div className="flex items-center gap-2 flex-wrap">
-        <div className="hidden sm:block w-px h-4 bg-[#1f2d40]" />
+        <div className="hidden sm:block w-px h-4 bg-border" />
         <input
           type="date" value={from} min={dataMin} max={to || dataMax}
           onChange={handleFromChange}
-          className="bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-2 py-1 text-slate-300 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 [color-scheme:dark]"
+          className="bg-bg border border-border rounded-lg px-2 py-1 text-slate-300 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 [color-scheme:dark]"
         />
         <span className="text-slate-600 text-xs">〜</span>
         <input
           type="date" value={to} min={from || dataMin} max={dataMax}
           onChange={handleToChange}
-          className="bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-2 py-1 text-slate-300 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 [color-scheme:dark]"
+          className="bg-bg border border-border rounded-lg px-2 py-1 text-slate-300 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 [color-scheme:dark]"
         />
         {isFiltered && (
           <button onClick={handleClear} className="text-slate-600 hover:text-slate-400 transition-colors" title={t('dateRange.clearTitle')}>

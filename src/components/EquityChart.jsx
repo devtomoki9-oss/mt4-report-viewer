@@ -34,7 +34,7 @@ const CustomTooltip = ({ active, payload, label, lang }) => {
   if (!active || !payload?.length) return null
   const val = payload[0].value
   return (
-    <div className="bg-[#111827] border border-[#1f2d40] rounded-lg px-3 py-2 text-xs shadow-xl">
+    <div className="bg-surface border border-border rounded-lg px-3 py-2 text-xs shadow-xl">
       <div className="text-slate-400 mb-1">{label}</div>
       <div className={`font-mono font-bold ${val >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
         {formatSignedMoney(val, { lang })}
@@ -93,7 +93,7 @@ export default function EquityChart({ data, title }) {
 
   if (!data || data.length === 0) {
     return (
-      <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4 flex items-center justify-center h-48 text-slate-600 text-sm">
+      <div className="bg-surface border border-border rounded-xl p-4 flex items-center justify-center h-48 text-slate-600 text-sm">
         {t('equityChart.noData')}
       </div>
     )
@@ -145,10 +145,10 @@ export default function EquityChart({ data, title }) {
     setBrushKey(k => k + 1)
   }
 
-  const btnCls = "w-7 h-7 bg-[#0d1117] border border-[#1f2d40] text-slate-400 hover:text-white hover:bg-[#1f2d40] rounded leading-none flex items-center justify-center transition-colors"
+  const btnCls = "w-7 h-7 bg-[#0d1117] border border-border text-slate-400 hover:text-white hover:bg-border rounded leading-none flex items-center justify-center transition-colors"
 
   return (
-    <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4" ref={containerRef}>
+    <div className="bg-surface border border-border rounded-xl p-4" ref={containerRef}>
       <div className="flex items-center justify-between mb-3">
         <div className="text-sm font-semibold text-slate-300">{chartTitle}</div>
         <div className="flex items-center gap-2">

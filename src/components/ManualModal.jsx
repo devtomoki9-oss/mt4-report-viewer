@@ -25,14 +25,14 @@ export default function ManualModal({ onClose, onDownloadVbs }) {
   const mt5Steps    = t('manual.section2.step2.mt5Steps', { returnObjects: true }) || []
 
   return (
-    <div className="fixed inset-0 bg-[#0a0e17]/90 backdrop-blur flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+    <div className="fixed inset-0 bg-bg/90 backdrop-blur flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
       onClick={onClose}>
-      <div className="bg-[#111827] border border-[#1f2d40] rounded-t-2xl sm:rounded-2xl w-full max-w-2xl flex flex-col max-h-[90vh]"
+      <div className="bg-surface border border-border rounded-t-2xl sm:rounded-2xl w-full max-w-2xl flex flex-col max-h-[90vh]"
         onClick={e => e.stopPropagation()}>
 
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#1f2d40] flex-shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
           <div className="text-sm font-semibold text-slate-100">{t('manual.title')}</div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-100 text-xl px-2">✕</button>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-100 text-xl px-2" aria-label={t('common.close')}>✕</button>
         </div>
 
         <div className="overflow-y-auto px-5 py-4 space-y-6 text-xs text-slate-400 leading-relaxed">
@@ -41,7 +41,7 @@ export default function ManualModal({ onClose, onDownloadVbs }) {
           <section className="space-y-2">
             <h2 className="text-sm font-semibold text-slate-200">{t('manual.intro.heading')}</h2>
             <p>{t('manual.intro.body')}</p>
-            <div className="bg-[#0d1117] border border-[#1f2d40] rounded-lg px-3 py-2 text-slate-500 space-y-0.5">
+            <div className="bg-[#0d1117] border border-border rounded-lg px-3 py-2 text-slate-500 space-y-0.5">
               <div className="text-slate-400 font-medium text-[11px] mb-1">{t('manual.intro.prerequisitesTitle')}</div>
               <p dangerouslySetInnerHTML={html(t('manual.intro.prerequisitesBody'))} />
             </div>
@@ -51,13 +51,13 @@ export default function ManualModal({ onClose, onDownloadVbs }) {
           <section className="space-y-3">
             <h2 className="text-sm font-semibold text-slate-200">{t('manual.section1.heading')}</h2>
             <div className="space-y-2">
-              <div className="bg-[#0d1117] border border-[#1f2d40] rounded-lg p-3 space-y-1.5">
+              <div className="bg-[#0d1117] border border-border rounded-lg p-3 space-y-1.5">
                 <div className="text-slate-300 font-medium">{t('manual.section1.signup.title')}</div>
                 <ol className="list-decimal list-inside space-y-1 ml-1">
                   {signupSteps.map((s, i) => <li key={i}>{s}</li>)}
                 </ol>
               </div>
-              <div className="bg-[#0d1117] border border-[#1f2d40] rounded-lg p-3 space-y-1.5">
+              <div className="bg-[#0d1117] border border-border rounded-lg p-3 space-y-1.5">
                 <div className="text-slate-300 font-medium">{t('manual.section1.login.title')}</div>
                 <ol className="list-decimal list-inside space-y-1 ml-1">
                   {loginSteps.map((s, i) => <li key={i}>{s}</li>)}
@@ -80,11 +80,11 @@ export default function ManualModal({ onClose, onDownloadVbs }) {
                     ↓ install.bat
                   </button>
                   <a href="/MT4ReportExporter.mq4" download="MT4ReportExporter.mq4"
-                    className="text-xs text-slate-400 hover:text-slate-200 bg-[#1a2235] border border-[#1f2d40] px-3 py-1.5 rounded-lg transition-colors">
+                    className="text-xs text-slate-400 hover:text-slate-200 bg-surface2 border border-border px-3 py-1.5 rounded-lg transition-colors">
                     ↓ MT4ReportExporter.mq4
                   </a>
                   <a href="/MT5ReportExporter.mq5" download="MT5ReportExporter.mq5"
-                    className="text-xs text-slate-400 hover:text-slate-200 bg-[#1a2235] border border-[#1f2d40] px-3 py-1.5 rounded-lg transition-colors">
+                    className="text-xs text-slate-400 hover:text-slate-200 bg-surface2 border border-border px-3 py-1.5 rounded-lg transition-colors">
                     ↓ MT5ReportExporter.mq5
                   </a>
                 </div>
@@ -161,7 +161,7 @@ export default function ManualModal({ onClose, onDownloadVbs }) {
             <table className="w-full text-xs border-collapse">
               <tbody>
                 {screens.map(([name, desc]) => (
-                  <tr key={name} className="border-b border-[#1f2d40]">
+                  <tr key={name} className="border-b border-border">
                     <td className="py-2 pr-3 text-slate-300 font-medium whitespace-nowrap">{name}</td>
                     <td className="py-2 text-slate-500">{desc}</td>
                   </tr>
@@ -169,7 +169,7 @@ export default function ManualModal({ onClose, onDownloadVbs }) {
               </tbody>
             </table>
             <p className="text-slate-500 mt-1">{t('manual.section4.filterNote')}</p>
-            <div className="bg-[#0d1117] border border-[#1f2d40] rounded-lg p-3 space-y-1.5 mt-2">
+            <div className="bg-[#0d1117] border border-border rounded-lg p-3 space-y-1.5 mt-2">
               <div className="text-slate-400 font-medium text-[11px] mb-1">{t('manual.section4.cardOpsTitle')}</div>
               <ul className="list-disc list-inside space-y-1.5 ml-1 text-slate-500">
                 {cardOps.map((item, i) => <li key={i} dangerouslySetInnerHTML={html(item)} />)}
@@ -190,7 +190,7 @@ export default function ManualModal({ onClose, onDownloadVbs }) {
             <h2 className="text-sm font-semibold text-slate-200">{t('manual.section6.heading')}</h2>
             <table className="w-full text-xs border-collapse">
               <thead>
-                <tr className="border-b border-[#1f2d40]">
+                <tr className="border-b border-border">
                   <td className="py-1.5 pr-3 text-slate-500">{t('manual.section6.headers.feature')}</td>
                   <td className="py-1.5 pr-3 text-slate-500 text-center">{t('manual.section6.headers.free')}</td>
                   <td className="py-1.5 text-blue-400 text-center font-medium">{t('manual.section6.headers.pro')}</td>
@@ -198,7 +198,7 @@ export default function ManualModal({ onClose, onDownloadVbs }) {
               </thead>
               <tbody>
                 {section6Rows.map(([feat, free, pro]) => (
-                  <tr key={feat} className="border-b border-[#1f2d40]">
+                  <tr key={feat} className="border-b border-border">
                     <td className="py-2 pr-3 text-slate-400">{feat}</td>
                     <td className="py-2 pr-3 text-slate-500 text-center">{free}</td>
                     <td className={`py-2 text-center font-medium ${pro === '—' ? 'text-slate-600' : 'text-blue-400'}`}>{pro}</td>
@@ -245,7 +245,7 @@ export default function ManualModal({ onClose, onDownloadVbs }) {
 
 function Step({ n, title, children }) {
   return (
-    <div className="bg-[#0d1117] border border-[#1f2d40] rounded-lg p-3 space-y-1.5">
+    <div className="bg-[#0d1117] border border-border rounded-lg p-3 space-y-1.5">
       <div className="flex items-center gap-2">
         <span className="w-5 h-5 rounded-full bg-blue-600/30 text-blue-400 flex items-center justify-center flex-shrink-0 font-bold text-[11px]">{n}</span>
         <span className="text-slate-300 font-medium">{title}</span>
@@ -257,11 +257,12 @@ function Step({ n, title, children }) {
 
 function Code({ children, copyTitle }) {
   return (
-    <div className="mt-1.5 bg-[#111827] border border-[#1f2d40] rounded px-2.5 py-1.5 overflow-x-auto flex items-center gap-2">
+    <div className="mt-1.5 bg-surface border border-border rounded px-2.5 py-1.5 overflow-x-auto flex items-center gap-2">
       <code className="text-green-400 font-mono text-[11px] whitespace-nowrap flex-1 select-all">{children}</code>
       <button
         onClick={() => navigator.clipboard.writeText(children)}
         className="text-slate-600 hover:text-slate-300 flex-shrink-0 transition-colors"
+        aria-label={copyTitle}
         title={copyTitle}>⎘</button>
     </div>
   )

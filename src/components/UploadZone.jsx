@@ -26,7 +26,7 @@ export default function UploadZone({ onFiles }) {
       className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center gap-4 cursor-pointer transition-all
         ${dragging
           ? 'border-blue-500 bg-blue-500/10'
-          : 'border-[#1f2d40] hover:border-[#2a3f5a] hover:bg-[#111827]/50'
+          : 'border-border hover:border-border-light hover:bg-surface/50'
         }`}
     >
       <input
@@ -37,7 +37,7 @@ export default function UploadZone({ onFiles }) {
         className="hidden"
         onChange={e => handleFiles(e.target.files)}
       />
-      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl transition-all ${dragging ? 'bg-blue-500/20' : 'bg-[#1a2235]'}`}>
+      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl transition-all ${dragging ? 'bg-blue-500/20' : 'bg-surface2'}`}>
         📊
       </div>
       <div className="text-center">

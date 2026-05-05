@@ -10,10 +10,10 @@ export default function LandingPage({ onStart, onLogin }) {
   const STATS      = t('landing.stats.items',      { returnObjects: true }) || []
   const DISCLAIMER = t('landing.disclaimer.body')
   return (
-    <div className="min-h-screen bg-[#0a0e17] text-slate-200 overflow-x-hidden">
+    <div className="min-h-screen bg-bg text-slate-200 overflow-x-hidden">
 
       {/* ── ナビ ── */}
-      <nav className="border-b border-[#1f2d40] bg-[#0a0e17]/90 backdrop-blur-sm sticky top-0 z-10">
+      <nav className="border-b border-border bg-bg/90 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center text-sm">
@@ -66,7 +66,7 @@ export default function LandingPage({ onStart, onLogin }) {
           </button>
           <button
             onClick={onLogin}
-            className="bg-[#111827] border border-[#1f2d40] text-slate-300 hover:text-slate-100 hover:border-[#2a3d55] font-semibold px-8 py-3 rounded-xl text-sm transition-colors"
+            className="bg-surface border border-border text-slate-300 hover:text-slate-100 hover:border-[#2a3d55] font-semibold px-8 py-3 rounded-xl text-sm transition-colors"
           >
             {t('landing.hero.ctaSecondary')}
           </button>
@@ -74,8 +74,8 @@ export default function LandingPage({ onStart, onLogin }) {
 
         {/* スクリーンショット */}
         <div className="relative mx-auto max-w-4xl">
-          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#0a0e17] to-transparent z-10 pointer-events-none rounded-b-2xl" />
-          <div className="border border-[#1f2d40] rounded-2xl overflow-hidden shadow-2xl shadow-black/60">
+          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-bg to-transparent z-10 pointer-events-none rounded-b-2xl" />
+          <div className="border border-border rounded-2xl overflow-hidden shadow-2xl shadow-black/60">
             <img
               src={heroImg}
               alt={t('landing.hero.screenshotAlt')}
@@ -86,7 +86,7 @@ export default function LandingPage({ onStart, onLogin }) {
       </section>
 
       {/* ── 統計バー ── */}
-      <section className="border-y border-[#1f2d40] bg-[#0d1117] py-8">
+      <section className="border-y border-border bg-[#0d1117] py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-3 gap-4 text-center">
             {STATS.map(item => (
@@ -111,7 +111,7 @@ export default function LandingPage({ onStart, onLogin }) {
       </section>
 
       {/* ── 機能一覧 ── */}
-      <section className="bg-[#0d1117] border-y border-[#1f2d40] py-20">
+      <section className="bg-[#0d1117] border-y border-border py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-100 mb-3">{t('landing.features.title')}</h2>
@@ -121,7 +121,7 @@ export default function LandingPage({ onStart, onLogin }) {
             {FEATURES.map(f => (
               <div
                 key={f.title}
-                className="bg-[#111827] border border-[#1f2d40] rounded-xl p-5 hover:border-blue-500/30 transition-colors"
+                className="bg-surface border border-border rounded-xl p-5 hover:border-blue-500/30 transition-colors"
               >
                 <div className="text-2xl mb-3">{f.icon}</div>
                 <div className="font-semibold text-slate-200 mb-1.5 text-sm">{f.title}</div>
@@ -142,7 +142,7 @@ export default function LandingPage({ onStart, onLogin }) {
           {USE_CASES.map(u => (
             <div
               key={u.label}
-              className="bg-[#111827] border border-[#1f2d40] rounded-xl px-5 py-4 flex items-start gap-4"
+              className="bg-surface border border-border rounded-xl px-5 py-4 flex items-start gap-4"
             >
               <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-1.5" />
               <div>
@@ -155,7 +155,7 @@ export default function LandingPage({ onStart, onLogin }) {
       </section>
 
       {/* ── 使い方 ── */}
-      <section className="bg-[#0d1117] border-y border-[#1f2d40] py-20">
+      <section className="bg-[#0d1117] border-y border-border py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-100 mb-3">{t('landing.steps.title')}</h2>
@@ -168,7 +168,7 @@ export default function LandingPage({ onStart, onLogin }) {
                   {s.step}
                 </div>
                 {i < STEPS.length - 1 && (
-                  <div className="hidden lg:block absolute top-5 left-[calc(50%+20px)] right-[calc(-50%+20px)] h-px bg-[#1f2d40]" />
+                  <div className="hidden lg:block absolute top-5 left-[calc(50%+20px)] right-[calc(-50%+20px)] h-px bg-border" />
                 )}
                 <div className="font-semibold text-slate-300 text-sm mb-1">{s.title}</div>
                 <div className="text-slate-500 text-xs leading-relaxed">{s.desc}</div>
@@ -193,7 +193,7 @@ export default function LandingPage({ onStart, onLogin }) {
       </section>
 
       {/* ── フッター ── */}
-      <footer className="border-t border-[#1f2d40] py-10">
+      <footer className="border-t border-border py-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-4">
           <div className="text-center text-xs font-semibold text-slate-500 mb-2">{t('landing.disclaimer.heading')}</div>
           <p className="text-xs text-slate-700 leading-relaxed text-center">

@@ -47,10 +47,10 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
   }
 
   return (
-    <div className="bg-[#111827] border border-[#1f2d40] rounded-xl overflow-hidden">
+    <div className="bg-surface border border-border rounded-xl overflow-hidden">
       {/* ヘッダ */}
       <div
-        className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-[#1a2235] transition-colors"
+        className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-surface2 transition-colors"
         onClick={() => !editing && setExpanded(e => !e)}
       >
         <div className="flex items-center gap-3">
@@ -63,10 +63,10 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
                   value={editValue}
                   onChange={e => setEditValue(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  className="bg-[#0a0e17] border border-blue-500 rounded px-2 py-0.5 text-sm text-slate-200 focus:outline-none w-48"
+                  className="bg-bg border border-blue-500 rounded px-2 py-0.5 text-sm text-slate-200 focus:outline-none w-48"
                 />
-                <button onClick={saveEdit} className="text-emerald-400 hover:text-emerald-300 text-xs px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded">✓</button>
-                <button onClick={cancelEdit} className="text-slate-500 hover:text-slate-300 text-xs px-1.5 py-0.5 bg-[#1a2235] border border-[#1f2d40] rounded">✕</button>
+                <button onClick={saveEdit} aria-label={t('common.save')} className="text-emerald-400 hover:text-emerald-300 text-xs px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded">✓</button>
+                <button onClick={cancelEdit} aria-label={t('common.cancel')} className="text-slate-500 hover:text-slate-300 text-xs px-1.5 py-0.5 bg-surface2 border border-border rounded">✕</button>
               </div>
             ) : (
               <div className="flex items-center gap-1.5 group">
@@ -75,6 +75,7 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
                   onClick={startEdit}
                   className="text-slate-600 hover:text-blue-400 transition-colors text-xs leading-none opacity-0 group-hover:opacity-100"
                   title={t('account.card.rename')}
+                  aria-label={t('account.card.rename')}
                 >
                   ✎
                 </button>
@@ -118,16 +119,17 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
             onClick={e => { e.stopPropagation(); onRemove() }}
             className="text-slate-600 hover:text-red-400 transition-colors text-sm px-1"
             title={t('account.card.delete')}
+            aria-label={t('account.card.delete')}
           >
             ✕
           </button>
-          <span className="text-slate-600 text-xs">{expanded ? '▲' : '▼'}</span>
+          <span aria-hidden="true" className="text-slate-600 text-xs">{expanded ? '▲' : '▼'}</span>
         </div>
       </div>
 
       {/* 展開詳細 */}
       {expanded && (
-        <div className="border-t border-[#1f2d40] px-4 py-3 space-y-3">
+        <div className="border-t border-border px-4 py-3 space-y-3">
           {/* 口座情報 */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {(() => {
@@ -140,7 +142,7 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
                 { label: t('account.card.metrics.floating'), value: `${formatSignedMoney(floating, { lang })}${cur ? ' ' + cur : ''}`, color: floating >= 0 ? 'text-emerald-400' : 'text-red-400' },
               ]
             })().map(item => (
-              <div key={item.label} className="bg-[#0a0e17] rounded-lg p-2.5">
+              <div key={item.label} className="bg-bg rounded-lg p-2.5">
                 <div className="text-xs text-slate-600 mb-0.5">{item.label}</div>
                 <div className={`font-mono text-sm font-semibold ${item.color}`}>{item.value}</div>
               </div>
@@ -158,7 +160,7 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
               { label: t('account.card.metrics.losses'),       value: formatCount(stats.losses, { lang }), color: 'text-red-400' },
               { label: t('account.card.metrics.maxDrawdown'),  value: formatNumber(stats.maxDrawdown, { lang }), color: 'text-amber-400' },
             ].map(item => (
-              <div key={item.label} className="bg-[#0a0e17] rounded-lg p-2.5">
+              <div key={item.label} className="bg-bg rounded-lg p-2.5">
                 <div className="text-xs text-slate-600 mb-0.5">{item.label}</div>
                 <div className={`font-mono text-sm font-semibold ${item.color}`}>{item.value}</div>
               </div>
@@ -166,7 +168,7 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
           </div>
           {/* EA パラメータ管理（Pro 限定） */}
           {info.number != null && (
-            <div className="pt-2 border-t border-[#1f2d40]">
+            <div className="pt-2 border-t border-border">
               <EaParamsPanel
                 accountNumber={info.number}
                 isPro={isPro}

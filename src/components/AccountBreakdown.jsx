@@ -11,7 +11,7 @@ function PFBar({ pf, lang }) {
   const color = pf >= 2 ? '#10b981' : pf >= 1 ? '#f59e0b' : '#ef4444'
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 bg-[#0a0e17] rounded-full h-1.5 overflow-hidden">
+      <div className="flex-1 bg-bg rounded-full h-1.5 overflow-hidden">
         <div style={{ width: `${(capped / 5) * 100}%`, background: color }} className="h-full rounded-full" />
       </div>
       <span className="font-mono text-xs w-10 text-right" style={{ color }}>
@@ -82,7 +82,7 @@ export default function AccountBreakdown({ accounts, filteredTrades, aliases = {
   return (
     <div className="space-y-4">
       {accounts.length > 1 && (
-        <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4">
+        <div className="bg-surface border border-border rounded-xl p-4">
           <div className="text-sm font-semibold text-slate-300 mb-3">{t('account.breakdown.barChartTitle')}</div>
           <ResponsiveContainer width="100%" height={160}>
             <BarChart data={barData} margin={{ top: 4, right: 8, bottom: 20, left: 0 }}>
@@ -103,13 +103,13 @@ export default function AccountBreakdown({ accounts, filteredTrades, aliases = {
         </div>
       )}
 
-      <div className="bg-[#111827] border border-[#1f2d40] rounded-xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-[#1f2d40]">
+      <div className="bg-surface border border-border rounded-xl overflow-hidden">
+        <div className="px-4 py-3 border-b border-border">
           <div className="text-sm font-semibold text-slate-300">{t('account.breakdown.title')}</div>
         </div>
 
         {/* モバイルカードビュー */}
-        <div className="sm:hidden divide-y divide-[#1f2d40]">
+        <div className="sm:hidden divide-y divide-border">
           {accounts.map((a) => {
             const s = a.stats
             const isProfit = (s.totalProfit ?? 0) >= 0
@@ -118,7 +118,7 @@ export default function AccountBreakdown({ accounts, filteredTrades, aliases = {
               <div
                 key={a.account.name}
                 onClick={() => setSelected(isSelected ? null : a.account.name)}
-                className={`px-4 py-3 cursor-pointer transition-colors ${isSelected ? 'bg-[#1a2235]' : 'active:bg-[#1a2235]/60'}`}
+                className={`px-4 py-3 cursor-pointer transition-colors ${isSelected ? 'bg-surface2' : 'active:bg-surface2/60'}`}
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
@@ -149,7 +149,7 @@ export default function AccountBreakdown({ accounts, filteredTrades, aliases = {
         <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-[#1f2d40] text-slate-500">
+              <tr className="border-b border-border text-slate-500">
                 <SortTh label={t('account.breakdown.headers.name')}        col="name"        sortKey={sortKey} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-2.5" />
                 <SortTh label={t('account.breakdown.headers.trades')}      col="trades"      sortKey={sortKey} sortDir={sortDir} onSort={onSort} className={thRight} />
                 <SortTh label={t('account.breakdown.headers.profit')}      col="profit"      sortKey={sortKey} sortDir={sortDir} onSort={onSort} className={thRight} />
@@ -169,8 +169,8 @@ export default function AccountBreakdown({ accounts, filteredTrades, aliases = {
                   <tr
                     key={a.account.name}
                     onClick={() => setSelected(isSelected ? null : a.account.name)}
-                    className={`border-b border-[#1f2d40]/50 cursor-pointer transition-colors
-                      ${isSelected ? 'bg-[#1a2235]' : 'hover:bg-[#1a2235]/60'}`}
+                    className={`border-b border-border/50 cursor-pointer transition-colors
+                      ${isSelected ? 'bg-surface2' : 'hover:bg-surface2/60'}`}
                   >
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-2">
@@ -203,8 +203,8 @@ export default function AccountBreakdown({ accounts, filteredTrades, aliases = {
       </div>
 
       {selectedAcc && (
-        <div className="bg-[#111827] border border-[#1f2d40] rounded-xl overflow-hidden">
-          <div className="flex items-center gap-4 px-4 py-3 border-b border-[#1f2d40]">
+        <div className="bg-surface border border-border rounded-xl overflow-hidden">
+          <div className="flex items-center gap-4 px-4 py-3 border-b border-border">
             <div className="text-sm font-semibold text-slate-200 flex-1">
               {displayName(selectedAcc.account.name)}
               <span className="ml-2 text-xs text-slate-500 font-normal">{t('account.card.tradesCount', { count: selectedTrades.length })}</span>

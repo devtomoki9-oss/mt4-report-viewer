@@ -103,7 +103,7 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
           <select
             value={symbolFilter}
             onChange={e => updateFilter(setSymbolFilter)(e.target.value)}
-            className="bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-2.5 py-2 text-xs text-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20"
+            className="bg-bg border border-border rounded-lg px-2.5 py-2 text-xs text-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20"
           >
             <option value={ALL}>{t('trades.table.filters.symbolAll')}</option>
             {symbolOptions.map(s => <option key={s} value={s}>{s}</option>)}
@@ -111,7 +111,7 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
           <select
             value={typeFilter}
             onChange={e => updateFilter(setTypeFilter)(e.target.value)}
-            className="bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-2.5 py-2 text-xs text-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20"
+            className="bg-bg border border-border rounded-lg px-2.5 py-2 text-xs text-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20"
           >
             <option value={ALL}>{t('trades.table.filters.typeAll')}</option>
             {typeOptions.map(typeOpt => <option key={typeOpt} value={typeOpt}>{typeOpt}</option>)}
@@ -119,7 +119,7 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
           <select
             value={accountFilter}
             onChange={e => updateFilter(setAccountFilter)(e.target.value)}
-            className="bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-2.5 py-2 text-xs text-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 max-w-[200px]"
+            className="bg-bg border border-border rounded-lg px-2.5 py-2 text-xs text-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 max-w-[200px]"
           >
             <option value={ALL}>{t('trades.table.filters.accountAll')}</option>
             {accountOptions.map(a => <option key={a} value={a}>{aliases[a] || a}</option>)}
@@ -127,7 +127,7 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
           {hasActiveFilter && (
             <button
               onClick={resetFilters}
-              className="px-2.5 py-2 text-xs rounded-lg bg-[#1a2235] text-slate-400 hover:bg-[#1f2d40] hover:text-slate-200 transition-colors"
+              className="px-2.5 py-2 text-xs rounded-lg bg-surface2 text-slate-400 hover:bg-border hover:text-slate-200 transition-colors"
             >
               {t('trades.table.filters.reset')}
             </button>
@@ -144,7 +144,7 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
           const isProfit = tr.netProfit >= 0
           const isBuy = tr.type?.toLowerCase().startsWith('buy')
           return (
-            <div key={tr.ticket + i} className="bg-[#111827] border border-[#1f2d40] rounded-xl p-3">
+            <div key={tr.ticket + i} className="bg-surface border border-border rounded-xl p-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -174,10 +174,10 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
       </div>
 
       {/* デスクトップテーブルビュー */}
-      <div className="hidden sm:block overflow-x-auto rounded-xl border border-[#1f2d40]">
+      <div className="hidden sm:block overflow-x-auto rounded-xl border border-border">
         <table className="w-full text-xs whitespace-nowrap">
           <thead>
-            <tr className="bg-[#0a0e17] border-b border-[#1f2d40]">
+            <tr className="bg-bg border-b border-border">
               {COLS.map(col => (
                 <th
                   key={col.key}
@@ -202,7 +202,7 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
               const isProfit = tr.netProfit >= 0
               const isBuy = tr.type?.toLowerCase().startsWith('buy')
               return (
-                <tr key={tr.ticket + i} className="border-b border-[#1f2d40]/40 hover:bg-[#1a2235]/60 transition-colors">
+                <tr key={tr.ticket + i} className="border-b border-border/40 hover:bg-surface2/60 transition-colors">
                   <td className="px-3 py-2 text-slate-500 font-mono">{tr.ticket || '—'}</td>
                   <td className="px-3 py-2 text-slate-500">{tr.openTime?.slice(0, 16) || '—'}</td>
                   <td className="px-3 py-2 text-slate-500">{tr.closeTime?.slice(0, 16) || '—'}</td>
@@ -237,7 +237,7 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
           <button
             disabled={page === 0}
             onClick={() => goToPage(p => p - 1)}
-            className="px-3 py-1.5 text-xs rounded-lg bg-[#1a2235] text-slate-400 disabled:opacity-30 hover:bg-[#1f2d40] transition-colors"
+            className="px-3 py-1.5 text-xs rounded-lg bg-surface2 text-slate-400 disabled:opacity-30 hover:bg-border transition-colors"
           >
             {t('common.prev')}
           </button>
@@ -245,7 +245,7 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
           <button
             disabled={page >= pages - 1}
             onClick={() => goToPage(p => p + 1)}
-            className="px-3 py-1.5 text-xs rounded-lg bg-[#1a2235] text-slate-400 disabled:opacity-30 hover:bg-[#1f2d40] transition-colors"
+            className="px-3 py-1.5 text-xs rounded-lg bg-surface2 text-slate-400 disabled:opacity-30 hover:bg-border transition-colors"
           >
             {t('common.next')}
           </button>

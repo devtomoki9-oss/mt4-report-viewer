@@ -110,7 +110,7 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
             className={`px-3 py-1 text-xs rounded-full border transition-colors
               ${!selectedAccount
                 ? 'bg-blue-600/30 border-blue-500/50 text-blue-300'
-                : 'border-[#1f2d40] text-slate-500 hover:text-slate-300'}`}>
+                : 'border-border text-slate-500 hover:text-slate-300'}`}>
             {t('calendar.allAccounts')}
           </button>
           {accountNames.map(name => {
@@ -123,7 +123,7 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
                 className={`px-3 py-1 text-xs rounded-full border transition-colors
                   ${active
                     ? 'bg-blue-600/30 border-blue-500/50 text-blue-300'
-                    : 'border-[#1f2d40] text-slate-500 hover:text-slate-300'}`}>
+                    : 'border-border text-slate-500 hover:text-slate-300'}`}>
                 {display}
               </button>
             )
@@ -132,11 +132,11 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
       )}
 
       {/* ヘッダ：月ナビ＋月集計 */}
-      <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4">
+      <div className="bg-surface border border-border rounded-xl p-4">
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={prevMonth}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-200 hover:bg-[#1a2235] transition-colors text-lg">
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-200 hover:bg-surface2 transition-colors text-lg">
             ‹
           </button>
           <div className="text-base font-semibold text-slate-100">
@@ -144,13 +144,13 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
           </div>
           <button
             onClick={nextMonth}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-200 hover:bg-[#1a2235] transition-colors text-lg">
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-200 hover:bg-surface2 transition-colors text-lg">
             ›
           </button>
         </div>
 
         {/* 月集計バー */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs border-t border-[#1f2d40] pt-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs border-t border-border pt-3">
           <div>
             <div className="text-slate-500 mb-0.5">{t('calendar.metrics.monthProfit')}</div>
             <div className={`font-semibold text-sm ${monthStats.profit > 0 ? 'text-emerald-400' : monthStats.profit < 0 ? 'text-red-400' : 'text-slate-400'}`}>
@@ -177,8 +177,8 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
       </div>
 
       {/* カレンダーグリッド */}
-      <div className="bg-[#111827] border border-[#1f2d40] rounded-xl overflow-hidden">
-        <div className="grid grid-cols-7 border-b border-[#1f2d40]">
+      <div className="bg-surface border border-border rounded-xl overflow-hidden">
+        <div className="grid grid-cols-7 border-b border-border">
           {WEEKDAYS.map((w, i) => (
             <div key={w} className={`py-2 text-center text-xs font-medium
               ${i === 0 ? 'text-red-400' : i === 6 ? 'text-blue-400' : 'text-slate-500'}`}>
@@ -190,7 +190,7 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
         <div className="grid grid-cols-7">
           {calendarDays.map((day, idx) => {
             if (!day) {
-              return <div key={`blank-${idx}`} className="border-b border-r border-[#1a2235] h-16 sm:h-20" />
+              return <div key={`blank-${idx}`} className="border-b border-r border-surface2 h-16 sm:h-20" />
             }
             const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
             const data = dailyMap.get(key)
@@ -204,8 +204,8 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
               <button
                 key={key}
                 onClick={() => { setSelectedDay(isSelected ? null : day); setTradePage(0) }}
-                className={`border-b border-r border-[#1a2235] h-16 sm:h-20 p-1.5 text-left flex flex-col transition-colors
-                  ${isSelected ? 'bg-blue-600/20 border-blue-500/30' : 'hover:bg-[#1a2235]'}
+                className={`border-b border-r border-surface2 h-16 sm:h-20 p-1.5 text-left flex flex-col transition-colors
+                  ${isSelected ? 'bg-blue-600/20 border-blue-500/30' : 'hover:bg-surface2'}
                   ${(idx + 1) % 7 === 0 ? 'border-r-0' : ''}`}>
                 <span className={`text-xs font-medium w-5 h-5 flex items-center justify-center rounded-full
                   ${isToday ? 'bg-blue-500 text-white' : isSun ? 'text-red-400' : isSat ? 'text-blue-400' : 'text-slate-400'}`}>
@@ -235,8 +235,8 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
         const pages  = Math.ceil(sorted.length / PAGE_SIZE)
         const paged  = sorted.slice(tradePage * PAGE_SIZE, (tradePage + 1) * PAGE_SIZE)
         return (
-          <div ref={tradeTableRef} className="bg-[#111827] border border-[#1f2d40] rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#1f2d40] flex items-center justify-between">
+          <div ref={tradeTableRef} className="bg-surface border border-border rounded-xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-border flex items-center justify-between">
               <div className="text-sm font-semibold text-slate-300">
                 {t('calendar.dayHeading', { year, month: month + 1, day: selectedDay, monthName: formatMonthName(new Date(year, month, 1), { lang }) })}
                 <span className="ml-2 text-xs font-normal text-slate-500">{t('units.items', { count: sorted.length })}</span>
@@ -248,7 +248,7 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="text-slate-500 border-b border-[#1f2d40]">
+                  <tr className="text-slate-500 border-b border-border">
                     <th className="px-3 py-2 text-left font-medium">{t('calendar.table.time')}</th>
                     <th className="px-3 py-2 text-left font-medium">{t('calendar.table.symbol')}</th>
                     <th className="px-3 py-2 text-left font-medium">{t('calendar.table.type')}</th>
@@ -261,7 +261,7 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
                   {paged.map((t, i) => {
                     const p = t.netProfit ?? t.profit ?? 0
                     return (
-                      <tr key={t.ticket ?? i} className="border-b border-[#1a2235] hover:bg-[#1a2235] transition-colors">
+                      <tr key={t.ticket ?? i} className="border-b border-surface2 hover:bg-surface2 transition-colors">
                         <td className="px-3 py-2 text-slate-400 tabular-nums whitespace-nowrap">
                           {t.closeTime?.slice(11, 16)}
                         </td>
@@ -283,11 +283,11 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
               </table>
             </div>
             {pages > 1 && (
-              <div className="flex items-center justify-center gap-2 px-4 py-3 border-t border-[#1f2d40]">
+              <div className="flex items-center justify-center gap-2 px-4 py-3 border-t border-border">
                 <button
                   disabled={tradePage === 0}
                   onClick={() => { setTradePage(p => p - 1); if (tradeTableRef.current) { const y = tradeTableRef.current.getBoundingClientRect().top + window.scrollY - 72; window.scrollTo({ top: y, behavior: 'smooth' }) } }}
-                  className="px-3 py-1.5 text-xs rounded-lg bg-[#1a2235] text-slate-400 disabled:opacity-30 hover:bg-[#1f2d40] transition-colors">
+                  className="px-3 py-1.5 text-xs rounded-lg bg-surface2 text-slate-400 disabled:opacity-30 hover:bg-border transition-colors">
                   {t('common.prev')}
                 </button>
                 <span className="text-xs text-slate-500 tabular-nums">
@@ -296,7 +296,7 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
                 <button
                   disabled={tradePage >= pages - 1}
                   onClick={() => { setTradePage(p => p + 1); if (tradeTableRef.current) { const y = tradeTableRef.current.getBoundingClientRect().top + window.scrollY - 72; window.scrollTo({ top: y, behavior: 'smooth' }) } }}
-                  className="px-3 py-1.5 text-xs rounded-lg bg-[#1a2235] text-slate-400 disabled:opacity-30 hover:bg-[#1f2d40] transition-colors">
+                  className="px-3 py-1.5 text-xs rounded-lg bg-surface2 text-slate-400 disabled:opacity-30 hover:bg-border transition-colors">
                   {t('common.next')}
                 </button>
               </div>

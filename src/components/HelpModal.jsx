@@ -10,14 +10,14 @@ export default function HelpModal({ onClose }) {
   const [active, setActive] = useState('sync')
 
   return (
-    <div className="fixed inset-0 bg-[#0a0e17]/90 backdrop-blur flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+    <div className="fixed inset-0 bg-bg/90 backdrop-blur flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
       onClick={onClose}>
-      <div className="bg-[#111827] border border-[#1f2d40] rounded-t-2xl sm:rounded-2xl w-full max-w-2xl flex flex-col max-h-[90vh]"
+      <div className="bg-surface border border-border rounded-t-2xl sm:rounded-2xl w-full max-w-2xl flex flex-col max-h-[90vh]"
         onClick={e => e.stopPropagation()}>
 
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#1f2d40] flex-shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
           <div className="text-sm font-semibold text-slate-100">{t('help.title')}</div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-100 text-xl px-2">✕</button>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-100 text-xl px-2" aria-label={t('common.close')}>✕</button>
         </div>
 
         {/* トピック選択タブ */}
@@ -29,7 +29,7 @@ export default function HelpModal({ onClose }) {
               className={`px-3 py-1.5 text-xs rounded-lg whitespace-nowrap font-medium transition-colors flex-shrink-0
                 ${active === id
                   ? 'bg-blue-600 text-white'
-                  : 'text-slate-500 hover:text-slate-300 bg-[#0d1117] border border-[#1f2d40]'}`}>
+                  : 'text-slate-500 hover:text-slate-300 bg-[#0d1117] border border-border'}`}>
               {t(`help.topics.${id}`)}
             </button>
           ))}
@@ -55,7 +55,7 @@ function Section({ topicId, t }) {
           {item.body && <p dangerouslySetInnerHTML={html(item.body)} />}
           {item.options && (
             <div className="mt-2">
-              <div className="bg-[#111827] border border-[#1f2d40] rounded px-3 py-2 space-y-1">
+              <div className="bg-surface border border-border rounded px-3 py-2 space-y-1">
                 {item.options.map(([v, desc]) => (
                   <div key={v} className="flex gap-3">
                     <span className="text-slate-300 font-mono w-12 flex-shrink-0">{v}</span>
@@ -97,7 +97,7 @@ function Section({ topicId, t }) {
 
 function CheckItem({ n, title, children }) {
   return (
-    <div className="bg-[#0d1117] border border-[#1f2d40] rounded-lg p-3 space-y-1.5">
+    <div className="bg-[#0d1117] border border-border rounded-lg p-3 space-y-1.5">
       <div className="flex items-center gap-2">
         <span className="w-5 h-5 rounded-full bg-blue-600/30 text-blue-400 flex items-center justify-center flex-shrink-0 font-bold text-[11px]">{n}</span>
         <span className="text-slate-300 font-medium">{title}</span>
@@ -109,11 +109,12 @@ function CheckItem({ n, title, children }) {
 
 function Code({ children, copyTitle }) {
   return (
-    <div className="mt-1.5 bg-[#111827] border border-[#1f2d40] rounded px-2.5 py-1.5 overflow-x-auto flex items-center gap-2">
+    <div className="mt-1.5 bg-surface border border-border rounded px-2.5 py-1.5 overflow-x-auto flex items-center gap-2">
       <code className="text-green-400 font-mono text-[11px] whitespace-nowrap flex-1 select-all">{children}</code>
       <button
         onClick={() => navigator.clipboard.writeText(children)}
         className="text-slate-600 hover:text-slate-300 flex-shrink-0 transition-colors"
+        aria-label={copyTitle}
         title={copyTitle}>⎘</button>
     </div>
   )

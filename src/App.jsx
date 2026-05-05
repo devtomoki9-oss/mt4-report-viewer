@@ -55,6 +55,7 @@ import LoginScreen from './components/LoginScreen'
 import LandingPage from './components/LandingPage'
 import PasswordResetScreen from './components/PasswordResetScreen'
 import LanguageSwitcher from './components/LanguageSwitcher'
+import SetupStep, { CodeCopyBlock } from './components/SetupStep'
 import { formatMoney, formatMoneyWithCurrency, formatSignedMoney, formatCount, formatPercent, formatTime, normalizeCurrency } from './i18n/format'
 
 const TAB_IDS = ['overview', 'insight', 'ea', 'trades', 'calendar']
@@ -564,7 +565,7 @@ export default function App() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#0a0e17] flex items-center justify-center">
+      <div className="min-h-screen bg-bg flex items-center justify-center">
         <div className="text-slate-500 text-sm">{t('common.loading')}</div>
       </div>
     )
@@ -584,10 +585,10 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0e17] text-slate-200">
+    <div className="min-h-screen bg-bg text-slate-200">
 
       {/* ヘッダ */}
-      <header className="border-b border-[#1f2d40] bg-[#0a0e17]/80 backdrop-blur-sm sticky top-0 z-10">
+      <header className="border-b border-border bg-bg/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="h-14 flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -599,7 +600,7 @@ export default function App() {
             </div>
             <div className="flex items-center gap-1.5 sm:gap-2">
               {hasData && (
-                <nav className="hidden sm:flex gap-1 bg-[#111827] border border-[#1f2d40] rounded-lg p-1">
+                <nav className="hidden sm:flex gap-1 bg-surface border border-border rounded-lg p-1">
                   {TAB_IDS.map(id => (
                     <button key={id} onClick={() => setTab(id)}
                       className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all
@@ -622,17 +623,20 @@ export default function App() {
                   <div className="relative" ref={userMenuRef}>
                     <button
                       onClick={() => setShowUserMenu(v => !v)}
-                      className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#111827] border border-[#1f2d40] hover:border-slate-600 transition-colors">
+                      aria-haspopup="menu"
+                      aria-expanded={showUserMenu}
+                      aria-label={user.email}
+                      className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-surface border border-border hover:border-slate-600 transition-colors">
                       <span className="text-xs text-slate-400 max-w-[120px] truncate hidden sm:inline">{user.email}</span>
                       {plan === 'pro'
                         ? <span className="text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1.5 py-0.5 rounded font-semibold">{t('app.header.userMenu.planPro')}</span>
                         : <span className="text-[10px] bg-slate-700/50 text-slate-500 border border-slate-700 px-1.5 py-0.5 rounded font-semibold">{t('app.header.userMenu.planFree')}</span>
                       }
-                      <span className="text-slate-600 text-[10px]">▾</span>
+                      <span aria-hidden="true" className="text-slate-600 text-[10px]">▾</span>
                     </button>
                     {showUserMenu && (
-                      <div className="absolute right-0 top-full mt-1 w-56 bg-[#111827] border border-[#1f2d40] rounded-xl shadow-2xl py-1 z-50">
-                        <div className="px-4 py-2.5 border-b border-[#1f2d40]">
+                      <div className="absolute right-0 top-full mt-1 w-56 bg-surface border border-border rounded-xl shadow-2xl py-1 z-50">
+                        <div className="px-4 py-2.5 border-b border-border">
                           <div className="text-xs text-slate-400 truncate">{user.email}</div>
                           {plan === 'pro'
                             ? <div className="text-[10px] text-blue-400 mt-0.5">{t('app.header.userMenu.planProLabel')}</div>
@@ -642,19 +646,19 @@ export default function App() {
                         {plan === 'pro' && (
                           <button
                             onClick={() => { handleManagePlan(); setShowUserMenu(false) }}
-                            className="w-full text-left px-4 py-2.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-[#1a2235] transition-colors">
+                            className="w-full text-left px-4 py-2.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-surface2 transition-colors">
                             {t('app.header.userMenu.manageSubscription')}
                           </button>
                         )}
                         <button
                           onClick={async () => { setShowUserMenu(false); await signOut(); setAccounts([]); setUser(null) }}
-                          className="w-full text-left px-4 py-2.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-[#1a2235] transition-colors">
+                          className="w-full text-left px-4 py-2.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-surface2 transition-colors">
                           {t('app.header.userMenu.logout')}
                         </button>
-                        <div className="border-t border-[#1f2d40] mt-1 pt-1">
+                        <div className="border-t border-border mt-1 pt-1">
                           <button
                             onClick={() => { setShowDeleteAccount(true); setShowUserMenu(false) }}
-                            className="w-full text-left px-4 py-2.5 text-xs text-red-400/60 hover:text-red-400 hover:bg-[#1a2235] transition-colors">
+                            className="w-full text-left px-4 py-2.5 text-xs text-red-400/60 hover:text-red-400 hover:bg-surface2 transition-colors">
                             {t('app.header.userMenu.deleteAccount')}
                           </button>
                         </div>
@@ -666,49 +670,46 @@ export default function App() {
             </div>
           </div>
           {hasData && (
-            <div className="sm:hidden flex gap-1 pb-2 overflow-x-auto">
+            <nav className="sm:hidden flex gap-1 pb-2 overflow-x-auto" aria-label={t('app.tabs.label', { defaultValue: 'Sections' })}>
               {TAB_IDS.map(id => (
                 <button key={id} onClick={() => setTab(id)}
                   className={`flex-1 flex-shrink-0 py-1.5 text-xs rounded-md font-medium transition-all whitespace-nowrap
-                    ${tab === id ? 'bg-blue-600 text-white shadow' : 'bg-[#111827] border border-[#1f2d40] text-slate-500'}`}>
+                    ${tab === id ? 'bg-blue-600 text-white shadow' : 'bg-surface border border-border text-slate-500'}`}>
                   {t(`app.tabs.${id}`)}
                 </button>
               ))}
-              <button onClick={clearAll}
-                className="flex-shrink-0 px-2.5 py-1.5 text-xs rounded-md font-medium bg-[#111827] border border-[#1f2d40] text-slate-600 hover:text-red-400 transition-colors">
-                {t('app.header.clear')}
-              </button>
-            </div>
+            </nav>
           )}
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4">
 
-{!hasData && manualCleared ? (
-          /* ── クリア後の空状態（セットアップ画面へ遷移しない） ── */
-          <div className="flex flex-col items-center justify-center min-h-[55vh] gap-4">
-            <p className="text-slate-500 text-sm">{t('app.cleared.message')}</p>
-            <div className="w-full max-w-2xl">
-              <UploadZone onFiles={handleFiles} />
-            </div>
-            <button
-              onClick={() => setManualCleared(false)}
-              className="text-xs text-slate-600 hover:text-slate-400 transition-colors underline">
-              {t('app.cleared.showSetup')}
-            </button>
-          </div>
-        ) : !hasData ? (
-          /* ── セットアップ画面 ── */
+{!hasData ? (
+          /* ── セットアップ画面（クリア後もここに集約） ── */
           <div className="flex flex-col items-center justify-center min-h-[55vh] gap-5 py-4">
             <div className="text-center">
               <h1 className="text-xl font-bold text-slate-100 mb-1.5">{t('app.setup.title')}</h1>
               <p className="text-slate-500 text-sm">{t('app.setup.subtitle')}</p>
             </div>
 
+            {manualCleared && (
+              <div className="w-full max-w-lg bg-surface border border-border rounded-xl px-4 py-2.5 flex items-center justify-between gap-3 text-xs text-slate-400">
+                <span>{t('app.cleared.message')}</span>
+                <button
+                  type="button"
+                  onClick={() => setManualCleared(false)}
+                  className="text-slate-500 hover:text-slate-200 transition-colors"
+                  aria-label={t('common.close', { defaultValue: 'Close' })}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
             {syncDone && (
               <div className="w-full max-w-lg bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 flex items-start gap-3 text-xs text-amber-400">
-                <span className="flex-shrink-0 mt-0.5">⚠</span>
+                <span className="flex-shrink-0 mt-0.5" aria-hidden="true">⚠</span>
                 <div>
                   <div className="font-semibold">{t('app.syncWarn.title')}</div>
                   <div className="text-amber-500/80 mt-0.5">{t('app.syncWarn.body')}</div>
@@ -717,42 +718,34 @@ export default function App() {
             )}
 
             <div className="w-full max-w-lg space-y-3">
-              {/* ステップ 1 */}
-              <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4 space-y-2.5">
-                <div className="flex items-center gap-2.5">
-                  <span className="w-6 h-6 rounded-full bg-blue-600/30 text-blue-400 flex items-center justify-center flex-shrink-0 font-bold text-xs">1</span>
-                  <span className="text-sm font-semibold text-slate-200">{t('app.setup.step1.title')}</span>
-                </div>
-                <p className="text-xs text-slate-500 ml-[34px]">{t('app.setup.step1.description', { file: 'install.bat' })}</p>
-                <div className="flex flex-wrap gap-2 ml-[34px]">
+              <SetupStep
+                number={1}
+                title={t('app.setup.step1.title')}
+                description={t('app.setup.step1.description', { file: 'install.bat' })}
+              >
+                <div className="flex flex-wrap gap-2">
                   <button onClick={() => downloadText(INSTALL_BAT, 'install.bat')}
                     className="text-xs text-blue-400 hover:text-blue-300 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg transition-colors">
                     ↓ install.bat
                   </button>
                   <a href="/MT4ReportExporter.mq4" download="MT4ReportExporter.mq4"
-                    className="text-xs text-slate-400 hover:text-slate-200 bg-[#1a2235] border border-[#1f2d40] px-3 py-1.5 rounded-lg transition-colors">
+                    className="text-xs text-slate-400 hover:text-slate-200 bg-surface2 border border-border px-3 py-1.5 rounded-lg transition-colors">
                     ↓ MT4ReportExporter.mq4
                   </a>
                   <a href="/MT5ReportExporter.mq5" download="MT5ReportExporter.mq5"
-                    className="text-xs text-slate-400 hover:text-slate-200 bg-[#1a2235] border border-[#1f2d40] px-3 py-1.5 rounded-lg transition-colors">
+                    className="text-xs text-slate-400 hover:text-slate-200 bg-surface2 border border-border px-3 py-1.5 rounded-lg transition-colors">
                     ↓ MT5ReportExporter.mq5
                   </a>
                 </div>
-                <div className="ml-[34px] flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded px-2.5 py-1.5 overflow-x-auto">
-                  <code className="text-green-400 font-mono text-[11px] whitespace-nowrap flex-1 select-all">{'Unblock-File "$env:USERPROFILE\\Downloads\\install.bat"; & "$env:USERPROFILE\\Downloads\\install.bat"'}</code>
-                  <button onClick={() => navigator.clipboard.writeText('Unblock-File "$env:USERPROFILE\\Downloads\\install.bat"; & "$env:USERPROFILE\\Downloads\\install.bat"')}
-                    className="text-slate-600 hover:text-slate-300 flex-shrink-0 transition-colors" title={t('common.copy')}>⎘</button>
-                </div>
-              </div>
+                <CodeCopyBlock code={'Unblock-File "$env:USERPROFILE\\Downloads\\install.bat"; & "$env:USERPROFILE\\Downloads\\install.bat"'} />
+              </SetupStep>
 
-              {/* ステップ 2 */}
-              <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4 space-y-2.5">
-                <div className="flex items-center gap-2.5">
-                  <span className="w-6 h-6 rounded-full bg-blue-600/30 text-blue-400 flex items-center justify-center flex-shrink-0 font-bold text-xs">2</span>
-                  <span className="text-sm font-semibold text-slate-200">{t('app.setup.step2.title')}</span>
-                </div>
-                <p className="text-xs text-slate-500 ml-[34px]">{t('app.setup.step2.description')}</p>
-                <div className="flex flex-wrap gap-2 ml-[34px]">
+              <SetupStep
+                number={2}
+                title={t('app.setup.step2.title')}
+                description={t('app.setup.step2.description')}
+              >
+                <div className="flex flex-wrap gap-2">
                   <a href="/sync-to-supabase.ps1" download="sync-to-supabase.ps1"
                     className="text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg transition-colors">
                     ↓ sync-to-supabase.ps1
@@ -762,26 +755,16 @@ export default function App() {
                     ↓ run-sync.vbs
                   </button>
                 </div>
-                <div className="ml-[34px] flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded px-2.5 py-1.5 overflow-x-auto">
-                  <code className="text-green-400 font-mono text-[11px] whitespace-nowrap flex-1 select-all">{'Unblock-File "$env:USERPROFILE\\Downloads\\sync-to-supabase.ps1"'}</code>
-                  <button onClick={() => navigator.clipboard.writeText('Unblock-File "$env:USERPROFILE\\Downloads\\sync-to-supabase.ps1"')}
-                    className="text-slate-600 hover:text-slate-300 flex-shrink-0 transition-colors" title={t('common.copy')}>⎘</button>
-                </div>
-              </div>
+                <CodeCopyBlock code={'Unblock-File "$env:USERPROFILE\\Downloads\\sync-to-supabase.ps1"'} />
+              </SetupStep>
 
-              {/* ステップ 3 */}
-              <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-4 space-y-2.5">
-                <div className="flex items-center gap-2.5">
-                  <span className="w-6 h-6 rounded-full bg-blue-600/30 text-blue-400 flex items-center justify-center flex-shrink-0 font-bold text-xs">3</span>
-                  <span className="text-sm font-semibold text-slate-200">{t('app.setup.step3.title')}</span>
-                </div>
-                <p className="text-xs text-slate-500 ml-[34px]">{t('app.setup.step3.description')}</p>
-                <div className="ml-[34px] flex items-center gap-2 bg-[#0d1117] border border-[#1f2d40] rounded px-2.5 py-1.5 overflow-x-auto">
-                  <code className="text-green-400 font-mono text-[11px] whitespace-nowrap flex-1 select-all">{'schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"'}</code>
-                  <button onClick={() => navigator.clipboard.writeText('schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"')}
-                    className="text-slate-600 hover:text-slate-300 flex-shrink-0 transition-colors" title={t('common.copy')}>⎘</button>
-                </div>
-              </div>
+              <SetupStep
+                number={3}
+                title={t('app.setup.step3.title')}
+                description={t('app.setup.step3.description')}
+              >
+                <CodeCopyBlock code={'schtasks /create /tn "MTExportSync" /sc minute /mo 1 /f /tr "wscript /b %USERPROFILE%\\Downloads\\run-sync.vbs"'} />
+              </SetupStep>
             </div>
 
             <button onClick={() => setShowManual(true)}
@@ -806,7 +789,7 @@ export default function App() {
                     {formatTime(lastUpdated, { lang: i18n.language })}
                   </span>
                 )}
-                <button onClick={clearAll} className="hidden sm:inline text-slate-600 hover:text-red-400 transition-colors">
+                <button onClick={clearAll} className="text-slate-600 hover:text-red-400 transition-colors">
                   {t('app.toolbar.clear')}
                 </button>
               </div>
@@ -829,7 +812,7 @@ export default function App() {
             {tab === 'calendar' ? (
               <TradeCalendar trades={allTrades} aliases={aliases} />
             ) : filteredTrades.length === 0 ? (
-              <div className="bg-[#111827] border border-[#1f2d40] rounded-xl p-8 text-center text-slate-500 text-sm">
+              <div className="bg-surface border border-border rounded-xl p-8 text-center text-slate-500 text-sm">
                 {t('app.noTradesInRange.message')}
                 <button onClick={() => setDateRange({ from: '', to: '' })}
                   className="block mx-auto mt-2 text-xs text-blue-400 hover:text-blue-300">
@@ -866,7 +849,7 @@ export default function App() {
                         </>)
                       })()}
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:grid-cols-7">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-3">
                       <StatCard label={t('app.stats.netProfitTotal')}
                         value={formatSignedMoney(agg.totalProfit, { lang: i18n.language })}
                         color={agg.totalProfit >= 0 ? 'profit' : 'loss'} size="lg" />
@@ -941,15 +924,16 @@ export default function App() {
       </main>
 
       {/* フッター */}
-      <footer className="text-center py-6 text-xs text-slate-600 space-y-2">
-        <div className="flex items-center justify-center gap-4 flex-wrap">
+      <footer className="py-6 text-xs text-slate-600 space-y-3">
+        <div className="flex items-center justify-center gap-x-4 gap-y-2 flex-wrap">
           <button onClick={() => setShowManual(true)} className="hover:text-slate-300 transition-colors">{t('app.footer.manual')}</button>
           <button onClick={() => setShowHelp(true)} className="hover:text-slate-300 transition-colors">{t('app.footer.help')}</button>
+          <button onClick={() => setShowFeedback(true)} className="hover:text-slate-300 transition-colors">{t('app.footer.contact')}</button>
+          <span aria-hidden="true" className="text-slate-800">·</span>
           <button onClick={() => setShowTerms(true)} className="hover:text-slate-300 transition-colors">{t('app.footer.terms')}</button>
           <button onClick={() => setShowPrivacy(true)} className="hover:text-slate-300 transition-colors">{t('app.footer.privacy')}</button>
-          <button onClick={() => setShowFeedback(true)} className="hover:text-slate-300 transition-colors">{t('app.footer.contact')}</button>
         </div>
-        <div className="text-slate-700">{t('app.footer.copyright', { year: new Date().getFullYear() })}</div>
+        <div className="text-center text-slate-700">{t('app.footer.copyright', { year: new Date().getFullYear() })}</div>
       </footer>
 
       {showManual   && <ManualModal     onClose={() => setShowManual(false)} onDownloadVbs={() => { setShowManual(false); setVbsPass(''); setShowVbsModal(true) }} />}
@@ -959,9 +943,9 @@ export default function App() {
       {showFeedback && <FeedbackModal   onClose={() => setShowFeedback(false)} />}
 
       {showVbsModal && (
-        <div className="fixed inset-0 bg-[#0a0e17]/90 backdrop-blur flex items-center justify-center z-50 p-4"
+        <div className="fixed inset-0 bg-bg/90 backdrop-blur flex items-center justify-center z-50 p-4"
           onClick={() => setShowVbsModal(false)}>
-          <div className="bg-[#111827] border border-[#1f2d40] rounded-2xl w-full max-w-sm p-6 space-y-4"
+          <div className="bg-surface border border-border rounded-2xl w-full max-w-sm p-6 space-y-4"
             onClick={e => e.stopPropagation()}>
             <div className="space-y-1">
               <h2 className="text-sm font-semibold text-slate-200">{t('app.vbsModal.title')}</h2>
@@ -969,7 +953,7 @@ export default function App() {
             </div>
             <div className="space-y-1">
               <div className="text-xs text-slate-500">{t('app.vbsModal.email')}</div>
-              <div className="text-xs text-slate-400 bg-[#0a0e17] border border-[#1f2d40] rounded px-3 py-2">{user?.email}</div>
+              <div className="text-xs text-slate-400 bg-bg border border-border rounded px-3 py-2">{user?.email}</div>
             </div>
             <div className="space-y-1.5">
               <label className="text-xs text-slate-500">{t('app.vbsModal.password')}</label>
@@ -983,14 +967,14 @@ export default function App() {
                     setShowVbsModal(false)
                   }
                 }}
-                className="w-full bg-[#0a0e17] border border-[#1f2d40] rounded-lg px-3 py-2.5 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:border-blue-500/50"
+                className="w-full bg-bg border border-border rounded-lg px-3 py-2.5 text-sm text-slate-200 placeholder-slate-700 focus:outline-none focus:border-blue-500/50"
                 placeholder={t('app.vbsModal.passwordPlaceholder')}
                 autoFocus
               />
             </div>
             <div className="flex gap-2">
               <button onClick={() => setShowVbsModal(false)}
-                className="flex-1 bg-[#1a2235] border border-[#1f2d40] text-slate-400 hover:text-slate-200 text-xs px-4 py-2.5 rounded-lg transition-colors">
+                className="flex-1 bg-surface2 border border-border text-slate-400 hover:text-slate-200 text-xs px-4 py-2.5 rounded-lg transition-colors">
                 {t('common.cancel')}
               </button>
               <button

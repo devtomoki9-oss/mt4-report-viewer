@@ -4,14 +4,14 @@ export default function TermsModal({ onClose }) {
   const { t } = useTranslation()
   const sections = t('terms.sections', { returnObjects: true }) || []
   return (
-    <div className="fixed inset-0 bg-[#0a0e17]/90 backdrop-blur flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+    <div className="fixed inset-0 bg-bg/90 backdrop-blur flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
       onClick={onClose}>
-      <div className="bg-[#111827] border border-[#1f2d40] rounded-t-2xl sm:rounded-2xl w-full max-w-2xl flex flex-col max-h-[85vh]"
+      <div className="bg-surface border border-border rounded-t-2xl sm:rounded-2xl w-full max-w-2xl flex flex-col max-h-[85vh]"
         onClick={e => e.stopPropagation()}>
 
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#1f2d40] flex-shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
           <div className="text-sm font-semibold text-slate-100">{t('terms.title')}</div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-100 text-xl px-2">✕</button>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-100 text-xl px-2" aria-label={t('common.close')}>✕</button>
         </div>
 
         <div className="overflow-y-auto px-5 py-4 space-y-5 text-xs text-slate-400 leading-relaxed">

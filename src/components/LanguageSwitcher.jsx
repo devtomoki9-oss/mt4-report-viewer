@@ -38,7 +38,7 @@ export default function LanguageSwitcher({ compact = false }) {
         aria-expanded={open}
         aria-label={t('language.switcher.label')}
         title={t('language.switcher.label')}
-        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#111827] border border-[#1f2d40] hover:border-slate-600 text-xs text-slate-400 transition-colors">
+        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-surface border border-border hover:border-slate-600 text-xs text-slate-400 transition-colors">
         <span aria-hidden="true">🌐</span>
         <span className={compact ? 'hidden sm:inline' : ''}>{currentLabel}</span>
         <span className="text-slate-600 text-[10px]">▾</span>
@@ -47,7 +47,7 @@ export default function LanguageSwitcher({ compact = false }) {
         <div
           role="listbox"
           aria-label={t('language.switcher.label')}
-          className="absolute right-0 top-full mt-1 w-36 bg-[#111827] border border-[#1f2d40] rounded-xl shadow-2xl py-1 z-50">
+          className="absolute right-0 top-full mt-1 w-36 bg-surface border border-border rounded-xl shadow-2xl py-1 z-50">
           {SUPPORTED_LANGUAGES.map(lng => {
             const selected = lng === current
             return (
@@ -58,8 +58,8 @@ export default function LanguageSwitcher({ compact = false }) {
                 onClick={() => change(lng)}
                 className={`w-full text-left px-3 py-2 text-xs transition-colors ${
                   selected
-                    ? 'text-blue-400 bg-[#1a2235]'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-[#1a2235]'
+                    ? 'text-blue-400 bg-surface2'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-surface2'
                 }`}>
                 {LANGUAGE_LABELS[lng] ?? lng.toUpperCase()}
               </button>

@@ -22,7 +22,7 @@ const VALUE_SIZES = {
 
 export default function StatCard({ label, value, sub, color = 'white', size = 'md' }) {
   return (
-    <div className="bg-[#111827] border border-[#1f2d40] rounded-xl overflow-hidden flex flex-col">
+    <div className="bg-surface border border-border rounded-xl overflow-hidden flex flex-col">
       {TOP_ACCENT[color] && (
         <div className={`h-0.5 w-full ${TOP_ACCENT[color]}`} />
       )}

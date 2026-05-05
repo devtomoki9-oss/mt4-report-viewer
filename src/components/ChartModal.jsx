@@ -20,19 +20,19 @@ export default function ChartModal({ symbol, chartDataMap, trades, positions, on
 
   const chartData = chartDataMap?.[selectedTf] ?? null
 
-  const btnCls = "w-7 h-7 bg-[#0d1117] border border-[#1f2d40] text-slate-400 hover:text-white hover:bg-[#1f2d40] rounded leading-none flex items-center justify-center transition-colors flex-shrink-0"
+  const btnCls = "w-7 h-7 bg-[#0d1117] border border-border text-slate-400 hover:text-white hover:bg-border rounded leading-none flex items-center justify-center transition-colors flex-shrink-0"
 
   return createPortal(
     <div
-      className="fixed inset-0 bg-[#0a0e17]/90 backdrop-blur flex items-end sm:items-center justify-center z-[9999] p-0 sm:p-4"
+      className="fixed inset-0 bg-bg/90 backdrop-blur flex items-end sm:items-center justify-center z-[9999] p-0 sm:p-4"
       onClick={onClose}
     >
       <div
-        className="bg-[#111827] border border-[#1f2d40] rounded-t-2xl sm:rounded-2xl w-full max-w-5xl flex flex-col h-[90dvh] max-h-[100dvh] sm:h-[680px] sm:max-h-[90dvh] overflow-hidden"
+        className="bg-surface border border-border rounded-t-2xl sm:rounded-2xl w-full max-w-5xl flex flex-col h-[90dvh] max-h-[100dvh] sm:h-[680px] sm:max-h-[90dvh] overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* ヘッダ */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-[#1f2d40] flex-shrink-0 gap-3 flex-wrap">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border flex-shrink-0 gap-3 flex-wrap">
           <div className="flex items-center gap-3 flex-wrap">
             <span className="text-sm font-semibold text-slate-100">{symbol}</span>
 
@@ -46,7 +46,7 @@ export default function ChartModal({ symbol, chartDataMap, trades, positions, on
                       className={`text-xs px-2 py-0.5 rounded transition-colors ${
                         selectedTf === tf
                           ? 'bg-blue-600 text-white'
-                          : 'text-slate-500 hover:text-slate-300 border border-[#1f2d40]'
+                          : 'text-slate-500 hover:text-slate-300 border border-border'
                       }`}
                     >
                       {TF_LABELS[tf]}
@@ -68,7 +68,7 @@ export default function ChartModal({ symbol, chartDataMap, trades, positions, on
               <button onClick={() => tradeChartRef.current?.fitContent()} className={btnCls} title={t('chart.fitAll')}><span className="text-xs">⊡</span></button>
               <button onClick={() => tradeChartRef.current?.zoomOut()}   className={btnCls} title={t('chart.zoomOut')}><span className="text-base">−</span></button>
             </div>
-            <button onClick={onClose} className="text-slate-400 hover:text-slate-100 text-xl px-2">✕</button>
+            <button onClick={onClose} className="text-slate-400 hover:text-slate-100 text-xl px-2" aria-label={t('common.close')}>✕</button>
           </div>
         </div>
 

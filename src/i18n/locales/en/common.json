@@ -477,7 +477,7 @@
       "title": "AI Diagnosis",
       "freeBadge": "Free: 1 item",
       "proBadge": "Pro",
-      "insufficient": "Need at least 5 trades for a diagnosis",
+      "insufficient": "Need at least 5 trades to run a diagnosis.",
       "lockedRemainder_one": "Upgrade to Pro to see {{count}} more",
       "lockedRemainder_other": "Upgrade to Pro to see {{count}} more"
     },
@@ -485,10 +485,10 @@
       "title": "Recommendations",
       "proBadge": "Pro only",
       "unlockCta": "Upgrade to Pro to unlock",
-      "noneNeeded": "No recommendations — your performance is solid",
+      "noneNeeded": "Nothing to suggest — your performance looks solid.",
       "perAccountTitle": "Recommendations by account",
       "perAccountScore": "Score {{score}}",
-      "perAccountNoneNeeded": "Nothing to flag — performance looks good"
+      "perAccountNoneNeeded": "Nothing to flag — performance looks good."
     },
     "winPatterns": {
       "title": "Winning patterns",
@@ -503,42 +503,42 @@
       "medium": "Med"
     },
     "rules": {
-      "negativeExpectancy": "Your edge is negative — this strategy is likely to lose over time.",
-      "lowWinRate": "Win rate is low. Take a hard look at your entry criteria.",
-      "highLossRatio": "Average losses ({{avgLoss}}) are much larger than average wins ({{avgWin}}).",
-      "sessionUnderperform": "{{session}} session underperforms ({{sessionRate}}% win rate vs. {{overallRate}}% overall).",
-      "sessionOverperform": "{{session}} session is your strong spot ({{sessionRate}}% win rate).",
-      "lossStreak": "Hit a {{streak}}-loss streak. Consider shrinking position size.",
-      "symbolUnderperform": "{{symbol}} is underperforming ({{rate}}% win rate, P/L {{profit}}).",
-      "holdingMismatch": "Losers are held longer than winners — likely a stop-loss discipline issue.",
-      "drawdownLarge": "Max drawdown reached {{value}}.",
+      "negativeExpectancy": "Your edge is negative right now — keep going and you're statistically likely to bleed capital over time.",
+      "lowWinRate": "Win rate is on the low side. Take a hard look at your entry criteria.",
+      "highLossRatio": "Your average loss ({{avgLoss}}) is much bigger than your average win ({{avgWin}}). Tighten the risk:reward ratio.",
+      "sessionUnderperform": "The {{session}} session is dragging your numbers down ({{sessionRate}}% win rate vs. {{overallRate}}% overall).",
+      "sessionOverperform": "The {{session}} session is where you're strongest ({{sessionRate}}% win rate).",
+      "lossStreak": "You're up to a {{streak}}-loss streak. Consider scaling back position size.",
+      "symbolUnderperform": "{{symbol}} isn't pulling its weight ({{rate}}% win rate, P/L {{profit}}).",
+      "holdingMismatch": "You hold losers longer than winners — likely a stop-loss discipline problem.",
+      "drawdownLarge": "Max drawdown has reached {{value}}. Time to revisit how much you're risking.",
       "excellentWinRate": "Win rate of {{rate}}% is excellent.",
-      "pfGood": "Profit factor of {{pf}} is healthy.",
-      "stableTrades": "Drawdown stays small — your trading looks stable."
+      "pfGood": "A profit factor of {{pf}} is healthy.",
+      "stableTrades": "Drawdown stays small — your trading looks steady."
     },
     "suggestionRules": {
-      "pauseAndRecheck": "Pause and review your entry criteria before placing the next trade.",
-      "reviewStrategy": "Rebuild your entry rules from the ground up — current edge is negative.",
-      "improveStopLoss": "Tighten your stops and aim for at least 1:1.5 risk:reward.",
+      "pauseAndRecheck": "Stop trading and review your entry criteria before the next setup.",
+      "reviewStrategy": "Rebuild your entry rules from scratch — the current edge is negative.",
+      "improveStopLoss": "Tighten your stops and aim for at least a 1:1.5 risk:reward.",
       "tightenLossExit": "You're holding losers too long. Stick to your stop-loss rules.",
-      "reduceSession": "Cut back or stop trading the {{session}} session.",
-      "skipSymbol": "Stop trading {{symbol}} and focus on pairs that are working.",
-      "reduceLot": "Drawdown is too high — reduce your lot size."
+      "reduceSession": "Cut back on (or stop trading) the {{session}} session.",
+      "skipSymbol": "Step away from {{symbol}} and focus on pairs that are working.",
+      "reduceLot": "Drawdown is too high — drop your lot size by a notch."
     },
     "alertRules": {
-      "ongoingStreak": "{{streak}} losses in a row — consider pausing for a bit.",
+      "ongoingStreak": "{{streak}} losses in a row — consider stepping away for a bit.",
       "drawdownDanger": "Drawdown has hit {{value}}.",
       "pfWarn": "Profit factor has dropped to {{pf}}."
     },
     "demo": {
       "suggestions": [
-        { "priority": "high", "message": "Tighten your stops and improve your risk:reward ratio." },
+        { "priority": "high", "message": "Tighten your stops and aim for at least a 1:1.5 risk:reward." },
         { "priority": "medium", "message": "Consider cutting back on London-session trades." },
-        { "priority": "medium", "message": "Drawdown is high — reduce your lot size." }
+        { "priority": "medium", "message": "Drawdown is high — drop your lot size by a notch." }
       ],
       "perAccount": [
-        { "name": "Account A", "items": ["Tighten your stops and improve your risk:reward ratio.", "Reduce lot size — drawdown is too high."] },
-        { "name": "Account B", "items": ["Rebuild your entry rules from the ground up.", "Consider cutting back on London-session trades."] }
+        { "name": "Account A", "items": ["Tighten your stops and aim for at least a 1:1.5 risk:reward.", "Drawdown is too high — drop your lot size by a notch."] },
+        { "name": "Account B", "items": ["Rebuild your entry rules from scratch.", "Consider cutting back on London-session trades."] }
       ],
       "winPatterns": [
         { "title": "Top 3 hours by win rate", "items": ["09:00  68%  42 trades", "14:00  65%  31 trades", "21:00  62%  18 trades"] },
@@ -546,6 +546,18 @@
         { "title": "Avg. winning hold time", "items": ["2.4 hrs"] }
       ]
     }
+  },
+  "glossary": {
+    "drawdown": "drawdown",
+    "expectancy": "expectancy",
+    "riskRewardRatio": "risk:reward ratio",
+    "stopLoss": "stop loss",
+    "lot": "lot",
+    "positionSize": "position size",
+    "profitFactor": "profit factor",
+    "winRate": "win rate",
+    "session": "session",
+    "edge": "edge"
   },
   "session": {
     "asia": "Asia",

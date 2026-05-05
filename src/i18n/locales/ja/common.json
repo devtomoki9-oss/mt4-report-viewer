@@ -465,17 +465,17 @@
       "title": "AI診断",
       "freeBadge": "Free: 1件",
       "proBadge": "Pro",
-      "insufficient": "取引データが少ないため診断できません(5件以上必要)",
-      "lockedRemainder": "Pro にアップグレードして残り{{count}}件を表示"
+      "insufficient": "診断には取引データが 5 件以上必要です。",
+      "lockedRemainder": "Pro にアップグレードして残り {{count}} 件を表示"
     },
     "suggestions": {
       "title": "改善提案",
-      "proBadge": "Pro限定",
+      "proBadge": "Pro 限定",
       "unlockCta": "Pro にアップグレードして解放",
-      "noneNeeded": "改善提案なし(良好なパフォーマンスです)",
-      "perAccountTitle": "口座別改善提案",
+      "noneNeeded": "現時点で改善が必要な点は見当たりません。良好なパフォーマンスです。",
+      "perAccountTitle": "口座別の改善提案",
       "perAccountScore": "スコア {{score}}",
-      "perAccountNoneNeeded": "改善点なし(良好なパフォーマンスです)"
+      "perAccountNoneNeeded": "目立った改善点はありません。良好なパフォーマンスです。"
     },
     "winPatterns": {
       "title": "勝ちパターン分析",
@@ -490,42 +490,42 @@
       "medium": "中"
     },
     "rules": {
-      "negativeExpectancy": "この手法は長期的に負ける可能性があります(期待値がマイナスです)",
-      "lowWinRate": "勝率が低いためエントリー条件の見直しが必要です",
-      "highLossRatio": "平均損失({{avgLoss}})が平均利益({{avgWin}})を大きく上回っています",
-      "sessionUnderperform": "{{session}}時間のパフォーマンスに偏りがあります(勝率{{sessionRate}}% vs 全体{{overallRate}}%)",
-      "sessionOverperform": "{{session}}時間のパフォーマンスが高いです(勝率{{sessionRate}}%)",
-      "lossStreak": "最大{{streak}}連敗を記録しています。ポジションサイズを見直してください",
-      "symbolUnderperform": "{{symbol}}のパフォーマンスが低調です(勝率{{rate}}%・損益{{profit}})",
-      "holdingMismatch": "負けトレードの平均保有時間が勝ちトレードより長いです(損切りの遅れ)",
-      "drawdownLarge": "最大ドローダウンが{{value}}に達しています",
-      "excellentWinRate": "勝率 {{rate}}% は優秀です",
-      "pfGood": "プロフィットファクター {{pf}} は良好です",
-      "stableTrades": "ドローダウンが小さく安定したトレードです"
+      "negativeExpectancy": "現状の期待値はマイナスです。このまま続けると長期的に資金を減らす可能性が高いです。",
+      "lowWinRate": "勝率がやや低めです。エントリー条件を見直してみてください。",
+      "highLossRatio": "1回あたりの負け({{avgLoss}})が勝ち({{avgWin}})を大きく上回っています。リスクリワード比の改善を検討してください。",
+      "sessionUnderperform": "{{session}}時間帯の成績が他の時間帯より低めです(勝率 {{sessionRate}}% / 全体 {{overallRate}}%)。",
+      "sessionOverperform": "{{session}}時間帯は調子がよさそうです(勝率 {{sessionRate}}%)。",
+      "lossStreak": "{{streak}}連敗まで伸びています。一度ロットを落として様子を見ることも検討してください。",
+      "symbolUnderperform": "{{symbol}}は伸び悩んでいます(勝率 {{rate}}% / 損益 {{profit}})。",
+      "holdingMismatch": "勝ちより負けを長く持つ傾向があります。損切りが遅れている可能性が高いです。",
+      "drawdownLarge": "最大ドローダウンが {{value}} まで広がっています。リスク量の見直しが必要です。",
+      "excellentWinRate": "勝率 {{rate}}% は十分高い水準です。",
+      "pfGood": "プロフィットファクター {{pf}} は健全な水準です。",
+      "stableTrades": "ドローダウンが小さく抑えられており、運用は安定しています。"
     },
     "suggestionRules": {
-      "pauseAndRecheck": "トレードを一時停止し、エントリー条件を再確認してください",
-      "reviewStrategy": "エントリー条件を根本から見直してください(現在の手法は期待値がマイナスです)",
-      "improveStopLoss": "ストップロスを見直し、リスクリワード比を改善してください(目標 1:1.5 以上)",
-      "tightenLossExit": "負けトレードを長く保有しすぎています。損切りルールを徹底してください",
-      "reduceSession": "{{session}}時間のトレードを削減または停止することを検討してください",
-      "skipSymbol": "{{symbol}}のトレードを停止し、他の通貨ペアに集中することを検討してください",
-      "reduceLot": "ドローダウンが大きいため、ロットサイズを下げることを検討してください"
+      "pauseAndRecheck": "一旦トレードを止めて、エントリー条件を見直してください。",
+      "reviewStrategy": "現状は期待値がマイナスです。エントリー基準を一から組み直すことをおすすめします。",
+      "improveStopLoss": "損切り幅を見直し、リスクリワード比 1:1.5 以上を目標にしてください。",
+      "tightenLossExit": "負けトレードを長く持ちすぎています。損切りルールを徹底してください。",
+      "reduceSession": "{{session}}時間帯のトレードを減らすか、一旦止めることを検討してください。",
+      "skipSymbol": "{{symbol}}は一旦お休みにして、相性の良い通貨ペアに絞ることを検討してください。",
+      "reduceLot": "ドローダウンが大きいので、ロットを一段階下げることを検討してください。"
     },
     "alertRules": {
-      "ongoingStreak": "現在 {{streak}} 連敗中です。トレードを一時停止することを検討してください",
-      "drawdownDanger": "ドローダウンが {{value}} に達しています",
-      "pfWarn": "プロフィットファクターが {{pf}} に低下しています"
+      "ongoingStreak": "現在 {{streak}} 連敗中です。一旦休んで仕切り直すことも検討してください。",
+      "drawdownDanger": "ドローダウンが {{value}} まで拡大しています。",
+      "pfWarn": "プロフィットファクターが {{pf}} まで低下しています。"
     },
     "demo": {
       "suggestions": [
-        { "priority": "high", "message": "ストップロスを見直し、リスクリワード比を改善してください" },
-        { "priority": "medium", "message": "ロンドン時間のトレードを削減することを検討してください" },
-        { "priority": "medium", "message": "ドローダウンが大きいため、ロットサイズを下げることを検討してください" }
+        { "priority": "high", "message": "損切り幅を見直し、リスクリワード比 1:1.5 以上を目標にしてください。" },
+        { "priority": "medium", "message": "ロンドン時間帯のトレードを減らすことを検討してください。" },
+        { "priority": "medium", "message": "ドローダウンが大きいので、ロットを一段階下げることを検討してください。" }
       ],
       "perAccount": [
-        { "name": "口座A", "items": ["ストップロスを見直し、リスクリワード比を改善してください", "ドローダウンが大きいためロットサイズを下げてください"] },
-        { "name": "口座B", "items": ["エントリー条件を根本から見直してください", "ロンドン時間のトレードを削減することを検討してください"] }
+        { "name": "口座 A", "items": ["損切り幅を見直し、リスクリワード比 1:1.5 以上を目標にしてください。", "ドローダウンが大きいので、ロットを一段階下げてください。"] },
+        { "name": "口座 B", "items": ["エントリー基準を一から組み直すことをおすすめします。", "ロンドン時間帯のトレードを減らすことを検討してください。"] }
       ],
       "winPatterns": [
         { "title": "勝率の高い時間帯 TOP3", "items": ["09:00  68%  42件", "14:00  65%  31件", "21:00  62%  18件"] },
@@ -533,6 +533,18 @@
         { "title": "勝ちトレード平均保有時間", "items": ["2.4時間"] }
       ]
     }
+  },
+  "glossary": {
+    "drawdown": "ドローダウン",
+    "expectancy": "期待値",
+    "riskRewardRatio": "リスクリワード比",
+    "stopLoss": "損切り",
+    "lot": "ロット",
+    "positionSize": "ロットサイズ",
+    "profitFactor": "プロフィットファクター",
+    "winRate": "勝率",
+    "session": "時間帯",
+    "edge": "期待値"
   },
   "session": {
     "asia": "アジア",

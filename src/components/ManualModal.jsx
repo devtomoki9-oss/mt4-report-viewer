@@ -214,6 +214,9 @@ export default function ManualModal({ onClose, onDownloadVbs }) {
           {/* Section: EA params SDK (Pro) */}
           <section className="space-y-2">
             <h2 className="text-sm font-semibold text-slate-200">{t('manual.eaParams.heading')}</h2>
+            <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg px-3 py-2 text-amber-200/80">
+              <p dangerouslySetInnerHTML={html(t('manual.eaParams.scope'))} />
+            </div>
             <p dangerouslySetInnerHTML={html(t('manual.eaParams.body'))} />
             <div className="flex flex-wrap gap-2">
               <a href="/MTReportViewerParams.mqh" download="MTReportViewerParams.mqh"

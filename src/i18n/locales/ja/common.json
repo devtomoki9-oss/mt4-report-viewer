@@ -744,7 +744,8 @@
     },
     "eaParams": {
       "heading": "EA パラメータ管理（Pro 限定）",
-      "body": "ご自身の EA に <strong>MTReportViewerParams.mqh</strong> を組み込んで再コンパイルすると、口座カードを展開した中のフォームから EA の入力値を遠隔で変更できます。同じ EA でも EURUSD 用と USDJPY 用は別エントリとして表示されます。",
+      "scope": "<strong>対象:</strong> ソースコード（.mq4/.mq5）を所有している EA のみ。.ex4/.ex5 のコンパイル済バイナリしか持っていない EA（市販品など）は対応できません。MT4/5 が他 EA の input を外部から書き換える API を提供していないためです。",
+      "body": "ご自身の EA のソースに <strong>MTReportViewerParams.mqh</strong> を組み込んで再コンパイルすると、口座カードを展開した中のフォームから EA の入力値を遠隔で変更できます。同じ EA でも EURUSD 用と USDJPY 用は別エントリとして表示されます。",
       "note": "値の反映には数秒の遅延があります。MT 端末側で同期スクリプトが稼働している必要があります。"
     },
     "section7": {
@@ -895,11 +896,12 @@
   },
   "eaParams": {
     "title": "EA パラメータ管理",
-    "subtitle": "チャート単位",
+    "subtitle": "チャート単位 · ソースコード必須",
     "proOnly": "Pro プラン限定機能です。Web からチャートに付けた EA の入力値を遠隔で変更できます。",
+    "sourceRequired": "対象は <strong>ソースコード（.mq4/.mq5）を所有している EA</strong> に限られます。市販品など .ex4/.ex5 のバイナリしか持っていない EA には対応できません（MT4/5 が他 EA の input を外部から書き換える API を提供していないため）。",
     "upgradeCta": "Pro にアップグレード",
     "loading": "読み込み中…",
-    "empty": "対応 EA がまだ検出されていません。MTReportViewerParams.mqh を組み込んだ EA をチャートに付けると、ここに表示されます。",
+    "empty": "対応 EA がまだ検出されていません。<strong>ソース（.mq4/.mq5）が手元にある EA</strong> に MTReportViewerParams.mqh を組み込んで再コンパイル → チャートへアタッチすると、ここに表示されます。",
     "noParams": "このインスタンスは公開パラメータを持ちません。",
     "save": "保存して反映",
     "saving": "保存中…",

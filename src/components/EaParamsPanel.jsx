@@ -295,7 +295,11 @@ export default function EaParamsPanel({ accountNumber, isPro, onUpgrade }) {
     return (
       <div className="bg-[#0a0e17] border border-[#1f2d40] rounded-lg p-4 text-center">
         <div className="text-xs text-slate-300 mb-1 font-semibold">{t('eaParams.title')}</div>
-        <div className="text-[11px] text-slate-500 mb-3">{t('eaParams.proOnly')}</div>
+        <div className="text-[11px] text-slate-500 mb-2">{t('eaParams.proOnly')}</div>
+        <div
+          className="text-[11px] text-amber-200/70 mb-3 leading-relaxed text-left bg-amber-500/5 border border-amber-500/20 rounded px-3 py-2"
+          dangerouslySetInnerHTML={{ __html: t('eaParams.sourceRequired') }}
+        />
         <button
           onClick={onUpgrade}
           className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 py-1.5 rounded-lg font-semibold shadow-lg transition-colors"
@@ -318,8 +322,12 @@ export default function EaParamsPanel({ accountNumber, isPro, onUpgrade }) {
       {rows == null ? (
         <div className="text-[11px] text-slate-500">{t('eaParams.loading')}</div>
       ) : rows.length === 0 ? (
-        <div className="bg-[#0a0e17] border border-dashed border-[#1f2d40] rounded-lg p-4 text-center text-[11px] text-slate-500">
-          {t('eaParams.empty')}
+        <div className="bg-[#0a0e17] border border-dashed border-[#1f2d40] rounded-lg p-4 text-[11px] text-slate-500 space-y-2">
+          <div
+            className="text-amber-200/70 leading-relaxed bg-amber-500/5 border border-amber-500/20 rounded px-3 py-2"
+            dangerouslySetInnerHTML={{ __html: t('eaParams.sourceRequired') }}
+          />
+          <div dangerouslySetInnerHTML={{ __html: t('eaParams.empty') }} />
         </div>
       ) : (
         rows.map((r) => (

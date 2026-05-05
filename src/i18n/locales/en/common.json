@@ -757,7 +757,8 @@
     },
     "eaParams": {
       "heading": "EA parameter control (Pro)",
-      "body": "Add <strong>MTReportViewerParams.mqh</strong> to your EA, recompile, and you can change its inputs remotely from the form inside each expanded account card. The same EA running on EURUSD and USDJPY shows up as separate entries.",
+      "scope": "<strong>Scope:</strong> only EAs whose source (.mq4/.mq5) you own. EAs you only have as compiled .ex4/.ex5 binaries (e.g. commercial EAs) are not supported, because MT4/5 provides no API for an external program to read or write another EA's input values.",
+      "body": "Add <strong>MTReportViewerParams.mqh</strong> to your EA's source, recompile, and you can change its inputs remotely from the form inside each expanded account card. The same EA running on EURUSD and USDJPY shows up as separate entries.",
       "note": "Changes take a few seconds to propagate. The sync script must be running on the MT terminal machine."
     },
     "section7": {
@@ -908,11 +909,12 @@
   },
   "eaParams": {
     "title": "EA parameters",
-    "subtitle": "Per chart",
+    "subtitle": "Per chart · source code required",
     "proOnly": "Pro feature. Remotely change input values of EAs attached to your MT charts.",
+    "sourceRequired": "Only works with EAs whose <strong>source code (.mq4/.mq5)</strong> you own. EAs you only have as compiled .ex4/.ex5 binaries (e.g. commercial EAs) cannot be controlled — MT4/5 exposes no API for one program to read or write another EA's input values.",
     "upgradeCta": "Upgrade to Pro",
     "loading": "Loading…",
-    "empty": "No compatible EAs detected yet. Drop an EA built with MTReportViewerParams.mqh onto a chart to see it here.",
+    "empty": "No compatible EAs detected yet. Take an EA <strong>whose source you own</strong>, add MTReportViewerParams.mqh, recompile, and attach it to a chart to see it here.",
     "noParams": "This instance exposes no parameters.",
     "save": "Save & apply",
     "saving": "Saving…",

@@ -10,10 +10,13 @@ const fmtTime = (str) => {
 }
 
 // ---- Hover tooltip ---------------------------------------------------------
+const TOOLTIP_W = 240  // maxWidth と揃える
+const TOOLTIP_H = 200  // 最大行数の目安高さ
+
 function MarkerTooltip({ tooltip, containerRef, t }) {
   if (!tooltip) return null
-  const cw = containerRef.current?.clientWidth ?? 600
-  const isRight = tooltip.x > cw * 0.62
+  const cw = containerRef.current?.clientWidth  ?? 600
+  const ch = containerRef.current?.clientHeight ?? 400
   const { data } = tooltip
 
   const rows = []
@@ -42,16 +45,22 @@ function MarkerTooltip({ tooltip, containerRef, t }) {
   }
   if (rows.length === 0) return null
 
+  // 水平：カーソル右に置けるスペースがあれば右、なければ左
+  const spaceRight = cw - (tooltip.x + 12)
+  const left = spaceRight >= TOOLTIP_W
+    ? tooltip.x + 12
+    : Math.max(4, tooltip.x - 8 - TOOLTIP_W)
+
+  // 垂直：カーソル下に置けるスペースがあれば下、なければ上
+  const spaceBelow = ch - (tooltip.y + 8)
+  const top = spaceBelow >= TOOLTIP_H
+    ? tooltip.y + 8
+    : Math.max(4, tooltip.y - 8 - TOOLTIP_H)
+
   return (
     <div
       className="absolute z-20 bg-surface2 border border-border rounded-lg p-2.5 text-xs pointer-events-none shadow-xl"
-      style={{
-        left:      isRight ? tooltip.x - 8 : tooltip.x + 12,
-        top:       Math.max(4, tooltip.y - 20),
-        transform: isRight ? 'translateX(-100%)' : undefined,
-        minWidth:  '160px',
-        maxWidth:  '240px',
-      }}
+      style={{ left, top, minWidth: '160px', maxWidth: `${TOOLTIP_W}px` }}
     >
       {rows.map((row, i) => (
         <div key={i} className={i > 0 ? 'mt-1.5 pt-1.5 border-t border-border' : ''}>
@@ -336,7 +345,7 @@ const TradeChart = forwardRef(function TradeChart(
   return (
     <div ref={wrapperRef} className="relative h-full min-h-[200px]">
       <div ref={containerRef} className="w-full" />
-      <MarkerTooltip tooltip={tooltip} containerRef={containerRef} t={t} />
+      <MarkerTooltip tooltip={tooltip} containerRef={wrapperRef} t={t} />
     </div>
   )
 })

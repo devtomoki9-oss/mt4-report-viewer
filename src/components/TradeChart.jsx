@@ -236,22 +236,9 @@ const TradeChart = forwardRef(function TradeChart(
     createSeriesMarkers(candleSeries, markerList)
     detailMapRef.current = detailMap
 
-    // スクロールズーム上限：全データ幅を超えたら fitContent に戻す
-    // ズームレンジをリアルタイムで保存（クリーンアップ時の null 問題を回避）
-    let lockFit = false
+    // ズームレンジをリアルタイムで保存（時間足切り替え時の復元用）
     chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
-      if (lockFit || !range) return
-      const total = totalCandlesRef.current
-      if (total > 0 && (range.to - range.from) > total * 1.1) {
-        lockFit = true
-        chart.timeScale().fitContent()
-        setTimeout(() => {
-          lockFit = false
-          const r = chart.timeScale().getVisibleLogicalRange()
-          if (r) { savedRangeRef.current = r; savedCtxRef.current = { symbol, tf } }
-        }, 50)
-        return
-      }
+      if (!range) return
       savedRangeRef.current = range
       savedCtxRef.current   = { symbol, tf }
     })

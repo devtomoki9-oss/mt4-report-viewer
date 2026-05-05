@@ -180,20 +180,32 @@ const TradeChart = forwardRef(function TradeChart(
       return detailMap.get(barTime)
     }
 
-    for (const t of trades.filter(tr => tr.symbol === symbol)) {
-      if (t.openTime) {
-        const ts = toUnixSec(t.openTime)
+    for (const tr of trades.filter(tr => tr.symbol === symbol)) {
+      if (tr.openTime) {
+        const ts = toUnixSec(tr.openTime)
         if (ts >= firstTs && ts <= lastTs) {
           const d = getDetail(snapToBar(ts))
-          if (t.type === 'buy') d.buyEntries.push({ size: t.size, time: t.openTime })
-          else                  d.sellEntries.push({ size: t.size, time: t.openTime })
+          if (tr.type === 'buy') d.buyEntries.push({ size: tr.size, time: tr.openTime })
+          else                   d.sellEntries.push({ size: tr.size, time: tr.openTime })
         }
       }
-      if (t.closeTime) {
-        const ts  = toUnixSec(t.closeTime)
-        const pnl = t.netProfit ?? t.profit ?? 0
+      if (tr.closeTime) {
+        const ts  = toUnixSec(tr.closeTime)
+        const pnl = tr.netProfit ?? tr.profit ?? 0
         if (ts >= firstTs && ts <= lastTs)
-          getDetail(snapToBar(ts)).exits.push({ size: t.size, pnl, time: t.closeTime })
+          getDetail(snapToBar(ts)).exits.push({ size: tr.size, pnl, time: tr.closeTime })
+      }
+    }
+
+    // 保有中ポジションのエントリーもマーカーとして表示
+    for (const pos of positions.filter(pos => pos.symbol === symbol)) {
+      if (pos.openTime) {
+        const ts = toUnixSec(pos.openTime)
+        if (ts >= firstTs && ts <= lastTs) {
+          const d = getDetail(snapToBar(ts))
+          if (pos.type === 'buy') d.buyEntries.push({ size: pos.size, time: pos.openTime })
+          else                    d.sellEntries.push({ size: pos.size, time: pos.openTime })
+        }
       }
     }
 

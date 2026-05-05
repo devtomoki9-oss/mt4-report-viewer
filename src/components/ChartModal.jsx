@@ -6,11 +6,22 @@ import TradeChart from './TradeChart'
 const TF_ORDER  = ['1', '5', '15', '60', '240', '1440']
 const TF_LABELS = { '1': 'M1', '5': 'M5', '15': 'M15', '60': 'H1', '240': 'H4', '1440': 'D1' }
 
+// モーダルを閉じても選択中の時間足をシンボルごとに記憶する
+const lastTfBySymbol = {}
+
 export default function ChartModal({ symbol, chartDataMap, trades, positions, onClose }) {
   const { t } = useTranslation()
   const available = TF_ORDER.filter(tf => chartDataMap?.[tf]?.candles?.length > 0)
-  const defaultTf = available.includes('15') ? '15' : (available[0] ?? null)
+  const savedTf   = lastTfBySymbol[symbol]
+  const defaultTf = (savedTf && available.includes(savedTf))
+    ? savedTf
+    : (available.includes('15') ? '15' : (available[0] ?? null))
   const [selectedTf, setSelectedTf] = useState(defaultTf)
+
+  const handleSelectTf = (tf) => {
+    lastTfBySymbol[symbol] = tf
+    setSelectedTf(tf)
+  }
   const tradeChartRef = useRef(null)
 
   useEffect(() => {
@@ -42,7 +53,7 @@ export default function ChartModal({ symbol, chartDataMap, trades, positions, on
                 ? TF_ORDER.filter(tf => available.includes(tf)).map(tf => (
                     <button
                       key={tf}
-                      onClick={() => setSelectedTf(tf)}
+                      onClick={() => handleSelectTf(tf)}
                       className={`text-xs px-2 py-0.5 rounded transition-colors ${
                         selectedTf === tf
                           ? 'bg-blue-600 text-white'

@@ -124,7 +124,11 @@ const TradeChart = forwardRef(function TradeChart(
       grid:            { vertLines: { color: '#1f2d40' }, horzLines: { color: '#1f2d40' } },
       crosshair:       { mode: CrosshairMode.Normal },
       rightPriceScale: { borderColor: '#1f2d40' },
-      timeScale:       { borderColor: '#1f2d40', timeVisible: true, secondsVisible: false },
+      timeScale:       {
+        borderColor: '#1f2d40', timeVisible: true, secondsVisible: false,
+        fixLeftEdge: true, fixRightEdge: true,
+        lockVisibleTimeRangeOnResize: true,
+      },
       width:  containerRef.current.clientWidth,
       height: chartHeight,
     })

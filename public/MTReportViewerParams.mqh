@@ -4,14 +4,23 @@
 //|                                                                  |
 //|  使い方（最小例）:                                               |
 //|  ----------------------------------------------------------------|
+//|  注意: MQL の input 変数は再代入不可（定数）です。                 |
+//|  「input は初期値を渡すだけ」「実行中の値はシャドー変数で持つ」    |
+//|  の 2 段構えにしてください。                                      |
+//|                                                                  |
 //|  #include <MTReportViewerParams.mqh>                             |
 //|                                                                  |
-//|  input int    Lot      = 1;                                       |
-//|  input bool   UseTrend = true;                                    |
-//|  input string Mode     = "A";                                     |
+//|  input int    Lot_      = 1;       // _ 付きが input              |
+//|  input bool   UseTrend_ = true;                                  |
+//|  input string Mode_     = "A";                                   |
+//|                                                                  |
+//|  int    Lot;        // 実行時に書き換える本体                      |
+//|  bool   UseTrend;                                                 |
+//|  string Mode;                                                     |
 //|                                                                  |
 //|  int OnInit()                                                    |
 //|  {                                                               |
+//|     Lot = Lot_; UseTrend = UseTrend_; Mode = Mode_;              |
 //|     ParamReset();                                                 |
 //|     ParamRegisterInt   ("Lot",      Lot,      1, 100);            |
 //|     ParamRegisterBool  ("UseTrend", UseTrend);                    |

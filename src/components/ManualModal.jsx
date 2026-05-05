@@ -218,6 +218,7 @@ export default function ManualModal({ onClose, onDownloadVbs }) {
               <p dangerouslySetInnerHTML={html(t('manual.eaParams.scope'))} />
             </div>
             <p dangerouslySetInnerHTML={html(t('manual.eaParams.body'))} />
+            <p className="text-slate-400" dangerouslySetInnerHTML={html(t('manual.eaParams.shadowNote'))} />
             <div className="flex flex-wrap gap-2">
               <a href="/MTReportViewerParams.mqh" download="MTReportViewerParams.mqh"
                 className="text-xs text-blue-400 hover:text-blue-300 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg transition-colors">
@@ -225,7 +226,7 @@ export default function ManualModal({ onClose, onDownloadVbs }) {
               </a>
             </div>
             <Code copyTitle={t('common.copy')}>
-              {`#include <MTReportViewerParams.mqh>\ninput int Lot=1; input bool UseTrend=true;\nint OnInit(){ ParamReset(); ParamRegisterInt("Lot",Lot,1,100); ParamRegisterBool("UseTrend",UseTrend); ParamPublish(); EventSetTimer(5); return 0; }\nvoid OnTimer(){ if(ParamPoll()){ Lot=ParamGetInt("Lot"); UseTrend=ParamGetBool("UseTrend"); ParamPublishActual(); } }\nvoid OnDeinit(const int r){ ParamCleanup(); }`}
+              {`#include <MTReportViewerParams.mqh>\ninput int Lot_=1; input bool UseTrend_=true;\nint Lot; bool UseTrend;\nint OnInit(){ Lot=Lot_; UseTrend=UseTrend_; ParamReset(); ParamRegisterInt("Lot",Lot,1,100); ParamRegisterBool("UseTrend",UseTrend); ParamPublish(); EventSetTimer(5); return 0; }\nvoid OnTimer(){ if(ParamPoll()){ Lot=ParamGetInt("Lot"); UseTrend=ParamGetBool("UseTrend"); ParamPublishActual(); } }\nvoid OnDeinit(const int r){ ParamCleanup(); }`}
             </Code>
             <p className="text-slate-500" dangerouslySetInnerHTML={html(t('manual.eaParams.note'))} />
           </section>

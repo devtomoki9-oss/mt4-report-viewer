@@ -41,13 +41,51 @@ export function formatMoney(value, { lang } = {}) {
     : abs.toFixed(2)
 }
 
+// Common broker variants → ISO 4217 codes.
+// Brokers sometimes report currencies as symbols ("$", "¥") or English words
+// ("Dollar", "U.S. Dollar"); normalize them to standard codes for display.
+const CURRENCY_ALIASES = {
+  '$':            'USD',
+  'us$':          'USD',
+  'usd':          'USD',
+  'dollar':       'USD',
+  'dollars':      'USD',
+  'usdollar':     'USD',
+  'us dollar':    'USD',
+  'u.s. dollar':  'USD',
+  'usdollars':    'USD',
+  '¥':            'JPY',
+  'jpy':          'JPY',
+  'yen':          'JPY',
+  'jp¥':          'JPY',
+  '€':            'EUR',
+  'eur':          'EUR',
+  'euro':         'EUR',
+  '£':            'GBP',
+  'gbp':          'GBP',
+  'pound':        'GBP',
+  'a$':           'AUD',
+  'aud':          'AUD',
+  'c$':           'CAD',
+  'cad':          'CAD',
+  'chf':          'CHF',
+  'nzd':          'NZD',
+}
+
+export function normalizeCurrency(currency) {
+  if (!currency) return ''
+  const key = String(currency).trim().toLowerCase()
+  return CURRENCY_ALIASES[key] ?? String(currency).trim().toUpperCase()
+}
+
 // Money + currency suffix. Currency code is rendered as the trailing symbol
 // the broker reports (USD, JPY, etc). We keep it as a plain suffix rather than
 // `Intl.NumberFormat({ style: 'currency' })` to preserve the existing layout
 // (digits first, then a literal currency token).
 export function formatMoneyWithCurrency(value, currency, { lang, maxDigits = 2 } = {}) {
   const num = formatNumber(value ?? 0, { lang, maxDigits })
-  return currency ? `${num} ${currency}` : num
+  const code = normalizeCurrency(currency)
+  return code ? `${num} ${code}` : num
 }
 
 // Signed money: prepends "+" for non-negative values, "-" for negative,

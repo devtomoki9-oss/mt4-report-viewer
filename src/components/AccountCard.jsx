@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { formatNumber, formatMoneyWithCurrency, formatSignedMoney, formatPercent, formatCount } from '../i18n/format'
+import { formatNumber, formatMoneyWithCurrency, formatSignedMoney, formatPercent, formatCount, normalizeCurrency } from '../i18n/format'
 
 const SORT_VALUE = {
   profit:      (s, t, lang) => ({ label: t('app.accountList.sort.profit'),      value: formatSignedMoney(s.totalProfit, { lang }),                              color: s.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400' }),
@@ -131,7 +131,7 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {(() => {
               const floating = (info.equity || 0) - (info.balance || 0) - (info.credit || 0)
-              const cur = info.currency || ''
+              const cur = normalizeCurrency(info.currency)
               return [
                 { label: t('account.card.metrics.balance'),  value: formatMoneyWithCurrency(info.balance || 0, cur, { lang }), color: 'text-slate-200' },
                 { label: t('account.card.metrics.credit'),   value: formatMoneyWithCurrency(info.credit || 0,  cur, { lang }), color: 'text-blue-400' },

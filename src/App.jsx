@@ -55,7 +55,7 @@ import LoginScreen from './components/LoginScreen'
 import LandingPage from './components/LandingPage'
 import PasswordResetScreen from './components/PasswordResetScreen'
 import LanguageSwitcher from './components/LanguageSwitcher'
-import { formatMoney, formatMoneyWithCurrency, formatSignedMoney, formatCount, formatPercent, formatTime } from './i18n/format'
+import { formatMoney, formatMoneyWithCurrency, formatSignedMoney, formatCount, formatPercent, formatTime, normalizeCurrency } from './i18n/format'
 
 const TAB_IDS = ['overview', 'insight', 'ea', 'trades', 'calendar']
 
@@ -857,7 +857,7 @@ export default function App() {
                         const totalEquity  = accounts.reduce((s, a) => s + (a.account.equity  || 0), 0)
                         const totalCredit  = accounts.reduce((s, a) => s + (a.account.credit  || 0), 0)
                         const totalFloat   = totalEquity - totalBalance - totalCredit
-                        const currency = accounts[0]?.account.currency || ''
+                        const currency = normalizeCurrency(accounts[0]?.account.currency)
                         return (<>
                           <StatCard label={t('app.stats.balanceTotal')}     value={formatMoneyWithCurrency(totalBalance, currency, { lang: i18n.language })} color="white" size="lg" />
                           <StatCard label={t('app.stats.creditTotal')}      value={formatMoneyWithCurrency(totalCredit,  currency, { lang: i18n.language })} color="white" size="lg" />

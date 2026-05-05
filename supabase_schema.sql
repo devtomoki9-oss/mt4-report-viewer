@@ -164,3 +164,140 @@ drop policy if exists "users can read own subscription" on subscriptions;
 create policy "users can read own subscription"
   on subscriptions for select
   using (auth.uid() = user_id);
+
+-- ============================================================
+-- ea_params テーブル（EA パラメータ管理 / Phase 2: 任意EA対応）
+--   key = (user_id, account_number, chart_id)
+--   chart_id は EA インスタンスを一意に識別するキー（例: "EURUSD#H1#12345"）
+--   manifest: EA起動時にMT側が書く（型・既定値・range など）
+--   desired : Web が書き、MT が読む
+--   actual  : MT が書き、Web が読む
+-- ============================================================
+create table if not exists ea_params (
+  user_id        uuid references auth.users not null,
+  account_number bigint not null,
+  chart_id       text not null,
+  ea_name        text,
+  symbol         text,
+  timeframe      text,
+  manifest       jsonb,
+  desired        jsonb,
+  actual         jsonb,
+  manifest_at    timestamptz,
+  desired_at     timestamptz,
+  actual_at      timestamptz,
+  updated_at     timestamptz default now(),
+  primary key (user_id, account_number, chart_id)
+);
+
+drop trigger if exists ea_params_updated_at on ea_params;
+create trigger ea_params_updated_at
+  before update on ea_params
+  for each row execute function update_updated_at();
+
+alter table ea_params enable row level security;
+
+drop policy if exists "select own ea_params" on ea_params;
+create policy "select own ea_params"
+  on ea_params for select
+  using (auth.uid() = user_id);
+
+drop policy if exists "insert own ea_params" on ea_params;
+create policy "insert own ea_params"
+  on ea_params for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "update own ea_params" on ea_params;
+create policy "update own ea_params"
+  on ea_params for update
+  using (auth.uid() = user_id);
+
+drop policy if exists "delete own ea_params" on ea_params;
+create policy "delete own ea_params"
+  on ea_params for delete
+  using (auth.uid() = user_id);
+
+-- upsert_ea_param_manifest: MT 側からマニフェストと現在値をアップサート
+create or replace function upsert_ea_param_manifest(
+  p_account_number bigint,
+  p_chart_id       text,
+  p_ea_name        text,
+  p_symbol         text,
+  p_timeframe      text,
+  p_manifest       jsonb,
+  p_actual         jsonb
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into ea_params (
+    user_id, account_number, chart_id, ea_name, symbol, timeframe,
+    manifest, actual, manifest_at, actual_at, updated_at
+  )
+  values (
+    auth.uid(), p_account_number, p_chart_id, p_ea_name, p_symbol, p_timeframe,
+    p_manifest, p_actual, now(), now(), now()
+  )
+  on conflict (user_id, account_number, chart_id)
+  do update set
+    ea_name     = excluded.ea_name,
+    symbol      = excluded.symbol,
+    timeframe   = excluded.timeframe,
+    manifest    = excluded.manifest,
+    actual      = excluded.actual,
+    manifest_at = now(),
+    actual_at   = now(),
+    updated_at  = now();
+end;
+$$;
+
+-- upsert_ea_param_actual: MT 側から現在値のみをアップサート（マニフェスト不変時）
+create or replace function upsert_ea_param_actual(
+  p_account_number bigint,
+  p_chart_id       text,
+  p_actual         jsonb
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update ea_params
+     set actual     = p_actual,
+         actual_at  = now(),
+         updated_at = now()
+   where user_id        = auth.uid()
+     and account_number = p_account_number
+     and chart_id       = p_chart_id;
+end;
+$$;
+
+-- upsert_ea_param_desired: Web 側から希望値をアップサート
+create or replace function upsert_ea_param_desired(
+  p_account_number bigint,
+  p_chart_id       text,
+  p_desired        jsonb
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into ea_params (
+    user_id, account_number, chart_id, desired, desired_at, updated_at
+  )
+  values (
+    auth.uid(), p_account_number, p_chart_id, p_desired, now(), now()
+  )
+  on conflict (user_id, account_number, chart_id)
+  do update set
+    desired    = p_desired,
+    desired_at = now(),
+    updated_at = now();
+end;
+$$;

@@ -211,6 +211,22 @@ export default function ManualModal({ onClose, onDownloadVbs }) {
             </ul>
           </section>
 
+          {/* Section: EA params SDK (Pro) */}
+          <section className="space-y-2">
+            <h2 className="text-sm font-semibold text-slate-200">{t('manual.eaParams.heading')}</h2>
+            <p dangerouslySetInnerHTML={html(t('manual.eaParams.body'))} />
+            <div className="flex flex-wrap gap-2">
+              <a href="/MTReportViewerParams.mqh" download="MTReportViewerParams.mqh"
+                className="text-xs text-blue-400 hover:text-blue-300 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg transition-colors">
+                ↓ MTReportViewerParams.mqh
+              </a>
+            </div>
+            <Code copyTitle={t('common.copy')}>
+              {`#include <MTReportViewerParams.mqh>\ninput int Lot=1; input bool UseTrend=true;\nint OnInit(){ ParamReset(); ParamRegisterInt("Lot",Lot,1,100); ParamRegisterBool("UseTrend",UseTrend); ParamPublish(); EventSetTimer(5); return 0; }\nvoid OnTimer(){ if(ParamPoll()){ Lot=ParamGetInt("Lot"); UseTrend=ParamGetBool("UseTrend"); ParamPublishActual(); } }\nvoid OnDeinit(const int r){ ParamCleanup(); }`}
+            </Code>
+            <p className="text-slate-500" dangerouslySetInnerHTML={html(t('manual.eaParams.note'))} />
+          </section>
+
           {/* Section 7 */}
           <section className="space-y-2">
             <h2 className="text-sm font-semibold text-slate-200">{t('manual.section7.heading')}</h2>

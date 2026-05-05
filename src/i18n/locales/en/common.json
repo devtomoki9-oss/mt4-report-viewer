@@ -755,6 +755,11 @@
         "<strong>Manage subscription</strong> (Pro only): same dropdown → \"Manage subscription\" lets you view billing, change plan, or cancel"
       ]
     },
+    "eaParams": {
+      "heading": "EA parameter control (Pro)",
+      "body": "Add <strong>MTReportViewerParams.mqh</strong> to your EA, recompile, and you can change its inputs remotely from the form inside each expanded account card. The same EA running on EURUSD and USDJPY shows up as separate entries.",
+      "note": "Changes take a few seconds to propagate. The sync script must be running on the MT terminal machine."
+    },
     "section7": {
       "heading": "7. Contact",
       "body": "For questions or bug reports, use the \"Contact\" link at the bottom of the page."
@@ -899,6 +904,29 @@
           "body": "Account menu → <strong>Manage subscription</strong> opens the Lemon Squeezy customer portal, where you can view and download past invoices and receipts."
         }
       ]
+    }
+  },
+  "eaParams": {
+    "title": "EA parameters",
+    "subtitle": "Per chart",
+    "proOnly": "Pro feature. Remotely change input values of EAs attached to your MT charts.",
+    "upgradeCta": "Upgrade to Pro",
+    "loading": "Loading…",
+    "empty": "No compatible EAs detected yet. Drop an EA built with MTReportViewerParams.mqh onto a chart to see it here.",
+    "noParams": "This instance exposes no parameters.",
+    "save": "Save & apply",
+    "saving": "Saving…",
+    "resetDefaults": "Reset to defaults",
+    "discardEdits": "Discard edits",
+    "deleteHint": "Delete this entry",
+    "confirmSave": "Apply these values to the running EA on your MT terminal?",
+    "confirmDelete": "Delete this entry. It will reappear after the MT-side EA restarts. Continue?",
+    "cancelled": "Cancelled",
+    "status": {
+      "notSet": "Not set",
+      "applied": "Applied",
+      "pending": "Pending",
+      "drift": "Drift"
     }
   }
 }

@@ -1,5 +1,5 @@
-# sync-to-supabase.ps1 v25
-# Full fault-tolerant edition - MT4/MT5 -> Supabase sync + AutoTrading control
+# sync-to-supabase.ps1 v26
+# Full fault-tolerant edition - MT4/MT5 -> Supabase sync + AutoTrading control + EA params
 #
 # Usage A (direct):
 #   .\sync-to-supabase.ps1 -Url "https://xxxx.supabase.co" -AnonKey "eyJ..." -Email "you@example.com" -Password "pass"
@@ -454,15 +454,163 @@ function Invoke-AutoTradingSync {
     }
 }
 
+# -- EA params sync -----------------------------------------------------------
+# manifest/actual files written by EA -> upload to Supabase
+# desired rows in Supabase -> write desired files for EA to consume
+$paramUploadTicks = @{}    # path -> last uploaded LastWriteTime.Ticks
+$paramDesiredHash = @{}    # chartId -> last written desired body hash
+
+function Get-DesiredEaParams {
+    try {
+        $wc = New-Object System.Net.WebClient
+        $wc.Headers.Add("apikey",        $AnonKey)
+        $wc.Headers.Add("Authorization", "Bearer $script:jwt")
+        $wc.Headers.Add("Accept",        "application/json")
+        $rows = $wc.DownloadString("$Url/rest/v1/ea_params?select=account_number,chart_id,desired,desired_at") | ConvertFrom-Json
+        $result = @{}
+        foreach ($row in $rows) {
+            if ($null -eq $row -or $null -eq $row.desired) { continue }
+            $key = "$($row.account_number)__$($row.chart_id)"
+            $result[$key] = @{
+                AccountNumber = [long]$row.account_number
+                ChartId       = [string]$row.chart_id
+                Desired       = $row.desired
+                DesiredAt     = $row.desired_at
+            }
+        }
+        return $result
+    } catch {
+        Log "[Params] Get-DesiredEaParams failed: $($_.Exception.Message)" -level WARN
+        return $null
+    }
+}
+
+function Send-EaParamManifest {
+    param([string]$filePath)
+    $text = Read-FileWithRetry $filePath
+    if ($null -eq $text) { return $false }
+    $parsed = $null
+    try { $parsed = $text | ConvertFrom-Json } catch { return $false }
+    if ($null -eq $parsed.account -or $null -eq $parsed.chartId) { return $false }
+    # actual.json は同じディレクトリにある想定
+    $actPath = $filePath -replace '\.manifest\.json$', '.actual.json'
+    $actualObj = $null
+    if (Test-Path $actPath) {
+        $aText = Read-FileWithRetry $actPath
+        if ($aText) { try { $actualObj = ($aText | ConvertFrom-Json).values } catch {} }
+    }
+    $body = @{
+        p_account_number = [long]$parsed.account
+        p_chart_id       = [string]$parsed.chartId
+        p_ea_name        = [string]$parsed.eaName
+        p_symbol         = [string]$parsed.symbol
+        p_timeframe      = [string]$parsed.timeframe
+        p_manifest       = $parsed
+        p_actual         = $actualObj
+    } | ConvertTo-Json -Depth 20 -Compress
+    try {
+        Invoke-RestMethod "$Url/rest/v1/rpc/upsert_ea_param_manifest" `
+            -Method Post -Headers (New-RpcHeaders) -Body $body -ErrorAction Stop | Out-Null
+        Log "[Params] manifest uploaded: $($parsed.chartId)"
+        return $true
+    } catch {
+        Log "[Params] manifest upload failed: $($_.Exception.Message)" -level WARN
+        return $false
+    }
+}
+
+function Send-EaParamActual {
+    param([string]$filePath)
+    $text = Read-FileWithRetry $filePath
+    if ($null -eq $text) { return $false }
+    $parsed = $null
+    try { $parsed = $text | ConvertFrom-Json } catch { return $false }
+    if ($null -eq $parsed.account -or $null -eq $parsed.chartId) { return $false }
+    $body = @{
+        p_account_number = [long]$parsed.account
+        p_chart_id       = [string]$parsed.chartId
+        p_actual         = $parsed.values
+    } | ConvertTo-Json -Depth 20 -Compress
+    try {
+        Invoke-RestMethod "$Url/rest/v1/rpc/upsert_ea_param_actual" `
+            -Method Post -Headers (New-RpcHeaders) -Body $body -ErrorAction Stop | Out-Null
+        Log "[Params] actual uploaded: $($parsed.chartId)"
+        return $true
+    } catch {
+        Log "[Params] actual upload failed: $($_.Exception.Message)" -level WARN
+        return $false
+    }
+}
+
+function Write-DesiredFile {
+    param([long]$accountNumber, [string]$chartId, $desiredObj)
+    if ($null -eq $desiredObj) { return }
+    $payload = @{
+        account = $accountNumber
+        chartId = $chartId
+        values  = $desiredObj
+    } | ConvertTo-Json -Depth 20 -Compress
+    $hash = (Get-FileHash -Algorithm MD5 -InputStream ([IO.MemoryStream]::new([Text.Encoding]::UTF8.GetBytes($payload)))).Hash
+    $key  = "$accountNumber`__$chartId"
+    if ($paramDesiredHash.ContainsKey($key) -and $paramDesiredHash[$key] -eq $hash) { return }
+    $safeChart = $chartId -replace '[\\/:*?"<>|]', '_'
+    $path = Join-Path $Folder "$accountNumber`__$safeChart.desired.json"
+    try {
+        [IO.File]::WriteAllText($path, $payload, [Text.Encoding]::UTF8)
+        $paramDesiredHash[$key] = $hash
+        Log "[Params] desired written: $chartId -> $([IO.Path]::GetFileName($path))"
+    } catch {
+        Log "[Params] desired write failed for ${chartId}: $($_.Exception.Message)" -level WARN
+    }
+}
+
+function Invoke-EaParamSync {
+    # 1. manifest/actual ファイルを Supabase に upload（差分のみ）
+    try {
+        $manifests = @(Get-ChildItem -Path $Folder -Filter "*.manifest.json" -ErrorAction SilentlyContinue)
+        foreach ($f in $manifests) {
+            $ticks = $f.LastWriteTime.Ticks
+            if ($paramUploadTicks.ContainsKey($f.FullName) -and $paramUploadTicks[$f.FullName] -eq $ticks) { continue }
+            if (Send-EaParamManifest $f.FullName) { $paramUploadTicks[$f.FullName] = $ticks }
+        }
+        $actuals = @(Get-ChildItem -Path $Folder -Filter "*.actual.json" -ErrorAction SilentlyContinue)
+        foreach ($f in $actuals) {
+            # manifest と同時にアップロード済みのものはスキップ
+            $manifestPath = $f.FullName -replace '\.actual\.json$', '.manifest.json'
+            if ($paramUploadTicks.ContainsKey($manifestPath)) {
+                $manifestTicks = $paramUploadTicks[$manifestPath]
+                if ($manifestTicks -ge $f.LastWriteTime.Ticks) { continue }
+            }
+            $ticks = $f.LastWriteTime.Ticks
+            if ($paramUploadTicks.ContainsKey($f.FullName) -and $paramUploadTicks[$f.FullName] -eq $ticks) { continue }
+            if (Send-EaParamActual $f.FullName) { $paramUploadTicks[$f.FullName] = $ticks }
+        }
+    } catch {
+        Log "[Params] manifest/actual scan error: $($_.Exception.Message)" -level WARN
+    }
+
+    # 2. Supabase の desired を desired ファイルとして配置
+    $desiredMap = Get-DesiredEaParams
+    if ($null -ne $desiredMap) {
+        foreach ($entry in $desiredMap.Values) {
+            Write-DesiredFile $entry.AccountNumber $entry.ChartId $entry.Desired
+        }
+    }
+}
+
 # -- Periodic scan (FSW fallback) ---------------------------------------------
 $lastScanTime = [datetime]::MinValue
 $lastUpload   = @{}
 
 function Invoke-FileScan {
     try {
-        $files = @(Get-ChildItem -Path $Folder -Filter "*.json" -ErrorAction SilentlyContinue)
+        # account レポート（<accountNumber>.json）のみ対象。
+        # manifest/actual/desired はファイル名末尾で区別。
+        $files = @(Get-ChildItem -Path $Folder -Filter "*.json" -ErrorAction SilentlyContinue | Where-Object {
+            $_.Name -notmatch '\.(manifest|actual|desired)\.json$'
+        })
         if ($files.Count -eq 0) {
-            Log "[Scan] no JSON files found in $Folder" -level WARN
+            Log "[Scan] no report JSON files found in $Folder" -level WARN
             return
         }
         $uploaded = 0
@@ -511,15 +659,29 @@ try {
                 Invoke-AutoTradingSync $desiredMap
             }
 
+            Invoke-EaParamSync
+
             if ($null -ne $watcher) {
                 try {
                     $change = $watcher.WaitForChanged([IO.WatcherChangeTypes]::Changed, $LOOP_WAIT_MS)
                     if (-not $change.TimedOut -and $change.Name) {
                         Start-Sleep -Milliseconds 500
                         $fswPath = Join-Path $Folder $change.Name
-                        $ok = Send-Report $fswPath
-                        if ($ok) {
-                            try { $lastUpload[$change.Name] = (Get-Item $fswPath -ErrorAction Stop).LastWriteTime.Ticks } catch {}
+                        if ($change.Name -match '\.manifest\.json$') {
+                            if (Send-EaParamManifest $fswPath) {
+                                try { $paramUploadTicks[$fswPath] = (Get-Item $fswPath -ErrorAction Stop).LastWriteTime.Ticks } catch {}
+                            }
+                        } elseif ($change.Name -match '\.actual\.json$') {
+                            if (Send-EaParamActual $fswPath) {
+                                try { $paramUploadTicks[$fswPath] = (Get-Item $fswPath -ErrorAction Stop).LastWriteTime.Ticks } catch {}
+                            }
+                        } elseif ($change.Name -match '\.desired\.json$') {
+                            # 自分が書いたファイル。スキップ。
+                        } else {
+                            $ok = Send-Report $fswPath
+                            if ($ok) {
+                                try { $lastUpload[$change.Name] = (Get-Item $fswPath -ErrorAction Stop).LastWriteTime.Ticks } catch {}
+                            }
                         }
                     }
                 } catch {

@@ -147,3 +147,44 @@ export async function upsertReport(accountNumber, filename, jsonData) {
     )
   if (error) throw error
 }
+
+// ── EA パラメータ管理 ────────────────────────────────────────
+
+export async function fetchEaParams(accountNumber) {
+  const { data, error } = await supabase
+    .from('ea_params')
+    .select('account_number, chart_id, ea_name, symbol, timeframe, manifest, desired, actual, manifest_at, desired_at, actual_at, updated_at')
+    .eq('account_number', accountNumber)
+    .order('chart_id')
+  if (error) throw error
+  return data || []
+}
+
+export async function setEaParamDesired(accountNumber, chartId, desired) {
+  const { error } = await supabase.rpc('upsert_ea_param_desired', {
+    p_account_number: Number(accountNumber),
+    p_chart_id: String(chartId),
+    p_desired: desired,
+  })
+  if (error) throw error
+}
+
+export async function deleteEaParam(accountNumber, chartId) {
+  const { error } = await supabase
+    .from('ea_params')
+    .delete()
+    .eq('account_number', accountNumber)
+    .eq('chart_id', chartId)
+  if (error) throw error
+}
+
+export function subscribeToEaParams(onUpdate) {
+  return supabase
+    .channel('ea-params-realtime')
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'ea_params',
+    }, onUpdate)
+    .subscribe()
+}

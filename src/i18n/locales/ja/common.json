@@ -742,6 +742,11 @@
         "<strong>サブスクリプション管理</strong>(Pro のみ):同ドロップダウンメニューの「サブスクリプション管理」から請求情報の確認・プランの変更・解約が行えます"
       ]
     },
+    "eaParams": {
+      "heading": "EA パラメータ管理（Pro 限定）",
+      "body": "ご自身の EA に <strong>MTReportViewerParams.mqh</strong> を組み込んで再コンパイルすると、口座カードを展開した中のフォームから EA の入力値を遠隔で変更できます。同じ EA でも EURUSD 用と USDJPY 用は別エントリとして表示されます。",
+      "note": "値の反映には数秒の遅延があります。MT 端末側で同期スクリプトが稼働している必要があります。"
+    },
     "section7": {
       "heading": "7. お問い合わせ",
       "body": "ご不明な点や不具合は画面下部の「お問い合わせ」からご連絡ください。"
@@ -886,6 +891,29 @@
           "body": "アカウントメニュー → <strong>サブスクリプション管理</strong> から Lemon Squeezy のカスタマーポータルにアクセスすると、過去の請求履歴や領収書を確認・ダウンロードできます。"
         }
       ]
+    }
+  },
+  "eaParams": {
+    "title": "EA パラメータ管理",
+    "subtitle": "チャート単位",
+    "proOnly": "Pro プラン限定機能です。Web からチャートに付けた EA の入力値を遠隔で変更できます。",
+    "upgradeCta": "Pro にアップグレード",
+    "loading": "読み込み中…",
+    "empty": "対応 EA がまだ検出されていません。MTReportViewerParams.mqh を組み込んだ EA をチャートに付けると、ここに表示されます。",
+    "noParams": "このインスタンスは公開パラメータを持ちません。",
+    "save": "保存して反映",
+    "saving": "保存中…",
+    "resetDefaults": "既定値に戻す",
+    "discardEdits": "編集を破棄",
+    "deleteHint": "このエントリを削除",
+    "confirmSave": "MT 端末の EA に値を反映します。よろしいですか？",
+    "confirmDelete": "このエントリを削除します。MT 側の EA が再起動するまで再表示されません。よろしいですか？",
+    "cancelled": "キャンセルしました",
+    "status": {
+      "notSet": "未設定",
+      "applied": "反映済",
+      "pending": "反映待ち",
+      "drift": "ドリフト"
     }
   }
 }

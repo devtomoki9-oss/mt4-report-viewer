@@ -924,6 +924,8 @@ export default function App() {
                               setTradingStates(prev => ({ ...prev, [String(acc.account.number)]: val }))
                               await setTradingEnabled(acc.account.number, val).catch(console.error)
                             } : undefined}
+                            isPro={plan === 'pro'}
+                            onUpgrade={handleUpgrade}
                           />
                         ))}
                       </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatNumber, formatMoneyWithCurrency, formatSignedMoney, formatPercent, formatCount, normalizeCurrency } from '../i18n/format'
+import EaParamsPanel from './EaParamsPanel'
 
 const SORT_VALUE = {
   profit:      (s, t, lang) => ({ label: t('app.accountList.sort.profit'),      value: formatSignedMoney(s.totalProfit, { lang }),                              color: s.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400' }),
@@ -11,7 +12,7 @@ const SORT_VALUE = {
   name:        (s, t, lang) => ({ label: t('app.accountList.sort.profit'),      value: formatSignedMoney(s.totalProfit, { lang }),                              color: s.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400' }),
 }
 
-export default function AccountCard({ account, onRemove, aliases = {}, setAlias, sortKey = 'profit', tradingEnabled = true, onTradingToggle }) {
+export default function AccountCard({ account, onRemove, aliases = {}, setAlias, sortKey = 'profit', tradingEnabled = true, onTradingToggle, isPro = false, onUpgrade }) {
   const { t, i18n } = useTranslation()
   const lang = i18n.language
   const [expanded, setExpanded] = useState(false)
@@ -163,6 +164,16 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
               </div>
             ))}
           </div>
+          {/* EA パラメータ管理（Pro 限定） */}
+          {info.number != null && (
+            <div className="pt-2 border-t border-[#1f2d40]">
+              <EaParamsPanel
+                accountNumber={info.number}
+                isPro={isPro}
+                onUpgrade={onUpgrade}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

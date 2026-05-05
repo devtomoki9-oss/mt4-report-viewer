@@ -191,14 +191,14 @@
     "agreePrivacy": "Privacy Policy",
     "agreeTerms": "Terms of Service",
     "errors": {
-      "passwordsMismatch": "Passwords don't match",
-      "unknown": "Something went wrong",
+      "passwordsMismatch": "Passwords don't match.",
+      "unknown": "Something went wrong.",
       "rateLimit": "Too many emails — please wait a few minutes and try again (Supabase free-tier limit).",
-      "invalidCredentials": "Email or password is incorrect",
-      "emailNotConfirmed": "Click the link in the confirmation email, then sign in again",
-      "userAlreadyRegistered": "An account with this email already exists",
-      "passwordTooShort": "Password must be at least 8 characters",
-      "invalidEmail": "That doesn't look like a valid email address"
+      "invalidCredentials": "That email or password isn't right.",
+      "emailNotConfirmed": "Click the link in the confirmation email, then sign in again.",
+      "userAlreadyRegistered": "An account already exists for that email.",
+      "passwordTooShort": "Password must be at least 8 characters.",
+      "invalidEmail": "That doesn't look like a valid email address."
     }
   },
   "passwordReset": {
@@ -250,13 +250,13 @@
       ]
     },
     "useCases": {
-      "title": "Built for traders who",
-      "subtitle": "use the data you already have",
+      "title": "Who it's for",
+      "subtitle": "Get more out of the trade history you already have.",
       "items": [
-        { "label": "Want to review past trades", "desc": "Track P/L and drawdown over time on a single chart" },
-        { "label": "Trade across multiple accounts", "desc": "Compare account stats side by side" },
-        { "label": "Keep records of their trading", "desc": "Centralize monthly and per-symbol breakdowns" },
-        { "label": "Prefer visuals over raw reports", "desc": "Turn MT4/MT5's standard reports into clear charts" }
+        { "label": "Reviewing past trades", "desc": "Track P/L and drawdown over time on a single chart." },
+        { "label": "Trading across multiple accounts", "desc": "Compare per-account stats side by side." },
+        { "label": "Keeping a trading journal", "desc": "Centralize monthly and per-symbol breakdowns." },
+        { "label": "Preferring visuals over raw reports", "desc": "Turn MT4/MT5's standard reports into clear charts." }
       ]
     },
     "steps": {
@@ -744,11 +744,11 @@
       "heading": "6. Plans & subscriptions",
       "headers": { "feature": "Feature", "free": "Free", "pro": "Pro" },
       "rows": [
-        ["Sync & view trade data", "○", "○"],
-        ["Multiple accounts", "○", "○"],
-        ["Calendar & equity curve", "○", "○"],
-        ["AI Insights (diagnosis)", "1", "○"],
-        ["AI Insights (recommendations, per-account, patterns)", "—", "○"]
+        ["Sync & view trade data", "✓", "✓"],
+        ["Multiple accounts", "✓", "✓"],
+        ["Calendar & equity curve", "✓", "✓"],
+        ["AI Insights (diagnosis)", "1", "✓"],
+        ["AI Insights (recommendations, per-account, patterns)", "—", "✓"]
       ],
       "notes": [
         "<strong>Upgrade to Pro</strong>: top-right dropdown → \"Upgrade\" opens the checkout page",

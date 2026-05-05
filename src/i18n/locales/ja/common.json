@@ -185,14 +185,14 @@
     "agreePrivacy": "プライバシーポリシー",
     "agreeTerms": "利用規約",
     "errors": {
-      "passwordsMismatch": "パスワードが一致しません",
-      "unknown": "不明なエラーが発生しました",
-      "rateLimit": "メール送信の上限に達しました。しばらく時間をおいてから再度お試しください（Supabase 無料プランの制限）",
-      "invalidCredentials": "メールアドレスまたはパスワードが正しくありません",
-      "emailNotConfirmed": "確認メールのリンクをクリックしてから再度ログインしてください",
-      "userAlreadyRegistered": "このメールアドレスはすでに登録されています",
-      "passwordTooShort": "パスワードは8文字以上で入力してください",
-      "invalidEmail": "メールアドレスの形式が正しくありません"
+      "passwordsMismatch": "パスワードが一致しません。",
+      "unknown": "予期しないエラーが発生しました。",
+      "rateLimit": "メール送信の上限に達しました。しばらく時間をおいてから再度お試しください(Supabase 無料プランの制限)。",
+      "invalidCredentials": "メールアドレスまたはパスワードが正しくありません。",
+      "emailNotConfirmed": "登録時の確認メールに記載されたリンクをクリックしてから、もう一度ログインしてください。",
+      "userAlreadyRegistered": "このメールアドレスはすでに登録されています。",
+      "passwordTooShort": "パスワードは 8 文字以上で入力してください。",
+      "invalidEmail": "メールアドレスの形式が正しくありません。"
     }
   },
   "passwordReset": {

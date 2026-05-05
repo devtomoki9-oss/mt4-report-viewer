@@ -201,7 +201,7 @@ export default function ManualModal({ onClose, onDownloadVbs }) {
                   <tr key={feat} className="border-b border-[#1f2d40]">
                     <td className="py-2 pr-3 text-slate-400">{feat}</td>
                     <td className="py-2 pr-3 text-slate-500 text-center">{free}</td>
-                    <td className={`py-2 text-center font-medium ${pro === '○' ? 'text-blue-400' : 'text-slate-600'}`}>{pro}</td>
+                    <td className={`py-2 text-center font-medium ${pro === '—' ? 'text-slate-600' : 'text-blue-400'}`}>{pro}</td>
                   </tr>
                 ))}
               </tbody>

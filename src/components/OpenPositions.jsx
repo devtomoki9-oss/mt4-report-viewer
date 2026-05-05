@@ -74,42 +74,46 @@ export default function OpenPositions({ positions, aliases = {}, charts = {}, tr
 
         {/* モバイルカードビュー */}
         <div className="sm:hidden divide-y divide-border">
-          {filtered.map((p, i) => {
-            const net = p.profit + p.swap
-            const isLong = p.type === 'buy'
-            const hasChart = chartSymbols.includes(p.symbol)
-            return (
-              <div key={i} className="px-4 py-3">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className={`text-xs font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${isLong ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-                      {isLong ? t('positions.buy') : t('positions.sell')}
-                    </span>
-                    <span className="text-sm font-semibold text-slate-200">{p.symbol}</span>
-                    <span className="text-xs text-slate-500">{p.size}lot</span>
+          {(() => {
+            const shownChartSymbols = new Set()
+            return filtered.map((p, i) => {
+              const net = p.profit + p.swap
+              const isLong = p.type === 'buy'
+              const showChart = chartSymbols.includes(p.symbol) && !shownChartSymbols.has(p.symbol)
+              if (showChart) shownChartSymbols.add(p.symbol)
+              return (
+                <div key={i} className="px-4 py-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={`text-xs font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${isLong ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                        {isLong ? t('positions.buy') : t('positions.sell')}
+                      </span>
+                      <span className="text-sm font-semibold text-slate-200">{p.symbol}</span>
+                      <span className="text-xs text-slate-500">{p.size}lot</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {showChart && (
+                        <button
+                          onClick={() => setChartSymbol(p.symbol)}
+                          className="text-xs text-blue-400 hover:text-blue-300 border border-blue-500/30 px-1.5 py-0.5 rounded transition-colors"
+                        >
+                          📈
+                        </button>
+                      )}
+                      <span className={`font-mono text-sm font-bold flex-shrink-0 ${net >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {formatSignedMoney(net, { lang })}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {hasChart && (
-                      <button
-                        onClick={() => setChartSymbol(p.symbol)}
-                        className="text-xs text-blue-400 hover:text-blue-300 border border-blue-500/30 px-1.5 py-0.5 rounded transition-colors"
-                      >
-                        📈
-                      </button>
-                    )}
-                    <span className={`font-mono text-sm font-bold flex-shrink-0 ${net >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {formatSignedMoney(net, { lang })}
-                    </span>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
+                    <span>{t('positions.openPriceLabel')} <span className="text-slate-400 font-mono">{p.openPrice}</span></span>
+                    <span>{t('positions.currentPriceLabel')} <span className="text-slate-400 font-mono">{p.currentPrice}</span></span>
+                    <span className="text-slate-600 truncate">{displayName(p.account)}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
-                  <span>{t('positions.openPriceLabel')} <span className="text-slate-400 font-mono">{p.openPrice}</span></span>
-                  <span>{t('positions.currentPriceLabel')} <span className="text-slate-400 font-mono">{p.currentPrice}</span></span>
-                  <span className="text-slate-600 truncate">{displayName(p.account)}</span>
-                </div>
-              </div>
-            )
-          })}
+              )
+            })
+          })()}
         </div>
 
         {/* デスクトップテーブルビュー */}
@@ -131,46 +135,50 @@ export default function OpenPositions({ positions, aliases = {}, charts = {}, tr
               </tr>
             </thead>
             <tbody>
-              {filtered.map((p, i) => {
-                const isLong   = p.type === 'buy'
-                const hasChart = chartSymbols.includes(p.symbol)
-                return (
-                  <tr key={i} className="border-b border-border/50 hover:bg-surface2/40 transition-colors">
-                    <td className="px-4 py-2.5 text-slate-400 max-w-[150px] truncate" title={displayName(p.account)}>
-                      {displayName(p.account)}
-                    </td>
-                    <td className="px-4 py-2.5 font-semibold text-slate-200">{p.symbol}</td>
-                    <td className="px-3 py-2.5">
-                      <span className={`font-bold px-1.5 py-0.5 rounded ${isLong ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-                        {isLong ? t('positions.buy') : t('positions.sell')}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2.5 text-right font-mono text-slate-300">{p.size}</td>
-                    <td className="px-3 py-2.5 text-right font-mono text-slate-400">{p.openPrice}</td>
-                    <td className="px-3 py-2.5 text-right font-mono text-slate-300">{p.currentPrice}</td>
-                    <td className={`px-3 py-2.5 text-right font-mono font-bold ${p.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {formatSignedMoney(p.profit, { lang })}
-                    </td>
-                    <td className={`px-3 py-2.5 text-right font-mono ${p.swap >= 0 ? 'text-emerald-400/70' : 'text-red-400/70'}`}>
-                      {formatNumber(p.swap, { lang })}
-                    </td>
-                    <td className="px-3 py-2.5 text-right font-mono text-slate-500">{p.sl || '—'}</td>
-                    <td className="px-3 py-2.5 text-right font-mono text-slate-500">{p.tp || '—'}</td>
-                    <td className="px-3 py-2.5 text-center">
-                      {hasChart ? (
-                        <button
-                          onClick={() => setChartSymbol(p.symbol)}
-                          className="text-xs text-blue-400 hover:text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded transition-colors"
-                        >
-                          📈
-                        </button>
-                      ) : (
-                        <span className="text-slate-700">—</span>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })}
+              {(() => {
+                const shownChartSymbols = new Set()
+                return filtered.map((p, i) => {
+                  const isLong    = p.type === 'buy'
+                  const showChart = chartSymbols.includes(p.symbol) && !shownChartSymbols.has(p.symbol)
+                  if (showChart) shownChartSymbols.add(p.symbol)
+                  return (
+                    <tr key={i} className="border-b border-border/50 hover:bg-surface2/40 transition-colors">
+                      <td className="px-4 py-2.5 text-slate-400 max-w-[150px] truncate" title={displayName(p.account)}>
+                        {displayName(p.account)}
+                      </td>
+                      <td className="px-4 py-2.5 font-semibold text-slate-200">{p.symbol}</td>
+                      <td className="px-3 py-2.5">
+                        <span className={`font-bold px-1.5 py-0.5 rounded ${isLong ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                          {isLong ? t('positions.buy') : t('positions.sell')}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-mono text-slate-300">{p.size}</td>
+                      <td className="px-3 py-2.5 text-right font-mono text-slate-400">{p.openPrice}</td>
+                      <td className="px-3 py-2.5 text-right font-mono text-slate-300">{p.currentPrice}</td>
+                      <td className={`px-3 py-2.5 text-right font-mono font-bold ${p.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {formatSignedMoney(p.profit, { lang })}
+                      </td>
+                      <td className={`px-3 py-2.5 text-right font-mono ${p.swap >= 0 ? 'text-emerald-400/70' : 'text-red-400/70'}`}>
+                        {formatNumber(p.swap, { lang })}
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-mono text-slate-500">{p.sl || '—'}</td>
+                      <td className="px-3 py-2.5 text-right font-mono text-slate-500">{p.tp || '—'}</td>
+                      <td className="px-3 py-2.5 text-center">
+                        {showChart ? (
+                          <button
+                            onClick={() => setChartSymbol(p.symbol)}
+                            className="text-xs text-blue-400 hover:text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded transition-colors"
+                          >
+                            📈
+                          </button>
+                        ) : (
+                          <span className="text-slate-700">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })
+              })()}
             </tbody>
           </table>
         </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { formatCount } from '../i18n/format'
 
 const PRESET_KEYS = [
   { key: '1d', days: 1 },
@@ -18,7 +19,8 @@ function subtractDays(dateStr, days) {
 }
 
 export default function DateRangeFilter({ from, to, onChange, dataMin, dataMax, totalCount, filteredCount }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const lang = i18n.language
   const [activeKey, setActiveKey] = useState(null)
 
   useEffect(() => {
@@ -80,7 +82,7 @@ export default function DateRangeFilter({ from, to, onChange, dataMin, dataMax, 
           <div className="ml-auto sm:ml-0 flex items-center gap-1.5 text-xs">
             {isFiltered && filteredCount !== totalCount ? (
               <>
-                <span className="font-mono text-blue-400 font-semibold">{filteredCount.toLocaleString()}</span>
+                <span className="font-mono text-blue-400 font-semibold">{formatCount(filteredCount, { lang })}</span>
                 <span className="text-slate-600">/ {t('units.items', { count: totalCount })}</span>
                 <span className="hidden sm:inline bg-blue-500/15 text-blue-400 px-1.5 py-0.5 rounded font-medium">{t('dateRange.filteredBadge')}</span>
               </>

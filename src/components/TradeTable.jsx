@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { formatNumber, formatSignedMoney } from '../i18n/format'
 
 const COL_KEYS = [
   { key: 'ticket',     align: 'left' },
@@ -21,7 +22,8 @@ const PAGE_SIZE = 50
 const ALL = '__all__'
 
 export default function TradeTable({ trades = [], showSearch = true, aliases = {} }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const lang = i18n.language
   const COLS = COL_KEYS.map(c => ({ ...c, label: t(`trades.table.columns.${c.key}`) }))
   const [sort, setSort] = useState({ key: 'closeTime', dir: 'desc' })
   const [symbolFilter, setSymbolFilter] = useState(ALL)
@@ -150,20 +152,20 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
                       {tr.type}
                     </span>
                     <span className="text-sm font-semibold text-slate-200">{tr.symbol || '—'}</span>
-                    <span className="text-xs text-slate-500 font-mono">{t('trades.table.lotsMobile', { lots: tr.size?.toFixed(2) })}</span>
+                    <span className="text-xs text-slate-500 font-mono">{t('trades.table.lotsMobile', { lots: formatNumber(tr.size, { lang }) })}</span>
                   </div>
                   <div className="text-xs text-slate-500 mt-1">{tr.closeTime?.slice(0, 10) || '—'}</div>
                   <div className="text-xs text-slate-600 font-mono mt-0.5">{fmtPrice(tr.openPrice)} → {fmtPrice(tr.closePrice)}</div>
                 </div>
                 <div className={`font-mono text-sm font-bold flex-shrink-0 ${isProfit ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {isProfit ? '+' : ''}{tr.netProfit.toFixed(2)}
+                  {formatSignedMoney(tr.netProfit, { lang })}
                 </div>
               </div>
               {(tr.account || tr.swap || tr.commission) && (
                 <div className="flex items-center gap-3 mt-1.5 text-xs">
                   {tr.account && <span className="text-slate-600 truncate">{aliases[tr.account] || tr.account}</span>}
-                  {!!tr.swap && <span className={tr.swap < 0 ? 'text-red-400/70' : 'text-emerald-400/70'}>{t('trades.table.swapMobile', { value: tr.swap.toFixed(2) })}</span>}
-                  {!!tr.commission && <span className="text-slate-600">{t('trades.table.commissionMobile', { value: tr.commission.toFixed(2) })}</span>}
+                  {!!tr.swap && <span className={tr.swap < 0 ? 'text-red-400/70' : 'text-emerald-400/70'}>{t('trades.table.swapMobile', { value: formatNumber(tr.swap, { lang }) })}</span>}
+                  {!!tr.commission && <span className="text-slate-600">{t('trades.table.commissionMobile', { value: formatNumber(tr.commission, { lang }) })}</span>}
                 </div>
               )}
             </div>
@@ -210,17 +212,17 @@ export default function TradeTable({ trades = [], showSearch = true, aliases = {
                     </span>
                   </td>
                   <td className="px-3 py-2 text-slate-300 font-medium">{tr.symbol || '—'}</td>
-                  <td className="px-3 py-2 text-right font-mono text-slate-400">{tr.size?.toFixed(2) || '—'}</td>
+                  <td className="px-3 py-2 text-right font-mono text-slate-400">{tr.size != null ? formatNumber(tr.size, { lang }) : '—'}</td>
                   <td className="px-3 py-2 text-right font-mono text-slate-500">{fmtPrice(tr.openPrice)}</td>
                   <td className="px-3 py-2 text-right font-mono text-slate-500">{fmtPrice(tr.closePrice)}</td>
                   <td className={`px-3 py-2 text-right font-mono ${tr.swap < 0 ? 'text-red-400/70' : tr.swap > 0 ? 'text-emerald-400/70' : 'text-slate-600'}`}>
-                    {tr.swap ? (tr.swap >= 0 ? '+' : '') + tr.swap.toFixed(2) : '—'}
+                    {tr.swap ? formatSignedMoney(tr.swap, { lang }) : '—'}
                   </td>
                   <td className={`px-3 py-2 text-right font-mono ${tr.commission < 0 ? 'text-red-400/70' : 'text-slate-600'}`}>
-                    {tr.commission ? tr.commission.toFixed(2) : '—'}
+                    {tr.commission ? formatNumber(tr.commission, { lang }) : '—'}
                   </td>
                   <td className={`px-3 py-2 text-right font-mono font-bold ${isProfit ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {isProfit ? '+' : ''}{tr.netProfit.toFixed(2)}
+                    {formatSignedMoney(tr.netProfit, { lang })}
                   </td>
                   <td className="px-3 py-2 text-slate-500 truncate max-w-[100px]" title={tr.account}>{aliases[tr.account] || tr.account || '—'}</td>
                 </tr>

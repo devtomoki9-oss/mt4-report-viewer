@@ -1,14 +1,6 @@
 import { useState, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-
-function fmt2(n) {
-  if (n == null) return '—'
-  const abs = Math.abs(n)
-  const s = abs >= 1000
-    ? abs.toLocaleString('en', { maximumFractionDigits: 2 })
-    : abs.toFixed(2)
-  return (n >= 0 ? '+' : '-') + s
-}
+import { formatSignedMoney, formatNumber, formatMonthName } from '../i18n/format'
 
 function toLocalDateKey(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -16,6 +8,8 @@ function toLocalDateKey(d) {
 
 export default function TradeCalendar({ trades = [], aliases = {} }) {
   const { t, i18n } = useTranslation()
+  const lang = i18n.language
+  const fmt2 = (n) => (n == null ? '—' : formatSignedMoney(n, { lang }))
   const WEEKDAYS = t('calendar.weekdays', { returnObjects: true })
   const today = new Date()
   const todayKey = toLocalDateKey(today)
@@ -146,7 +140,7 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
             ‹
           </button>
           <div className="text-base font-semibold text-slate-100">
-            {t('calendar.monthYear', { year, month: month + 1, monthName: new Date(year, month).toLocaleString(i18n.language, { month: 'long' }) })}
+            {t('calendar.monthYear', { year, month: month + 1, monthName: formatMonthName(new Date(year, month, 1), { lang }) })}
           </div>
           <button
             onClick={nextMonth}
@@ -244,7 +238,7 @@ export default function TradeCalendar({ trades = [], aliases = {} }) {
           <div ref={tradeTableRef} className="bg-[#111827] border border-[#1f2d40] rounded-xl overflow-hidden">
             <div className="px-4 py-3 border-b border-[#1f2d40] flex items-center justify-between">
               <div className="text-sm font-semibold text-slate-300">
-                {t('calendar.dayHeading', { year, month: month + 1, day: selectedDay, monthName: new Date(year, month).toLocaleString(i18n.language, { month: 'long' }) })}
+                {t('calendar.dayHeading', { year, month: month + 1, day: selectedDay, monthName: formatMonthName(new Date(year, month, 1), { lang }) })}
                 <span className="ml-2 text-xs font-normal text-slate-500">{t('units.items', { count: sorted.length })}</span>
               </div>
               <div className={`text-sm font-bold ${selectedData.profit > 0 ? 'text-emerald-400' : selectedData.profit < 0 ? 'text-red-400' : 'text-slate-400'}`}>

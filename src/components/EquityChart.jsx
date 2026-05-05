@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { formatNumber, formatSignedMoney } from '../i18n/format'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine, Brush
@@ -19,30 +20,34 @@ function calcNiceTicks(min, max, targetCount = 5) {
   return ticks
 }
 
-function fmtTick(v) {
-  const abs = Math.abs(v)
-  if (abs >= 1_000_000) return (v / 1_000_000).toFixed(1) + 'M'
-  if (abs >= 10_000)    return (v / 1_000).toFixed(0) + 'K'
-  if (abs >= 1_000)     return (v / 1_000).toFixed(1) + 'K'
-  return v.toLocaleString()
+function makeFmtTick(lang) {
+  return (v) => {
+    const abs = Math.abs(v)
+    if (abs >= 1_000_000) return (v / 1_000_000).toFixed(1) + 'M'
+    if (abs >= 10_000)    return (v / 1_000).toFixed(0) + 'K'
+    if (abs >= 1_000)     return (v / 1_000).toFixed(1) + 'K'
+    return formatNumber(v, { lang })
+  }
 }
 
-const CustomTooltip = ({ active, payload, label }) => {
+const CustomTooltip = ({ active, payload, label, lang }) => {
   if (!active || !payload?.length) return null
   const val = payload[0].value
   return (
     <div className="bg-[#111827] border border-[#1f2d40] rounded-lg px-3 py-2 text-xs shadow-xl">
       <div className="text-slate-400 mb-1">{label}</div>
       <div className={`font-mono font-bold ${val >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-        {val >= 0 ? '+' : ''}{val.toFixed(2)}
+        {formatSignedMoney(val, { lang })}
       </div>
     </div>
   )
 }
 
 export default function EquityChart({ data, title }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const lang = i18n.language
   const chartTitle = title ?? t('equityChart.default')
+  const fmtTick = useMemo(() => makeFmtTick(lang), [lang])
   const [range, setRange] = useState({ startIndex: 0, endIndex: 0 })
   const [brushKey, setBrushKey] = useState(0)
   const rangeRef = useRef(range)
@@ -153,7 +158,7 @@ export default function EquityChart({ data, title }) {
             <button onClick={() => handleZoom(false)} className={btnCls} title={t('equityChart.zoomOut')}><span className="text-base">−</span></button>
           </div>
           <div className={`font-mono text-sm font-bold ${isProfit ? 'text-emerald-400' : 'text-red-400'}`}>
-            {isProfit ? '+' : ''}{final.toFixed(2)}
+            {formatSignedMoney(final, { lang })}
           </div>
         </div>
       </div>
@@ -190,7 +195,7 @@ export default function EquityChart({ data, title }) {
             width={72}
             tickFormatter={fmtTick}
           />
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={<CustomTooltip lang={lang} />} />
           <ReferenceLine y={0} stroke="#2a3f5a" strokeDasharray="4 2" />
           <Area
             type="monotone"

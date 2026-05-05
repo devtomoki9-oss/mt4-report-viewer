@@ -1,9 +1,11 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { formatNumber, formatSignedMoney } from '../i18n/format'
 import ChartModal from './ChartModal'
 
 export default function OpenPositions({ positions, aliases = {}, charts = {}, trades = [] }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const lang = i18n.language
   const [selectedAccount, setSelectedAccount] = useState(null)
   const [chartSymbol, setChartSymbol]         = useState(null)
 
@@ -65,7 +67,7 @@ export default function OpenPositions({ positions, aliases = {}, charts = {}, tr
               </div>
             )}
             <div className={`font-mono text-sm font-bold ${isProfit ? 'text-emerald-400' : 'text-red-400'}`}>
-              {isProfit ? '+' : ''}{totalNet.toFixed(2)}
+              {formatSignedMoney(totalNet, { lang })}
             </div>
           </div>
         </div>
@@ -96,7 +98,7 @@ export default function OpenPositions({ positions, aliases = {}, charts = {}, tr
                       </button>
                     )}
                     <span className={`font-mono text-sm font-bold flex-shrink-0 ${net >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {net >= 0 ? '+' : ''}{net.toFixed(2)}
+                      {formatSignedMoney(net, { lang })}
                     </span>
                   </div>
                 </div>
@@ -147,10 +149,10 @@ export default function OpenPositions({ positions, aliases = {}, charts = {}, tr
                     <td className="px-3 py-2.5 text-right font-mono text-slate-400">{p.openPrice}</td>
                     <td className="px-3 py-2.5 text-right font-mono text-slate-300">{p.currentPrice}</td>
                     <td className={`px-3 py-2.5 text-right font-mono font-bold ${p.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {p.profit >= 0 ? '+' : ''}{p.profit.toFixed(2)}
+                      {formatSignedMoney(p.profit, { lang })}
                     </td>
                     <td className={`px-3 py-2.5 text-right font-mono ${p.swap >= 0 ? 'text-emerald-400/70' : 'text-red-400/70'}`}>
-                      {p.swap.toFixed(2)}
+                      {formatNumber(p.swap, { lang })}
                     </td>
                     <td className="px-3 py-2.5 text-right font-mono text-slate-500">{p.sl || '—'}</td>
                     <td className="px-3 py-2.5 text-right font-mono text-slate-500">{p.tp || '—'}</td>

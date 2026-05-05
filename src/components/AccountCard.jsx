@@ -1,29 +1,26 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { formatNumber, formatMoneyWithCurrency, formatSignedMoney, formatPercent, formatCount } from '../i18n/format'
 
 const SORT_VALUE = {
-  profit:      (s, t) => ({ label: t('app.accountList.sort.profit'), value: (s.totalProfit >= 0 ? '+' : '') + s.totalProfit.toFixed(2), color: s.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400' }),
-  trades:      (s, t) => ({ label: t('app.accountList.sort.trades'), value: String(s.totalTrades),                                       color: 'text-slate-300' }),
-  pf:          (s, t) => ({ label: t('app.accountList.sort.pf'),     value: isFinite(s.profitFactor) ? s.profitFactor.toFixed(2) : '∞', color: 'text-blue-400'  }),
-  winRate:     (s, t) => ({ label: t('app.accountList.sort.winRate'),value: s.winRate.toFixed(1) + '%',                                  color: 'text-slate-300' }),
-  maxDrawdown: (s, t) => ({ label: t('app.accountList.sort.maxDrawdown'), value: s.maxDrawdown.toFixed(2),                              color: 'text-amber-400' }),
-  name:        (s, t) => ({ label: t('app.accountList.sort.profit'), value: (s.totalProfit >= 0 ? '+' : '') + s.totalProfit.toFixed(2), color: s.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400' }),
+  profit:      (s, t, lang) => ({ label: t('app.accountList.sort.profit'),      value: formatSignedMoney(s.totalProfit, { lang }),                              color: s.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400' }),
+  trades:      (s, t, lang) => ({ label: t('app.accountList.sort.trades'),      value: formatCount(s.totalTrades, { lang }),                                    color: 'text-slate-300' }),
+  pf:          (s, t, lang) => ({ label: t('app.accountList.sort.pf'),          value: isFinite(s.profitFactor) ? formatNumber(s.profitFactor, { lang }) : '∞', color: 'text-blue-400'  }),
+  winRate:     (s, t, lang) => ({ label: t('app.accountList.sort.winRate'),     value: formatPercent(s.winRate, { lang }),                                       color: 'text-slate-300' }),
+  maxDrawdown: (s, t, lang) => ({ label: t('app.accountList.sort.maxDrawdown'), value: formatNumber(s.maxDrawdown, { lang }),                                    color: 'text-amber-400' }),
+  name:        (s, t, lang) => ({ label: t('app.accountList.sort.profit'),      value: formatSignedMoney(s.totalProfit, { lang }),                              color: s.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400' }),
 }
 
 export default function AccountCard({ account, onRemove, aliases = {}, setAlias, sortKey = 'profit', tradingEnabled = true, onTradingToggle }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const lang = i18n.language
   const [expanded, setExpanded] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editValue, setEditValue] = useState('')
   const { account: info, stats } = account
   const isProfit = stats.totalProfit >= 0
   const displayName = aliases[info.name] || info.name
-  const sortVal = (SORT_VALUE[sortKey] || SORT_VALUE.profit)(stats, t)
-
-  const fmt = (n) => {
-    const abs = Math.abs(n).toFixed(2)
-    return (n >= 0 ? '+' : '-') + abs
-  }
+  const sortVal = (SORT_VALUE[sortKey] || SORT_VALUE.profit)(stats, t, lang)
 
   const startEdit = (e) => {
     e.stopPropagation()
@@ -94,12 +91,12 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
           </div>
           {sortKey !== 'winRate' && (
             <div className="text-xs text-slate-500 font-mono hidden sm:block">
-              WR {stats.winRate.toFixed(1)}%
+              WR {formatPercent(stats.winRate, { lang })}
             </div>
           )}
           {sortKey !== 'pf' && (
             <div className="text-xs text-slate-500 font-mono hidden sm:block">
-              PF {isFinite(stats.profitFactor) ? stats.profitFactor.toFixed(2) : '∞'}
+              PF {isFinite(stats.profitFactor) ? formatNumber(stats.profitFactor, { lang }) : '∞'}
             </div>
           )}
           {onTradingToggle && (
@@ -132,12 +129,16 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
         <div className="border-t border-[#1f2d40] px-4 py-3 space-y-3">
           {/* 口座情報 */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {[
-              { label: t('account.card.metrics.balance'),  value: (info.balance || 0).toLocaleString('en', { maximumFractionDigits: 2 }) + ' ' + (info.currency || ''), color: 'text-slate-200' },
-              { label: t('account.card.metrics.credit'),   value: (info.credit || 0).toLocaleString('en', { maximumFractionDigits: 2 }) + ' ' + (info.currency || ''), color: 'text-blue-400' },
-              { label: t('account.card.metrics.equity'),   value: (info.equity  || 0).toLocaleString('en', { maximumFractionDigits: 2 }) + ' ' + (info.currency || ''), color: (info.equity || 0) >= (info.balance || 0) ? 'text-emerald-400' : 'text-amber-400' },
-              { label: t('account.card.metrics.floating'), value: ((info.equity || 0) - (info.balance || 0) - (info.credit || 0) >= 0 ? '+' : '') + ((info.equity || 0) - (info.balance || 0) - (info.credit || 0)).toFixed(2), color: (info.equity || 0) - (info.balance || 0) - (info.credit || 0) >= 0 ? 'text-emerald-400' : 'text-red-400' },
-            ].map(item => (
+            {(() => {
+              const floating = (info.equity || 0) - (info.balance || 0) - (info.credit || 0)
+              const cur = info.currency || ''
+              return [
+                { label: t('account.card.metrics.balance'),  value: formatMoneyWithCurrency(info.balance || 0, cur, { lang }), color: 'text-slate-200' },
+                { label: t('account.card.metrics.credit'),   value: formatMoneyWithCurrency(info.credit || 0,  cur, { lang }), color: 'text-blue-400' },
+                { label: t('account.card.metrics.equity'),   value: formatMoneyWithCurrency(info.equity || 0,  cur, { lang }), color: (info.equity || 0) >= (info.balance || 0) ? 'text-emerald-400' : 'text-amber-400' },
+                { label: t('account.card.metrics.floating'), value: `${formatSignedMoney(floating, { lang })}${cur ? ' ' + cur : ''}`, color: floating >= 0 ? 'text-emerald-400' : 'text-red-400' },
+              ]
+            })().map(item => (
               <div key={item.label} className="bg-[#0a0e17] rounded-lg p-2.5">
                 <div className="text-xs text-slate-600 mb-0.5">{item.label}</div>
                 <div className={`font-mono text-sm font-semibold ${item.color}`}>{item.value}</div>
@@ -147,14 +148,14 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
           {/* 取引成績 */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {[
-              { label: t('account.card.metrics.profit'),       value: fmt(stats.totalProfit), color: isProfit ? 'text-emerald-400' : 'text-red-400' },
-              { label: t('account.card.metrics.grossProfit'),  value: '+' + stats.grossProfit.toFixed(2), color: 'text-emerald-400' },
-              { label: t('account.card.metrics.grossLoss'),    value: '-' + stats.grossLoss.toFixed(2), color: 'text-red-400' },
-              { label: t('account.card.metrics.profitFactor'), value: isFinite(stats.profitFactor) ? stats.profitFactor.toFixed(2) : '∞', color: 'text-blue-400' },
-              { label: t('account.card.metrics.winRate'),      value: stats.winRate.toFixed(1) + '%', color: 'text-slate-300' },
-              { label: t('account.card.metrics.wins'),         value: stats.wins, color: 'text-emerald-400' },
-              { label: t('account.card.metrics.losses'),       value: stats.losses, color: 'text-red-400' },
-              { label: t('account.card.metrics.maxDrawdown'),  value: stats.maxDrawdown.toFixed(2), color: 'text-amber-400' },
+              { label: t('account.card.metrics.profit'),       value: formatSignedMoney(stats.totalProfit, { lang }), color: isProfit ? 'text-emerald-400' : 'text-red-400' },
+              { label: t('account.card.metrics.grossProfit'),  value: '+' + formatNumber(stats.grossProfit, { lang }), color: 'text-emerald-400' },
+              { label: t('account.card.metrics.grossLoss'),    value: '-' + formatNumber(stats.grossLoss,   { lang }), color: 'text-red-400' },
+              { label: t('account.card.metrics.profitFactor'), value: isFinite(stats.profitFactor) ? formatNumber(stats.profitFactor, { lang }) : '∞', color: 'text-blue-400' },
+              { label: t('account.card.metrics.winRate'),      value: formatPercent(stats.winRate, { lang }), color: 'text-slate-300' },
+              { label: t('account.card.metrics.wins'),         value: formatCount(stats.wins,   { lang }), color: 'text-emerald-400' },
+              { label: t('account.card.metrics.losses'),       value: formatCount(stats.losses, { lang }), color: 'text-red-400' },
+              { label: t('account.card.metrics.maxDrawdown'),  value: formatNumber(stats.maxDrawdown, { lang }), color: 'text-amber-400' },
             ].map(item => (
               <div key={item.label} className="bg-[#0a0e17] rounded-lg p-2.5">
                 <div className="text-xs text-slate-600 mb-0.5">{item.label}</div>

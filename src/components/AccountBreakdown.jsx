@@ -3,9 +3,10 @@ import { useTranslation } from 'react-i18next'
 import { buildEquityCurve } from '../lib/mt4Parser'
 import EquityChart from './EquityChart'
 import TradeTable from './TradeTable'
+import { formatNumber, formatPercent, formatSignedMoney } from '../i18n/format'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 
-function PFBar({ pf }) {
+function PFBar({ pf, lang }) {
   const capped = Math.min(isFinite(pf) ? pf : 5, 5)
   const color = pf >= 2 ? '#10b981' : pf >= 1 ? '#f59e0b' : '#ef4444'
   return (
@@ -14,13 +15,13 @@ function PFBar({ pf }) {
         <div style={{ width: `${(capped / 5) * 100}%`, background: color }} className="h-full rounded-full" />
       </div>
       <span className="font-mono text-xs w-10 text-right" style={{ color }}>
-        {isFinite(pf) ? pf.toFixed(2) : '∞'}
+        {isFinite(pf) ? formatNumber(pf, { lang }) : '∞'}
       </span>
     </div>
   )
 }
 
-function WinRatePie({ winRate }) {
+function WinRatePie({ winRate, lang }) {
   const color = winRate >= 55 ? '#10b981' : winRate >= 45 ? '#f59e0b' : '#ef4444'
   return (
     <div className="flex items-center gap-1.5">
@@ -28,7 +29,7 @@ function WinRatePie({ winRate }) {
         className="w-8 h-8 rounded-full flex-shrink-0"
         style={{ background: `conic-gradient(${color} ${winRate * 3.6}deg, #1f2d40 0deg)` }}
       />
-      <span className="font-mono text-xs" style={{ color }}>{winRate.toFixed(1)}%</span>
+      <span className="font-mono text-xs" style={{ color }}>{formatPercent(winRate, { lang })}</span>
     </div>
   )
 }
@@ -51,7 +52,8 @@ function SortTh({ label, col, sortKey, sortDir, onSort, className = '' }) {
 }
 
 export default function AccountBreakdown({ accounts, filteredTrades, aliases = {}, sortKey, sortDir, onSort }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const lang = i18n.language
   const [selected, setSelected] = useState(null)
   const [tab, setTab] = useState('equity')
 
@@ -125,7 +127,7 @@ export default function AccountBreakdown({ accounts, filteredTrades, aliases = {
                     {isSelected && <span className="text-blue-400 text-xs flex-shrink-0">▶</span>}
                   </div>
                   <span className={`font-mono text-sm font-bold flex-shrink-0 ${isProfit ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {isProfit ? '+' : ''}{(s.totalProfit ?? 0).toFixed(2)}
+                    {formatSignedMoney(s.totalProfit ?? 0, { lang })}
                   </span>
                 </div>
                 <div className="flex items-center gap-3 mt-2">
@@ -134,9 +136,9 @@ export default function AccountBreakdown({ accounts, filteredTrades, aliases = {
                     <span className="text-slate-600">/</span>
                     <span className="text-red-500">{s.losses ?? 0}</span>
                   </span>
-                  <div className="flex-1"><PFBar pf={s.profitFactor ?? 0} /></div>
-                  <WinRatePie winRate={s.winRate ?? 0} />
-                  <span className="text-xs font-mono text-amber-400">DD {(s.maxDrawdown ?? 0).toFixed(2)}</span>
+                  <div className="flex-1"><PFBar pf={s.profitFactor ?? 0} lang={lang} /></div>
+                  <WinRatePie winRate={s.winRate ?? 0} lang={lang} />
+                  <span className="text-xs font-mono text-amber-400">DD {formatNumber(s.maxDrawdown ?? 0, { lang })}</span>
                 </div>
               </div>
             )
@@ -185,13 +187,13 @@ export default function AccountBreakdown({ accounts, filteredTrades, aliases = {
                       <span className="text-red-500">{s.losses ?? 0}</span>
                     </td>
                     <td className={`px-3 py-2.5 text-right font-mono font-bold ${isProfit ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {isProfit ? '+' : ''}{(s.totalProfit ?? 0).toFixed(2)}
+                      {formatSignedMoney(s.totalProfit ?? 0, { lang })}
                     </td>
-                    <td className="px-3 py-2.5 w-44"><PFBar pf={s.profitFactor ?? 0} /></td>
-                    <td className="px-3 py-2.5"><WinRatePie winRate={s.winRate ?? 0} /></td>
-                    <td className="px-3 py-2.5 text-right font-mono text-amber-400">{(s.maxDrawdown ?? 0).toFixed(2)}</td>
-                    <td className="px-3 py-2.5 text-right font-mono text-emerald-400">+{(s.avgWin ?? 0).toFixed(2)}</td>
-                    <td className="px-3 py-2.5 text-right font-mono text-red-400">-{(s.avgLoss ?? 0).toFixed(2)}</td>
+                    <td className="px-3 py-2.5 w-44"><PFBar pf={s.profitFactor ?? 0} lang={lang} /></td>
+                    <td className="px-3 py-2.5"><WinRatePie winRate={s.winRate ?? 0} lang={lang} /></td>
+                    <td className="px-3 py-2.5 text-right font-mono text-amber-400">{formatNumber(s.maxDrawdown ?? 0, { lang })}</td>
+                    <td className="px-3 py-2.5 text-right font-mono text-emerald-400">+{formatNumber(s.avgWin ?? 0, { lang })}</td>
+                    <td className="px-3 py-2.5 text-right font-mono text-red-400">-{formatNumber(s.avgLoss ?? 0, { lang })}</td>
                   </tr>
                 )
               })}

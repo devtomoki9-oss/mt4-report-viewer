@@ -55,6 +55,7 @@ import LoginScreen from './components/LoginScreen'
 import LandingPage from './components/LandingPage'
 import PasswordResetScreen from './components/PasswordResetScreen'
 import LanguageSwitcher from './components/LanguageSwitcher'
+import { formatMoney, formatMoneyWithCurrency, formatSignedMoney, formatCount, formatPercent, formatTime } from './i18n/format'
 
 const TAB_IDS = ['overview', 'insight', 'ea', 'trades', 'calendar']
 
@@ -85,16 +86,7 @@ function downloadText(content, filename) {
 }
 
 
-function fmt(n) {
-  if (n == null) return '—'
-  const abs = Math.abs(n)
-  return abs >= 1000 ? abs.toLocaleString('en', { maximumFractionDigits: 2 }) : abs.toFixed(2)
-}
 function toDay(str) { return str?.slice(0, 10) || '' }
-function fmtTime(d, lang) {
-  if (!d) return ''
-  return d.toLocaleTimeString(lang || undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-}
 function fmtCountdown(s) {
   if (s == null) return ''
   const n = Math.max(0, s)
@@ -811,7 +803,7 @@ export default function App() {
                 {lastUpdated && (
                   <span className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 flex-shrink-0" />
-                    {fmtTime(lastUpdated, i18n.language)}
+                    {formatTime(lastUpdated, { lang: i18n.language })}
                   </span>
                 )}
                 <button onClick={clearAll} className="hidden sm:inline text-slate-600 hover:text-red-400 transition-colors">
@@ -867,26 +859,26 @@ export default function App() {
                         const totalFloat   = totalEquity - totalBalance - totalCredit
                         const currency = accounts[0]?.account.currency || ''
                         return (<>
-                          <StatCard label={t('app.stats.balanceTotal')}     value={totalBalance.toLocaleString('en', { maximumFractionDigits: 2 }) + ' ' + currency} color="white" size="lg" />
-                          <StatCard label={t('app.stats.creditTotal')}      value={totalCredit.toLocaleString('en',  { maximumFractionDigits: 2 }) + ' ' + currency} color="white" size="lg" />
-                          <StatCard label={t('app.stats.equityTotal')}      value={totalEquity.toLocaleString('en',  { maximumFractionDigits: 2 }) + ' ' + currency} color={totalEquity >= totalBalance ? 'profit' : 'warn'} size="lg" />
-                          <StatCard label={t('app.stats.floatPnlTotal')}    value={(totalFloat >= 0 ? '+' : '') + totalFloat.toFixed(2) + ' ' + currency} color={totalFloat >= 0 ? 'profit' : 'loss'} size="lg" />
+                          <StatCard label={t('app.stats.balanceTotal')}     value={formatMoneyWithCurrency(totalBalance, currency, { lang: i18n.language })} color="white" size="lg" />
+                          <StatCard label={t('app.stats.creditTotal')}      value={formatMoneyWithCurrency(totalCredit,  currency, { lang: i18n.language })} color="white" size="lg" />
+                          <StatCard label={t('app.stats.equityTotal')}      value={formatMoneyWithCurrency(totalEquity,  currency, { lang: i18n.language })} color={totalEquity >= totalBalance ? 'profit' : 'warn'} size="lg" />
+                          <StatCard label={t('app.stats.floatPnlTotal')}    value={`${formatSignedMoney(totalFloat, { lang: i18n.language })}${currency ? ' ' + currency : ''}`} color={totalFloat >= 0 ? 'profit' : 'loss'} size="lg" />
                         </>)
                       })()}
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:grid-cols-7">
                       <StatCard label={t('app.stats.netProfitTotal')}
-                        value={(agg.totalProfit >= 0 ? '+' : '-') + fmt(agg.totalProfit)}
+                        value={formatSignedMoney(agg.totalProfit, { lang: i18n.language })}
                         color={agg.totalProfit >= 0 ? 'profit' : 'loss'} size="lg" />
-                      <StatCard label={t('app.stats.totalTrades')} value={agg.totalTrades.toLocaleString()} color="white" />
-                      <StatCard label={t('app.stats.winRate')} value={agg.winRate.toFixed(1) + '%'}
+                      <StatCard label={t('app.stats.totalTrades')} value={formatCount(agg.totalTrades, { lang: i18n.language })} color="white" />
+                      <StatCard label={t('app.stats.winRate')} value={formatPercent(agg.winRate, { lang: i18n.language })}
                         color={agg.winRate >= 50 ? 'profit' : 'warn'} />
                       <StatCard label={t('app.stats.profitFactor')}
-                        value={isFinite(agg.profitFactor) ? agg.profitFactor.toFixed(2) : '∞'}
+                        value={isFinite(agg.profitFactor) ? formatMoney(agg.profitFactor, { lang: i18n.language }) : '∞'}
                         color={agg.profitFactor >= 1.5 ? 'profit' : agg.profitFactor >= 1 ? 'warn' : 'loss'} />
-                      <StatCard label={t('app.stats.grossProfit')} value={'+' + fmt(agg.grossProfit)} color="profit" />
-                      <StatCard label={t('app.stats.grossLoss')} value={'-' + fmt(agg.grossLoss)} color="loss" />
-                      <StatCard label={t('app.stats.maxDrawdown')} value={fmt(agg.maxDrawdown)} color="warn" />
+                      <StatCard label={t('app.stats.grossProfit')} value={'+' + formatMoney(agg.grossProfit, { lang: i18n.language })} color="profit" />
+                      <StatCard label={t('app.stats.grossLoss')}   value={'-' + formatMoney(agg.grossLoss,   { lang: i18n.language })} color="loss" />
+                      <StatCard label={t('app.stats.maxDrawdown')} value={formatMoney(agg.maxDrawdown,        { lang: i18n.language })} color="warn" />
                     </div>
                     <EquityChart data={equityCurve} title={t('app.equityChart.allCombined')} />
                     <OpenPositions positions={allPositions} aliases={aliases} charts={allCharts} trades={filteredTrades} />

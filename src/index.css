@@ -28,6 +28,16 @@ body {
 ::-webkit-scrollbar-thumb { background: #1f2d40; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #2a3f5a; }
 
+/* Tab bar: hide scrollbar but keep scroll functionality */
+.tab-scroll-bar { scrollbar-width: none; -ms-overflow-style: none; }
+.tab-scroll-bar::-webkit-scrollbar { display: none; }
+
+/* Landscape compact mode: reduce vertical padding */
+@media (orientation: landscape) and (max-height: 500px) {
+  main { padding-top: 8px !important; padding-bottom: 8px !important; }
+  .space-y-4 > * + * { margin-top: 8px !important; }
+}
+
 /* iOS Safari auto-zoom prevention: font-size must be >= 16px on inputs */
 @media screen and (-webkit-min-device-pixel-ratio: 0) {
   input, select, textarea { font-size: 16px !important; }

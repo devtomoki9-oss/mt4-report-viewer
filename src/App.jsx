@@ -590,20 +590,20 @@ export default function App() {
       {/* ヘッダ */}
       <header className="border-b border-border bg-bg/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="h-14 flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center text-sm">
+          <div className="h-12 sm:h-14 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center text-sm shrink-0">
                 📈
               </div>
-              <span className="font-semibold text-slate-100 text-sm tracking-tight">{t('app.title')}</span>
-              {hasData && <span className="text-xs text-slate-600 ml-1 hidden sm:inline">{t('units.accounts', { count: accounts.length })}</span>}
+              <span className="font-semibold text-slate-100 text-sm tracking-tight truncate">{t('app.title')}</span>
+              {hasData && <span className="text-xs text-slate-600 ml-1 hidden lg:inline shrink-0">{t('units.accounts', { count: accounts.length })}</span>}
             </div>
-            <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-1.5 shrink-0">
               {hasData && (
-                <nav className="hidden sm:flex gap-1 bg-surface border border-border rounded-lg p-1">
+                <nav className="hidden lg:flex gap-0.5 bg-surface border border-border rounded-lg p-1">
                   {TAB_IDS.map(id => (
                     <button key={id} onClick={() => setTab(id)}
-                      className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all
+                      className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all whitespace-nowrap
                         ${tab === id ? 'bg-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}>
                       {t(`app.tabs.${id}`)}
                     </button>
@@ -616,7 +616,7 @@ export default function App() {
                   <button
                     onClick={requestRefresh}
                     disabled={refreshing}
-                    className="text-xs text-blue-400 hover:text-blue-300 disabled:opacity-50 transition-colors bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg">
+                    className="text-xs text-blue-400 hover:text-blue-300 disabled:opacity-50 transition-colors bg-blue-500/10 border border-blue-500/20 px-2.5 py-1.5 rounded-lg whitespace-nowrap">
                     {refreshing ? t('app.header.refreshShort') : t('app.header.refresh')}
                   </button>
                   {/* アカウントメニュー */}
@@ -627,7 +627,7 @@ export default function App() {
                       aria-expanded={showUserMenu}
                       aria-label={user.email}
                       className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-surface border border-border hover:border-slate-600 transition-colors">
-                      <span className="text-xs text-slate-400 max-w-[120px] truncate hidden sm:inline">{user.email}</span>
+                      <span className="text-xs text-slate-400 max-w-[100px] truncate hidden lg:inline">{user.email}</span>
                       {plan === 'pro'
                         ? <span className="text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1.5 py-0.5 rounded font-semibold">{t('app.header.userMenu.planPro')}</span>
                         : <span className="text-[10px] bg-slate-700/50 text-slate-500 border border-slate-700 px-1.5 py-0.5 rounded font-semibold">{t('app.header.userMenu.planFree')}</span>
@@ -670,11 +670,11 @@ export default function App() {
             </div>
           </div>
           {hasData && (
-            <nav className="sm:hidden flex gap-1 pb-2 overflow-x-auto" aria-label={t('app.tabs.label', { defaultValue: 'Sections' })}>
+            <nav className="lg:hidden flex gap-1.5 pb-2 overflow-x-auto tab-scroll-bar" aria-label={t('app.tabs.label', { defaultValue: 'Sections' })}>
               {TAB_IDS.map(id => (
                 <button key={id} onClick={() => setTab(id)}
-                  className={`flex-1 flex-shrink-0 py-1.5 text-xs rounded-md font-medium transition-all whitespace-nowrap
-                    ${tab === id ? 'bg-blue-600 text-white shadow' : 'bg-surface border border-border text-slate-500'}`}>
+                  className={`shrink-0 px-3 py-1.5 text-xs rounded-md font-medium transition-all whitespace-nowrap
+                    ${tab === id ? 'bg-blue-600 text-white shadow' : 'bg-surface border border-border text-slate-500 hover:text-slate-300'}`}>
                   {t(`app.tabs.${id}`)}
                 </button>
               ))}
@@ -683,7 +683,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 lg:py-6 space-y-3 sm:space-y-4">
 
 {!hasData ? (
           /* ── セットアップ画面（クリア後もここに集約） ── */
@@ -789,7 +789,7 @@ export default function App() {
                     {formatTime(lastUpdated, { lang: i18n.language })}
                   </span>
                 )}
-                <button onClick={clearAll} className="text-slate-600 hover:text-red-400 transition-colors">
+                <button onClick={clearAll} className="hidden lg:inline text-slate-600 hover:text-red-400 transition-colors">
                   {t('app.toolbar.clear')}
                 </button>
               </div>

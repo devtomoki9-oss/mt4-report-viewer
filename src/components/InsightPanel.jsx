@@ -174,7 +174,7 @@ function WinPatternsContent({ patterns, t }) {
 
 // ── メインコンポーネント ────────────────────────────
 
-export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgrade, perAccountData = [] }) {
+export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgrade, perAccountData = [], aliases = {} }) {
   const { t } = useTranslation()
   const tradeScoreStyle = useMemo(() => makeTradeScoreStyle(t), [t])
   const riskScoreStyle  = useMemo(() => makeRiskScoreStyle(t),  [t])
@@ -192,10 +192,11 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
     if (perAccountData.length < 2) return []
     return perAccountData.map(({ account, trades: accTrades, stats: accStats }) => ({
       name: account.name,
+      displayName: aliases[account.name] || account.name,
       suggestions: generateSuggestions(accTrades, accStats).slice(0, 3),
       tradeScore: calcTradeScore(accStats, accTrades),
     }))
-  }, [perAccountData])
+  }, [perAccountData, aliases])
 
   const visibleInsights    = plan === 'pro' ? insights    : insights.slice(0, 1)
   const lockedInsightCount = plan === 'free' ? Math.max(0, insights.length - 1) : 0
@@ -342,11 +343,11 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
             </div>
           ) : (
             <div className="space-y-4">
-              {perAccountSuggestions.map(({ name, suggestions: accSuggestions, tradeScore: accScore }) => (
+              {perAccountSuggestions.map(({ name, displayName, suggestions: accSuggestions, tradeScore: accScore }) => (
                 <div key={name} className="border border-border rounded-lg p-3">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-xs font-semibold text-slate-300 bg-[#0d1520] px-2 py-0.5 rounded border border-[#2a3a50]">
-                      {name}
+                      {displayName}
                     </span>
                     {accScore !== null && (
                       <span className={`text-xs font-mono ${tradeScoreStyle(accScore).color}`}>

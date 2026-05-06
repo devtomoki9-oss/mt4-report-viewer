@@ -822,7 +822,7 @@ export default function App() {
             ) : (
               <>
                 {tab === 'insight' && (
-                  <InsightPanel trades={filteredTrades} stats={agg} plan={plan} onUpgrade={handleUpgrade} perAccountData={perAccountData} />
+                  <InsightPanel trades={filteredTrades} stats={agg} plan={plan} onUpgrade={handleUpgrade} perAccountData={perAccountData} aliases={aliases} />
                 )}
                 {tab === 'overview' && agg && (
                   <div className="space-y-5">

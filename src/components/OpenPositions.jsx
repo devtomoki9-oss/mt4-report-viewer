@@ -8,6 +8,7 @@ export default function OpenPositions({ positions, aliases = {}, charts = {}, tr
   const lang = i18n.language
   const [selectedAccount, setSelectedAccount] = useState(null)
   const [chartSymbol, setChartSymbol]         = useState(null)
+  const [chartAccount, setChartAccount]       = useState(null)
 
   const accounts = useMemo(() => {
     const seen = new Set()
@@ -94,7 +95,7 @@ export default function OpenPositions({ positions, aliases = {}, charts = {}, tr
                     <div className="flex items-center gap-2">
                       {showChart && (
                         <button
-                          onClick={() => setChartSymbol(p.symbol)}
+                          onClick={() => { setChartSymbol(p.symbol); setChartAccount(p.account) }}
                           className="text-xs text-blue-400 hover:text-blue-300 border border-blue-500/30 px-1.5 py-0.5 rounded transition-colors"
                         >
                           📈
@@ -166,7 +167,7 @@ export default function OpenPositions({ positions, aliases = {}, charts = {}, tr
                       <td className="px-3 py-2.5 text-center">
                         {showChart ? (
                           <button
-                            onClick={() => setChartSymbol(p.symbol)}
+                            onClick={() => { setChartSymbol(p.symbol); setChartAccount(p.account) }}
                             className="text-xs text-blue-400 hover:text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded transition-colors"
                           >
                             📈
@@ -190,7 +191,8 @@ export default function OpenPositions({ positions, aliases = {}, charts = {}, tr
           chartDataMap={charts[chartSymbol]}
           trades={trades}
           positions={positions.filter(p => p.symbol === chartSymbol)}
-          onClose={() => setChartSymbol(null)}
+          accountId={chartAccount}
+          onClose={() => { setChartSymbol(null); setChartAccount(null) }}
         />
       )}
     </>

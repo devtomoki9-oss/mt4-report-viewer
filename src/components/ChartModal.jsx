@@ -6,20 +6,19 @@ import TradeChart from './TradeChart'
 const TF_ORDER  = ['1', '5', '15', '60', '240', '1440']
 const TF_LABELS = { '1': 'M1', '5': 'M5', '15': 'M15', '60': 'H1', '240': 'H4', '1440': 'D1' }
 
-// モーダルを閉じても選択中の時間足をシンボルごとに記憶する
-const lastTfBySymbol = {}
+const tfStorageKey = (accountId) => `mt4_chart_tf_${accountId ?? 'default'}`
 
-export default function ChartModal({ symbol, chartDataMap, trades, positions, onClose }) {
+export default function ChartModal({ symbol, chartDataMap, trades, positions, accountId, onClose }) {
   const { t } = useTranslation()
   const available = TF_ORDER.filter(tf => chartDataMap?.[tf]?.candles?.length > 0)
-  const savedTf   = lastTfBySymbol[symbol]
+  const savedTf   = localStorage.getItem(tfStorageKey(accountId))
   const defaultTf = (savedTf && available.includes(savedTf))
     ? savedTf
     : (available.includes('15') ? '15' : (available[0] ?? null))
   const [selectedTf, setSelectedTf] = useState(defaultTf)
 
   const handleSelectTf = (tf) => {
-    lastTfBySymbol[symbol] = tf
+    localStorage.setItem(tfStorageKey(accountId), tf)
     setSelectedTf(tf)
   }
   const tradeChartRef = useRef(null)

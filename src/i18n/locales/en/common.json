@@ -61,6 +61,7 @@
         "planFree": "Free",
         "planProLabel": "Pro plan",
         "planFreeLabel": "Free plan",
+        "upgrade": "Upgrade to Pro",
         "manageSubscription": "Manage subscription",
         "logout": "Sign out",
         "deleteAccount": "Delete account"
@@ -730,6 +731,10 @@
       "step3": {
         "title": "Live updates",
         "body": "Thanks to Supabase Realtime, the dashboard updates almost instantly when MT4/MT5 writes new data. Click <strong>↻ Refresh</strong> if you want to force an immediate update."
+      },
+      "step4": {
+        "title": "Loss alert notifications (optional)",
+        "body": "Click the \"🔔 Enable notifications\" banner above the account list to allow push notifications. Then expand any account card, find the \"🔔 Loss alert\" section, and save a threshold. You'll receive a push notification on registered devices when the unrealized loss on that account exceeds the limit (30-minute cooldown per account)."
       }
     },
     "section4": {
@@ -746,7 +751,8 @@
       "cardOps": [
         "<strong>Rename account</strong>: hover over the card and click ✎ to edit the display name",
         "<strong>Auto-trading on/off</strong>: the toggle on the card remotely controls the EA's auto-trading. Changes are picked up by MT4/MT5 via Ctrl+E",
-        "<strong>Delete account data</strong>: the × button removes that account's data from the cloud"
+        "<strong>Delete account data</strong>: the × button removes that account's data from the cloud",
+        "<strong>Loss alert</strong>: expand a card to see the 🔔 loss alert panel. Set a threshold and registered devices receive a push notification when unrealized loss exceeds it (30-min cooldown)"
       ]
     },
     "section5": {
@@ -764,7 +770,8 @@
         ["Multiple accounts", "✓", "✓"],
         ["Calendar & equity curve", "✓", "✓"],
         ["AI Insights (diagnosis)", "1", "✓"],
-        ["AI Insights (recommendations, per-account, patterns)", "—", "✓"]
+        ["AI Insights (recommendations, per-account, patterns)", "—", "✓"],
+        ["Loss alert push notifications", "✓", "✓"]
       ],
       "notes": [
         "<strong>Upgrade to Pro</strong>: top-right dropdown → \"Upgrade\" opens the checkout page",

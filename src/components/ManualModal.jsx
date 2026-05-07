@@ -152,6 +152,9 @@ export default function ManualModal({ onClose, onDownloadVbs }) {
               <Step n="③" title={t('manual.section3.step3.title')}>
                 <p dangerouslySetInnerHTML={html(t('manual.section3.step3.body'))} />
               </Step>
+              <Step n="④" title={t('manual.section3.step4.title')}>
+                <p dangerouslySetInnerHTML={html(t('manual.section3.step4.body'))} />
+              </Step>
             </div>
           </section>
 

@@ -307,6 +307,16 @@
       "tradingPaused": "Paused",
       "tradingStopHint": "Stop auto-trading",
       "tradingRunHint": "Resume auto-trading",
+      "lossAlert": {
+        "title": "Loss Alert",
+        "enable": "Enable notifications",
+        "denied": "Browser notifications are blocked. Allow them in your browser settings.",
+        "placeholder": "e.g. 1000",
+        "hint": "Push notification when floating loss exceeds this value",
+        "set": "Active: −{{amount}}",
+        "save": "Save",
+        "remove": "Remove"
+      },
       "metrics": {
         "balance": "Balance",
         "credit": "Credit",

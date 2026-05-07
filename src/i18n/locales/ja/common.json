@@ -300,6 +300,16 @@
       "tradingPaused": "停止中",
       "tradingStopHint": "自動取引を停止",
       "tradingRunHint": "自動取引を稼働",
+      "lossAlert": {
+        "title": "含み損アラート",
+        "enable": "通知を有効にする",
+        "denied": "ブラウザの通知がブロックされています。設定から許可してください。",
+        "placeholder": "例: 1000",
+        "hint": "含み損が設定値を超えたらプッシュ通知",
+        "set": "設定中: −{{amount}}",
+        "save": "保存",
+        "remove": "解除"
+      },
       "metrics": {
         "balance": "残高",
         "credit": "クレジット",

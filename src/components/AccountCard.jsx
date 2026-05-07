@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatNumber, formatMoneyWithCurrency, formatSignedMoney, formatPercent, formatCount, normalizeCurrency } from '../i18n/format'
 import EaParamsPanel from './EaParamsPanel'
@@ -12,12 +12,18 @@ const SORT_VALUE = {
   name:        (s, t, lang) => ({ label: t('app.accountList.sort.profit'),      value: formatSignedMoney(s.totalProfit, { lang }),                              color: s.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400' }),
 }
 
-export default function AccountCard({ account, onRemove, aliases = {}, setAlias, sortKey = 'profit', tradingEnabled = true, onTradingToggle, isPro = false, onUpgrade }) {
+export default function AccountCard({ account, onRemove, aliases = {}, setAlias, sortKey = 'profit', tradingEnabled = true, onTradingToggle, isPro = false, onUpgrade, alertThreshold = null, onAlertThresholdChange, notificationPermission = 'unsupported', onRequestNotification }) {
   const { t, i18n } = useTranslation()
   const lang = i18n.language
   const [expanded, setExpanded] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editValue, setEditValue] = useState('')
+  const [thresholdInput, setThresholdInput] = useState(alertThreshold != null ? String(alertThreshold) : '')
+  const [thresholdSaving, setThresholdSaving] = useState(false)
+
+  useEffect(() => {
+    setThresholdInput(alertThreshold != null ? String(alertThreshold) : '')
+  }, [alertThreshold])
   const { account: info, stats } = account
   const isProfit = stats.totalProfit >= 0
   const displayName = aliases[info.name] || info.name
@@ -174,6 +180,69 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
                 isPro={isPro}
                 onUpgrade={onUpgrade}
               />
+            </div>
+          )}
+          {/* 含み損アラート通知 */}
+          {info.number != null && onAlertThresholdChange && notificationPermission !== 'unsupported' && (
+            <div className="pt-2 border-t border-border">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs text-slate-500 font-medium">🔔 {t('account.card.lossAlert.title')}</span>
+                {alertThreshold != null && (
+                  <span className="text-xs text-amber-400 font-mono">
+                    {t('account.card.lossAlert.set', { amount: alertThreshold.toLocaleString() })}
+                  </span>
+                )}
+              </div>
+              {notificationPermission === 'denied' && (
+                <p className="text-xs text-red-400/80">{t('account.card.lossAlert.denied')}</p>
+              )}
+              {notificationPermission === 'default' && (
+                <button
+                  onClick={e => { e.stopPropagation(); onRequestNotification?.() }}
+                  className="text-xs text-blue-400 hover:text-blue-300 border border-blue-500/30 px-2 py-1 rounded transition-colors"
+                >
+                  {t('account.card.lossAlert.enable')}
+                </button>
+              )}
+              {notificationPermission === 'granted' && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-slate-600 font-mono">−</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={thresholdInput}
+                      onChange={e => setThresholdInput(e.target.value)}
+                      onClick={e => e.stopPropagation()}
+                      placeholder={t('account.card.lossAlert.placeholder')}
+                      className="bg-bg border border-border rounded px-2 py-1 text-xs text-slate-200 font-mono focus:outline-none focus:border-blue-500 w-28"
+                    />
+                  </div>
+                  <button
+                    disabled={thresholdSaving}
+                    onClick={async e => {
+                      e.stopPropagation()
+                      const val = parseFloat(thresholdInput)
+                      if (!isFinite(val) || val <= 0) return
+                      setThresholdSaving(true)
+                      await onAlertThresholdChange(val).catch(console.error)
+                      setThresholdSaving(false)
+                    }}
+                    className="text-xs text-blue-400 hover:text-blue-300 border border-blue-500/30 px-2 py-1 rounded transition-colors disabled:opacity-40"
+                  >
+                    {t('account.card.lossAlert.save')}
+                  </button>
+                  {alertThreshold != null && (
+                    <button
+                      onClick={e => { e.stopPropagation(); onAlertThresholdChange(null).catch(console.error) }}
+                      className="text-xs text-slate-500 hover:text-red-400 transition-colors"
+                    >
+                      {t('account.card.lossAlert.remove')}
+                    </button>
+                  )}
+                  <span className="text-xs text-slate-700">{t('account.card.lossAlert.hint')}</span>
+                </div>
+              )}
             </div>
           )}
         </div>

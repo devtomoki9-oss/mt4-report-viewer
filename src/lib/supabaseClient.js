@@ -188,3 +188,42 @@ export function subscribeToEaParams(onUpdate) {
     }, onUpdate)
     .subscribe()
 }
+
+// ── プッシュ通知購読 ──────────────────────────────────
+
+export async function savePushSubscription(subscription) {
+  const json = subscription.toJSON()
+  const { error } = await supabase.from('push_subscriptions').upsert(
+    { endpoint: json.endpoint, p256dh: json.keys.p256dh, auth: json.keys.auth },
+    { onConflict: 'user_id,endpoint' }
+  )
+  if (error) throw error
+}
+
+export async function deletePushSubscription(endpoint) {
+  const { error } = await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint)
+  if (error) throw error
+}
+
+// ── アラート設定 ──────────────────────────────────────
+
+export async function fetchAlertSettings() {
+  const { data, error } = await supabase
+    .from('alert_settings')
+    .select('account_number, loss_threshold')
+  if (error) throw error
+  return Object.fromEntries((data ?? []).map(r => [String(r.account_number), Number(r.loss_threshold)]))
+}
+
+export async function saveAlertSetting(accountNumber, lossThreshold) {
+  const { error } = await supabase.from('alert_settings').upsert(
+    { account_number: String(accountNumber), loss_threshold: lossThreshold },
+    { onConflict: 'user_id,account_number' }
+  )
+  if (error) throw error
+}
+
+export async function deleteAlertSetting(accountNumber) {
+  const { error } = await supabase.from('alert_settings').delete().eq('account_number', String(accountNumber))
+  if (error) throw error
+}

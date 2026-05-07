@@ -34,7 +34,9 @@ import {
   supabase, signOut, getSession, fetchReports, deleteAccount, deleteReport,
   fetchAliases, saveAliases, fetchPlan, updatePassword, subscribeToReports,
   fetchTradingStates, setTradingEnabled, subscribeToTradingStates,
+  savePushSubscription, deletePushSubscription, fetchAlertSettings, saveAlertSetting, deleteAlertSetting,
 } from './lib/supabaseClient'
+import { registerServiceWorker, requestAndSubscribe, unsubscribeFromPush, getNotificationPermission } from './lib/pushNotifications'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import DeleteAccountModal from './components/DeleteAccountModal'
 import FeedbackModal from './components/FeedbackModal'
@@ -136,8 +138,11 @@ export default function App() {
   const [showFeedback,      setShowFeedback]      = useState(false)
   const [showManual,        setShowManual]        = useState(false)
   const [showHelp,          setShowHelp]          = useState(false)
-  const [tradingStates,     setTradingStates]       = useState(null)
-  const [showTerms,         setShowTerms]         = useState(false)
+  const [tradingStates,         setTradingStates]         = useState(null)
+  const [showTerms,             setShowTerms]             = useState(false)
+  const [alertSettings,         setAlertSettings]         = useState({})
+  const [swRegistration,        setSwRegistration]        = useState(null)
+  const [notificationPermission, setNotificationPermission] = useState(() => getNotificationPermission())
 
   const [showUserMenu,      setShowUserMenu]      = useState(false)
   const userMenuRef = useRef(null)
@@ -352,6 +357,15 @@ export default function App() {
     // 自動取引状態を取得
     fetchTradingStates().then(setTradingStates).catch(console.error)
 
+    // アラート設定を取得
+    fetchAlertSettings().then(setAlertSettings).catch(console.error)
+
+    // Service Worker を登録（HTTPS 環境のみ有効）
+    registerServiceWorker().then(reg => {
+      setSwRegistration(reg)
+      setNotificationPermission(getNotificationPermission())
+    })
+
     // Supabase から最新の alias を取得してローカルに反映
     fetchAliases().then(remote => {
       if (Object.keys(remote).length > 0) {
@@ -433,6 +447,28 @@ export default function App() {
       alert(t('app.errors.upgradeFailed', { message: e.message }))
     }
   }, [user, t])
+
+  // ── プッシュ通知の許可リクエスト & 購読 ────────────────
+  const handleRequestNotification = useCallback(async () => {
+    const sub = await requestAndSubscribe(swRegistration)
+    if (sub) {
+      await savePushSubscription(sub).catch(console.error)
+      setNotificationPermission(getNotificationPermission())
+    } else {
+      setNotificationPermission(getNotificationPermission())
+    }
+  }, [swRegistration])
+
+  // ── アラート閾値の保存・削除 ──────────────────────────
+  const handleAlertThresholdChange = useCallback(async (accountNumber, threshold) => {
+    if (threshold === null) {
+      await deleteAlertSetting(accountNumber)
+      setAlertSettings(prev => { const next = { ...prev }; delete next[String(accountNumber)]; return next })
+    } else {
+      await saveAlertSetting(accountNumber, threshold)
+      setAlertSettings(prev => ({ ...prev, [String(accountNumber)]: threshold }))
+    }
+  }, [])
 
   // ── Supabase Realtime 購読（reports テーブル変更を即時検知） ──
   useEffect(() => {
@@ -909,6 +945,10 @@ export default function App() {
                             } : undefined}
                             isPro={plan === 'pro'}
                             onUpgrade={handleUpgrade}
+                            alertThreshold={alertSettings[String(acc.account.number)] ?? null}
+                            onAlertThresholdChange={(threshold) => handleAlertThresholdChange(acc.account.number, threshold)}
+                            notificationPermission={notificationPermission}
+                            onRequestNotification={handleRequestNotification}
                           />
                         ))}
                       </div>

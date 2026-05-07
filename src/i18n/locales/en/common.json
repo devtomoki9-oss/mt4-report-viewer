@@ -314,6 +314,7 @@
         "placeholder": "e.g. 1000",
         "hint": "Push notification when floating loss exceeds this value",
         "set": "Active: −{{amount}}",
+        "active": "Active",
         "save": "Save",
         "remove": "Remove"
       },

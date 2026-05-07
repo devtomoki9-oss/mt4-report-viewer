@@ -126,6 +126,10 @@
         "maxDrawdown": "最大DD"
       }
     },
+    "notificationBanner": {
+      "hint": "含み損アラートを受け取るには通知を有効にしてください",
+      "registerHint": "このデバイスを登録すると含み損アラートが届きます"
+    },
     "vbsModal": {
       "title": "run-sync.vbs を生成",
       "body": "パスワードを入力すると接続情報が埋め込まれた VBS ファイルをダウンロードします。\nsync-to-supabase.ps1 と同じフォルダに置いてください。",

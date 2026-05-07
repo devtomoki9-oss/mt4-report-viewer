@@ -12,7 +12,7 @@ const SORT_VALUE = {
   name:        (s, t, lang) => ({ label: t('app.accountList.sort.profit'),      value: formatSignedMoney(s.totalProfit, { lang }),                              color: s.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400' }),
 }
 
-export default function AccountCard({ account, onRemove, aliases = {}, setAlias, sortKey = 'profit', tradingEnabled = true, onTradingToggle, isPro = false, onUpgrade, alertThreshold = null, onAlertThresholdChange, notificationPermission = 'unsupported', onRequestNotification }) {
+export default function AccountCard({ account, onRemove, aliases = {}, setAlias, sortKey = 'profit', tradingEnabled = true, onTradingToggle, isPro = false, onUpgrade, alertThreshold = null, onAlertThresholdChange, notificationPermission = 'unsupported' }) {
   const { t, i18n } = useTranslation()
   const lang = i18n.language
   const [expanded, setExpanded] = useState(false)
@@ -20,7 +20,6 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
   const [editValue, setEditValue] = useState('')
   const [thresholdInput, setThresholdInput] = useState(alertThreshold != null ? String(alertThreshold) : '')
   const [thresholdSaving, setThresholdSaving] = useState(false)
-  const [deviceRegistered, setDeviceRegistered] = useState(false)
 
   useEffect(() => {
     setThresholdInput(alertThreshold != null ? String(alertThreshold) : '')
@@ -184,7 +183,7 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
             </div>
           )}
           {/* 含み損アラート通知 */}
-          {info.number != null && onAlertThresholdChange && notificationPermission !== 'unsupported' && (
+          {info.number != null && onAlertThresholdChange && notificationPermission === 'granted' && (
             <div className="pt-2 border-t border-border">
               <div className={`rounded-lg p-3 space-y-2.5 transition-colors ${alertThreshold != null ? 'bg-amber-500/5 border border-amber-500/25' : 'bg-bg border border-border'}`}>
                 <div className="flex items-center justify-between gap-2">
@@ -197,74 +196,44 @@ export default function AccountCard({ account, onRemove, aliases = {}, setAlias,
                     </span>
                   )}
                 </div>
-                {notificationPermission === 'denied' && (
-                  <p className="text-xs text-red-400/80">{t('account.card.lossAlert.denied')}</p>
-                )}
-                {notificationPermission === 'default' && (
-                  <button
-                    onClick={e => { e.stopPropagation(); onRequestNotification?.() }}
-                    className="text-xs text-blue-400 hover:text-blue-300 border border-blue-500/30 px-2 py-1 rounded transition-colors"
-                  >
-                    {t('account.card.lossAlert.enable')}
-                  </button>
-                )}
-                {notificationPermission === 'granted' && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs text-slate-600 font-mono">−</span>
-                        <input
-                          type="number"
-                          min="0"
-                          value={thresholdInput}
-                          onChange={e => setThresholdInput(e.target.value)}
-                          onClick={e => e.stopPropagation()}
-                          placeholder={t('account.card.lossAlert.placeholder')}
-                          className="bg-bg border border-border rounded px-2 py-1 text-xs text-slate-200 font-mono focus:outline-none focus:border-blue-500 w-28"
-                        />
-                      </div>
-                      <button
-                        disabled={thresholdSaving}
-                        onClick={async e => {
-                          e.stopPropagation()
-                          const val = parseFloat(thresholdInput)
-                          if (!isFinite(val) || val <= 0) return
-                          setThresholdSaving(true)
-                          await onAlertThresholdChange(val).catch(console.error)
-                          setThresholdSaving(false)
-                        }}
-                        className="text-xs text-blue-400 hover:text-blue-300 border border-blue-500/30 px-2 py-1 rounded transition-colors disabled:opacity-40"
-                      >
-                        {t('account.card.lossAlert.save')}
-                      </button>
-                      {alertThreshold != null ? (
-                        <button
-                          onClick={e => { e.stopPropagation(); onAlertThresholdChange(null).catch(console.error) }}
-                          className="text-xs text-red-400/70 hover:text-red-400 border border-red-500/20 hover:border-red-500/40 hover:bg-red-500/10 px-2 py-1 rounded transition-colors"
-                        >
-                          {t('account.card.lossAlert.remove')}
-                        </button>
-                      ) : (
-                        <span className="text-xs text-slate-600">{t('account.card.lossAlert.hint')}</span>
-                      )}
-                    </div>
-                    {!deviceRegistered && (
-                      <button
-                        onClick={async e => {
-                          e.stopPropagation()
-                          await onRequestNotification?.()
-                          setDeviceRegistered(true)
-                        }}
-                        className="text-xs text-slate-500 hover:text-blue-400 border border-slate-700 hover:border-blue-500/30 px-2 py-1 rounded transition-colors"
-                      >
-                        📲 {t('account.card.lossAlert.registerDevice')}
-                      </button>
-                    )}
-                    {deviceRegistered && (
-                      <span className="text-xs text-emerald-500">✓ {t('account.card.lossAlert.registerDevice')}</span>
-                    )}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-slate-600 font-mono">−</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={thresholdInput}
+                      onChange={e => setThresholdInput(e.target.value)}
+                      onClick={e => e.stopPropagation()}
+                      placeholder={t('account.card.lossAlert.placeholder')}
+                      className="bg-bg border border-border rounded px-2 py-1 text-xs text-slate-200 font-mono focus:outline-none focus:border-blue-500 w-28"
+                    />
                   </div>
-                )}
+                  <button
+                    disabled={thresholdSaving}
+                    onClick={async e => {
+                      e.stopPropagation()
+                      const val = parseFloat(thresholdInput)
+                      if (!isFinite(val) || val <= 0) return
+                      setThresholdSaving(true)
+                      await onAlertThresholdChange(val).catch(console.error)
+                      setThresholdSaving(false)
+                    }}
+                    className="text-xs text-blue-400 hover:text-blue-300 border border-blue-500/30 px-2 py-1 rounded transition-colors disabled:opacity-40"
+                  >
+                    {t('account.card.lossAlert.save')}
+                  </button>
+                  {alertThreshold != null ? (
+                    <button
+                      onClick={e => { e.stopPropagation(); onAlertThresholdChange(null).catch(console.error) }}
+                      className="text-xs text-red-400/70 hover:text-red-400 border border-red-500/20 hover:border-red-500/40 hover:bg-red-500/10 px-2 py-1 rounded transition-colors"
+                    >
+                      {t('account.card.lossAlert.remove')}
+                    </button>
+                  ) : (
+                    <span className="text-xs text-slate-600">{t('account.card.lossAlert.hint')}</span>
+                  )}
+                </div>
               </div>
             </div>
           )}

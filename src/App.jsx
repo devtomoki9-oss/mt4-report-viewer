@@ -143,6 +143,7 @@ export default function App() {
   const [alertSettings,         setAlertSettings]         = useState({})
   const [swRegistration,        setSwRegistration]        = useState(null)
   const [notificationPermission, setNotificationPermission] = useState(() => getNotificationPermission())
+  const [deviceRegistered,      setDeviceRegistered]      = useState(() => localStorage.getItem('mt4_push_registered') === 'true')
 
   const [showUserMenu,      setShowUserMenu]      = useState(false)
   const userMenuRef = useRef(null)
@@ -369,7 +370,11 @@ export default function App() {
       if (reg && perm === 'granted') {
         try {
           const sub = await requestAndSubscribe(reg)
-          if (sub) await savePushSubscription(sub)
+          if (sub) {
+            await savePushSubscription(sub)
+            localStorage.setItem('mt4_push_registered', 'true')
+            setDeviceRegistered(true)
+          }
         } catch (e) {
           console.warn('Push subscription re-save failed:', e)
         }
@@ -463,10 +468,10 @@ export default function App() {
     const sub = await requestAndSubscribe(swRegistration)
     if (sub) {
       await savePushSubscription(sub).catch(console.error)
-      setNotificationPermission(getNotificationPermission())
-    } else {
-      setNotificationPermission(getNotificationPermission())
+      localStorage.setItem('mt4_push_registered', 'true')
+      setDeviceRegistered(true)
     }
+    setNotificationPermission(getNotificationPermission())
   }, [swRegistration])
 
   // ── アラート閾値の保存・削除 ──────────────────────────
@@ -911,6 +916,26 @@ export default function App() {
                     </div>
                     <EquityChart data={equityCurve} title={t('app.equityChart.allCombined')} />
                     <OpenPositions positions={allPositions} aliases={aliases} charts={allCharts} trades={filteredTrades} />
+                    {notificationPermission !== 'unsupported' && (notificationPermission !== 'granted' || !deviceRegistered) && (
+                      <div className="flex items-center gap-3 bg-surface border border-border rounded-lg px-3 py-2.5 text-xs">
+                        <span>🔔</span>
+                        {notificationPermission === 'default' && (<>
+                          <span className="text-slate-500 flex-1">{t('app.notificationBanner.hint')}</span>
+                          <button onClick={handleRequestNotification} className="text-blue-400 hover:text-blue-300 border border-blue-500/30 px-2 py-1 rounded transition-colors flex-shrink-0">
+                            {t('account.card.lossAlert.enable')}
+                          </button>
+                        </>)}
+                        {notificationPermission === 'denied' && (
+                          <span className="text-red-400 flex-1">{t('account.card.lossAlert.denied')}</span>
+                        )}
+                        {notificationPermission === 'granted' && !deviceRegistered && (<>
+                          <span className="text-slate-500 flex-1">{t('app.notificationBanner.registerHint')}</span>
+                          <button onClick={handleRequestNotification} className="text-blue-400 hover:text-blue-300 border border-blue-500/30 px-2 py-1 rounded transition-colors flex-shrink-0">
+                            📲 {t('account.card.lossAlert.registerDevice')}
+                          </button>
+                        </>)}
+                      </div>
+                    )}
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <div className="text-sm font-semibold text-slate-400">{t('app.accountList.title')}</div>
@@ -958,7 +983,6 @@ export default function App() {
                             alertThreshold={alertSettings[String(acc.account.number)] ?? null}
                             onAlertThresholdChange={(threshold) => handleAlertThresholdChange(acc.account.number, threshold)}
                             notificationPermission={notificationPermission}
-                            onRequestNotification={handleRequestNotification}
                           />
                         ))}
                       </div>

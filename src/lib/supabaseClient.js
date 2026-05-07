@@ -192,9 +192,11 @@ export function subscribeToEaParams(accountNumber, onUpdate) {
 // ── プッシュ通知購読 ──────────────────────────────────
 
 export async function savePushSubscription(subscription) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
   const json = subscription.toJSON()
   const { error } = await supabase.from('push_subscriptions').upsert(
-    { endpoint: json.endpoint, p256dh: json.keys.p256dh, auth: json.keys.auth },
+    { user_id: user.id, endpoint: json.endpoint, p256dh: json.keys.p256dh, auth: json.keys.auth },
     { onConflict: 'user_id,endpoint' }
   )
   if (error) throw error
@@ -216,8 +218,10 @@ export async function fetchAlertSettings() {
 }
 
 export async function saveAlertSetting(accountNumber, lossThreshold) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
   const { error } = await supabase.from('alert_settings').upsert(
-    { account_number: String(accountNumber), loss_threshold: lossThreshold },
+    { user_id: user.id, account_number: String(accountNumber), loss_threshold: lossThreshold },
     { onConflict: 'user_id,account_number' }
   )
   if (error) throw error

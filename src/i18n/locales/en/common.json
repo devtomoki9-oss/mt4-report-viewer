@@ -316,7 +316,8 @@
         "set": "Active: −{{amount}}",
         "active": "Active",
         "save": "Save",
-        "remove": "Remove"
+        "remove": "Remove",
+        "registerDevice": "Register this device"
       },
       "metrics": {
         "balance": "Balance",

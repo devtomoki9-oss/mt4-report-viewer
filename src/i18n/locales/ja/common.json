@@ -309,7 +309,8 @@
         "set": "設定中: −{{amount}}",
         "active": "監視中",
         "save": "保存",
-        "remove": "解除"
+        "remove": "解除",
+        "registerDevice": "このデバイスを登録"
       },
       "metrics": {
         "balance": "残高",

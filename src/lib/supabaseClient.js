@@ -178,9 +178,9 @@ export async function deleteEaParam(accountNumber, chartId) {
   if (error) throw error
 }
 
-export function subscribeToEaParams(onUpdate) {
+export function subscribeToEaParams(accountNumber, onUpdate) {
   return supabase
-    .channel('ea-params-realtime')
+    .channel(`ea-params-realtime-${accountNumber}`)
     .on('postgres_changes', {
       event: '*',
       schema: 'public',

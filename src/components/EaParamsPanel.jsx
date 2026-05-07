@@ -352,7 +352,7 @@ export default function EaParamsPanel({ accountNumber, isPro, onUpgrade }) {
     fetchEaParams(accountNumber)
       .then((data) => { if (!cancelled) { setRows(data); setError(null) } })
       .catch((e) => { if (!cancelled) setError(e.message ?? String(e)) })
-    const channel = subscribeToEaParams((payload) => {
+    const channel = subscribeToEaParams(accountNumber, (payload) => {
       const row = payload.new ?? payload.old
       if (row && Number(row.account_number) === Number(accountNumber)) reload()
     })

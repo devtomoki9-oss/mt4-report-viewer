@@ -361,9 +361,19 @@ export default function App() {
     fetchAlertSettings().then(setAlertSettings).catch(console.error)
 
     // Service Worker を登録（HTTPS 環境のみ有効）
-    registerServiceWorker().then(reg => {
+    // 通知許可済みの場合は起動時に購読情報を Supabase へ再保存する
+    registerServiceWorker().then(async reg => {
       setSwRegistration(reg)
-      setNotificationPermission(getNotificationPermission())
+      const perm = getNotificationPermission()
+      setNotificationPermission(perm)
+      if (reg && perm === 'granted') {
+        try {
+          const sub = await requestAndSubscribe(reg)
+          if (sub) await savePushSubscription(sub)
+        } catch (e) {
+          console.warn('Push subscription re-save failed:', e)
+        }
+      }
     })
 
     // Supabase から最新の alias を取得してローカルに反映

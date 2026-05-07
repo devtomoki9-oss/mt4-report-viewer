@@ -33,9 +33,15 @@ Deno.serve(async (req) => {
   const data          = record.data as Record<string, unknown> | undefined
   const positions     = (data?.positions ?? []) as Array<{ profit?: number; swap?: number }>
 
-  if (!userId || !positions.length) return new Response('No positions', { status: 200 })
+  console.log(`[send-alerts] userId=${userId} account=${accountNumber} positions=${positions.length}`)
+
+  if (!userId || !positions.length) {
+    console.log(`[send-alerts] skip: no userId or no positions`)
+    return new Response('No positions', { status: 200 })
+  }
 
   const totalNet = positions.reduce((s, p) => s + (p.profit ?? 0) + (p.swap ?? 0), 0)
+  console.log(`[send-alerts] totalNet=${totalNet}`)
 
   const { data: setting } = await supabase
     .from('alert_settings')
@@ -44,13 +50,19 @@ Deno.serve(async (req) => {
     .eq('account_number', accountNumber)
     .maybeSingle()
 
-  if (!setting) return new Response('No alert setting', { status: 200 })
+  if (!setting) {
+    console.log(`[send-alerts] skip: no alert setting for account=${accountNumber}`)
+    return new Response('No alert setting', { status: 200 })
+  }
 
   const threshold = Number(setting.loss_threshold)
+  console.log(`[send-alerts] threshold=${threshold} totalNet=${totalNet} check=${totalNet < -threshold}`)
+
   if (totalNet >= -threshold) return new Response('OK: under threshold', { status: 200 })
 
   if (setting.last_notified_at) {
     const elapsed = Date.now() - new Date(setting.last_notified_at as string).getTime()
+    console.log(`[send-alerts] cooldown elapsed=${elapsed}ms limit=${COOLDOWN_MS}ms`)
     if (elapsed < COOLDOWN_MS) return new Response('OK: cooldown', { status: 200 })
   }
 
@@ -59,6 +71,7 @@ Deno.serve(async (req) => {
     .select('endpoint, p256dh, auth')
     .eq('user_id', userId)
 
+  console.log(`[send-alerts] subs=${subs?.length ?? 0}`)
   if (!subs?.length) return new Response('No subscriptions', { status: 200 })
 
   const lossAmount = Math.abs(Math.round(totalNet)).toLocaleString('ja-JP')

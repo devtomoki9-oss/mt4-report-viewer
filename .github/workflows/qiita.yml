@@ -1,0 +1,32 @@
+name: Qiita Auto Post
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'   # Every Monday 09:00 JST (UTC+9)
+  workflow_dispatch:
+
+jobs:
+  qiita:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r scripts/qiita/requirements.txt
+
+      - name: Post to Qiita
+        env:
+          QIITA_TOKEN: ${{ secrets.QIITA_TOKEN }}
+        run: |
+          cd scripts/qiita
+          python post.py
+
+      - name: Commit post history
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'ci: update qiita post history'
+          file_pattern: 'scripts/qiita/posted_history.json'

@@ -71,23 +71,24 @@ def _click_tab(page: Page, label: str) -> bool:
 def _login(page: Page, app_url: str, email: str, password: str) -> bool:
     """Navigate to app and login. Returns True if login succeeded."""
     page.goto(app_url, wait_until="domcontentloaded", timeout=30000)
-    page.wait_for_timeout(3000)
+    page.wait_for_timeout(2000)
 
-    # Debug: log page state
-    logger.info("PAGE URL: %s", page.url)
-    logger.info("PAGE TITLE: %s", page.title())
-
-    # Save debug screenshot for CI artifact inspection
+    # Save debug screenshot
     debug_path = Path(__file__).parent / "debug_screenshot.png"
     page.screenshot(path=str(debug_path))
-    logger.info("デバッグスクリーンショット保存: %s", debug_path)
+
+    # If landing page is shown, click the login button first
+    login_btn = page.locator("a, button").filter(has_text="ログイン").first
+    if login_btn.count() > 0 and page.query_selector("input[type='email']") is None:
+        logger.info("ランディングページを検出 → ログインボタンをクリック")
+        login_btn.click()
+        page.wait_for_timeout(1500)
 
     # Wait for React to render the login form (up to 20s)
     try:
         page.wait_for_selector("input[type='email']", timeout=20000)
     except Exception:
         logger.warning("ログインフォームが見つかりません (20s timeout)")
-        logger.warning("PAGE HTML (first 500 chars): %s", page.content()[:500])
         return False
 
     email_input = page.locator("input[type='email']").first
@@ -217,11 +218,29 @@ def _scenario_tabs_tour(page: Page) -> list[Image.Image]:
     return frames
 
 
+def _scenario_landing_page(page: Page) -> list[Image.Image]:
+    """Scroll the landing page — no login required."""
+    frames: list[Image.Image] = []
+
+    page.evaluate("window.scrollTo(0, 0)")
+    page.wait_for_timeout(800)
+    frames.append(_shot(page))
+
+    _scroll_and_shoot(page, frames, steps=6, pixels=180, delay=650)
+
+    page.evaluate("window.scrollTo(0, 0)")
+    page.wait_for_timeout(600)
+    frames.append(_shot(page))
+
+    return frames
+
+
 SCENARIOS = [
     _scenario_overview,
     _scenario_account_expand,
     _scenario_trade_table,
     _scenario_tabs_tour,
+    _scenario_landing_page,
 ]
 
 SCENARIO_CAPTIONS = {
@@ -229,6 +248,7 @@ SCENARIO_CAPTIONS = {
     _scenario_account_expand: "口座ごとのエクイティカーブを確認📈",
     _scenario_trade_table:    "取引履歴をフィルターで絞り込み🔍",
     _scenario_tabs_tour:      "サマリー・取引・カレンダーを一括管理📅",
+    _scenario_landing_page:   "MT4/MT5のトレード履歴を見やすく整理🗂️",
 }
 
 
@@ -290,12 +310,19 @@ def post_gif() -> bool:
     if not app_url:
         logger.error(".env に APP_URL が設定されていません")
         return False
-    if not demo_email or not demo_password:
-        logger.error(".env に DEMO_EMAIL / DEMO_PASSWORD が設定されていません")
-        return False
+
+    # Scenarios that require login vs. public landing page
+    LOGIN_REQUIRED = {_scenario_overview, _scenario_account_expand,
+                      _scenario_trade_table, _scenario_tabs_tour}
 
     scenario_fn = random.choice(SCENARIOS)
     logger.info("シナリオ選択: %s", scenario_fn.__name__)
+
+    needs_login = scenario_fn in LOGIN_REQUIRED
+    if needs_login and (not demo_email or not demo_password):
+        logger.warning("ログイン情報未設定 → ランディングページシナリオに切り替え")
+        scenario_fn = _scenario_landing_page
+        needs_login = False
 
     with tempfile.NamedTemporaryFile(suffix=".gif", delete=False) as tmp:
         gif_path = tmp.name
@@ -310,11 +337,15 @@ def post_gif() -> bool:
             )
             page = context.new_page()
 
-            if not _login(page, app_url, demo_email, demo_password):
-                logger.error("ログインに失敗しました")
-                context.close()
-                browser.close()
-                return False
+            if needs_login:
+                if not _login(page, app_url, demo_email, demo_password):
+                    logger.warning("ログイン失敗 → ランディングページシナリオに切り替え")
+                    scenario_fn = _scenario_landing_page
+                    page.goto(app_url, wait_until="domcontentloaded", timeout=30000)
+                    page.wait_for_timeout(2000)
+            else:
+                page.goto(app_url, wait_until="domcontentloaded", timeout=30000)
+                page.wait_for_timeout(2000)
 
             frames = scenario_fn(page)
             context.close()

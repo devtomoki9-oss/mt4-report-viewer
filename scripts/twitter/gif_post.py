@@ -71,12 +71,23 @@ def _click_tab(page: Page, label: str) -> bool:
 def _login(page: Page, app_url: str, email: str, password: str) -> bool:
     """Navigate to app and login. Returns True if login succeeded."""
     page.goto(app_url, wait_until="domcontentloaded", timeout=30000)
+    page.wait_for_timeout(3000)
+
+    # Debug: log page state
+    logger.info("PAGE URL: %s", page.url)
+    logger.info("PAGE TITLE: %s", page.title())
+
+    # Save debug screenshot for CI artifact inspection
+    debug_path = Path(__file__).parent / "debug_screenshot.png"
+    page.screenshot(path=str(debug_path))
+    logger.info("デバッグスクリーンショット保存: %s", debug_path)
 
     # Wait for React to render the login form (up to 20s)
     try:
         page.wait_for_selector("input[type='email']", timeout=20000)
     except Exception:
         logger.warning("ログインフォームが見つかりません (20s timeout)")
+        logger.warning("PAGE HTML (first 500 chars): %s", page.content()[:500])
         return False
 
     email_input = page.locator("input[type='email']").first

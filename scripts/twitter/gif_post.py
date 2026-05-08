@@ -71,24 +71,51 @@ def _click_tab(page: Page, label: str) -> bool:
 def _login(page: Page, app_url: str, email: str, password: str) -> bool:
     """Navigate to app and login. Returns True if login succeeded."""
     page.goto(app_url, wait_until="domcontentloaded", timeout=30000)
-    page.wait_for_timeout(2000)
+    page.wait_for_timeout(3000)
 
-    # Save debug screenshot
+    # Debug screenshot
     debug_path = Path(__file__).parent / "debug_screenshot.png"
     page.screenshot(path=str(debug_path))
+    logger.info("PAGE URL: %s / TITLE: %s", page.url, page.title())
 
-    # If landing page is shown, click the login button first
-    login_btn = page.locator("a, button").filter(has_text="ログイン").first
-    if login_btn.count() > 0 and page.query_selector("input[type='email']") is None:
-        logger.info("ランディングページを検出 → ログインボタンをクリック")
-        login_btn.click()
-        page.wait_for_timeout(1500)
+    # Check if login form is already visible
+    has_form = bool(page.query_selector("input[type='email']"))
+    logger.info("ログインフォーム直接検出: %s", has_form)
 
-    # Wait for React to render the login form (up to 20s)
+    if not has_form:
+        # Try multiple strategies to reach the login form
+        login_selectors = [
+            "a[href*='login']",
+            "a[href*='/login']",
+            "button:text('ログイン')",
+            "a:text('ログイン')",
+            "button:text('Login')",
+            "a:text('Login')",
+        ]
+        clicked = False
+        for sel in login_selectors:
+            try:
+                el = page.locator(sel).first
+                if el.count() > 0:
+                    logger.info("ログインリンク発見: %s", sel)
+                    el.click()
+                    clicked = True
+                    break
+            except Exception:
+                continue
+
+        if not clicked:
+            logger.warning("ログインリンクが見つかりません。直接 /login へ移動します")
+            page.goto(app_url.rstrip("/") + "/login",
+                      wait_until="domcontentloaded", timeout=15000)
+
+        page.wait_for_timeout(2000)
+
+    # Wait for login form (up to 15s)
     try:
-        page.wait_for_selector("input[type='email']", timeout=20000)
+        page.wait_for_selector("input[type='email']", timeout=15000)
     except Exception:
-        logger.warning("ログインフォームが見つかりません (20s timeout)")
+        logger.warning("ログインフォームが見つかりません")
         return False
 
     email_input = page.locator("input[type='email']").first

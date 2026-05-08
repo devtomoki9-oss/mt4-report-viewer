@@ -1,16 +1,17 @@
 """Record an operation demo GIF of the app and post it to X.
 
 Flow:
-  1. Launch a headless Chromium browser via Playwright
-  2. Navigate through key app screens, taking screenshots
-  3. Stitch screenshots into an animated GIF (Pillow)
-  4. Upload GIF via X API v1.1 and tweet via v2
+  1. Launch headless Chromium via Playwright
+  2. Login with demo credentials
+  3. Navigate through key screens, taking screenshots
+  4. Stitch screenshots into an animated GIF (Pillow)
+  5. Upload via X API v1.1 and tweet via v2
 
-Env vars required (in .env):
+Env vars (scripts/twitter/.env):
   X_API_KEY, X_API_KEY_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET
-  APP_URL        - production or staging URL (e.g. https://your-app.vercel.app)
-  DEMO_EMAIL     - test account email
-  DEMO_PASSWORD  - test account password
+  APP_URL       - e.g. https://your-app.vercel.app
+  DEMO_EMAIL    - test account email
+  DEMO_PASSWORD - test account password
 """
 from __future__ import annotations
 
@@ -25,106 +26,13 @@ from pathlib import Path
 import tweepy
 from dotenv import load_dotenv
 from PIL import Image
-from playwright.sync_api import sync_playwright, Page
+from playwright.sync_api import sync_playwright, Page, BrowserContext
 
 logger = logging.getLogger(__name__)
 
-FRAME_DELAY_MS = 600  # milliseconds per frame in the GIF
-GIF_WIDTH = 900       # resize width (height is proportional)
-GIF_MAX_MB = 14       # stay under X's 15 MB GIF limit
-
-
-# ---------------------------------------------------------------------------
-# Recording scenarios — each returns a list of PIL Image frames
-# ---------------------------------------------------------------------------
-
-def _scenario_dashboard(page: Page, app_url: str) -> list[Image.Image]:
-    """Show the main account dashboard overview."""
-    frames: list[Image.Image] = []
-
-    page.goto(app_url, wait_until="networkidle")
-    page.wait_for_timeout(2000)
-    frames.append(_shot(page))
-
-    # Scroll down slowly to reveal account cards
-    for _ in range(4):
-        page.evaluate("window.scrollBy(0, 220)")
-        page.wait_for_timeout(600)
-        frames.append(_shot(page))
-
-    return frames
-
-
-def _scenario_equity_chart(page: Page, app_url: str) -> list[Image.Image]:
-    """Expand the equity curve chart for an account."""
-    frames: list[Image.Image] = []
-
-    page.goto(app_url, wait_until="networkidle")
-    page.wait_for_timeout(2000)
-    frames.append(_shot(page))
-
-    # Click the first account card to expand details
-    card = page.query_selector("[data-testid='account-card'], .account-card, [class*='AccountCard']")
-    if card:
-        card.click()
-        page.wait_for_timeout(1000)
-        frames.append(_shot(page))
-        page.wait_for_timeout(500)
-        frames.append(_shot(page))
-
-    # Scroll to chart area
-    chart = page.query_selector("canvas, [class*='EquityChart'], [class*='chart']")
-    if chart:
-        chart.scroll_into_view_if_needed()
-        page.wait_for_timeout(800)
-        frames.append(_shot(page))
-        page.wait_for_timeout(500)
-        frames.append(_shot(page))
-
-    return frames
-
-
-def _scenario_trade_table(page: Page, app_url: str) -> list[Image.Image]:
-    """Show the trade table with the search filter in action."""
-    frames: list[Image.Image] = []
-
-    page.goto(app_url, wait_until="networkidle")
-    page.wait_for_timeout(2000)
-    frames.append(_shot(page))
-
-    # Find and click the trade table tab if it exists
-    tab = page.query_selector("button:has-text('取引'), button:has-text('Trade'), [role='tab']")
-    if tab:
-        tab.click()
-        page.wait_for_timeout(1000)
-        frames.append(_shot(page))
-
-    # Type in a search box if present
-    search = page.query_selector("input[placeholder*='検索'], input[placeholder*='search'], input[placeholder*='Search']")
-    if search:
-        search.click()
-        page.wait_for_timeout(300)
-        for char in "USDJPY":
-            search.type(char, delay=80)
-        page.wait_for_timeout(800)
-        frames.append(_shot(page))
-        page.wait_for_timeout(500)
-        frames.append(_shot(page))
-
-    return frames
-
-
-SCENARIOS = [
-    _scenario_dashboard,
-    _scenario_equity_chart,
-    _scenario_trade_table,
-]
-
-SCENARIO_CAPTIONS = {
-    _scenario_dashboard:    "複数口座を一画面で管理📊",
-    _scenario_equity_chart: "エクイティカーブをリアルタイム表示📈",
-    _scenario_trade_table:  "取引履歴テーブルで素早く検索🔍",
-}
+FRAME_DELAY_MS = 700   # ms per frame in the GIF
+GIF_WIDTH      = 960   # resize width
+GIF_MAX_MB     = 14    # stay under X's 15 MB limit
 
 
 # ---------------------------------------------------------------------------
@@ -132,28 +40,199 @@ SCENARIO_CAPTIONS = {
 # ---------------------------------------------------------------------------
 
 def _shot(page: Page) -> Image.Image:
-    data = page.screenshot(type="png")
-    return Image.open(io.BytesIO(data)).convert("RGB")
+    return Image.open(io.BytesIO(page.screenshot(type="png"))).convert("RGB")
 
 
 def _resize(img: Image.Image, width: int) -> Image.Image:
-    ratio = width / img.width
-    return img.resize((width, int(img.height * ratio)), Image.LANCZOS)
+    return img.resize((width, int(img.height * width / img.width)), Image.LANCZOS)
 
+
+def _scroll_and_shoot(page: Page, frames: list, steps: int = 4,
+                      pixels: int = 250, delay: int = 700) -> None:
+    for _ in range(steps):
+        page.evaluate(f"window.scrollBy(0, {pixels})")
+        page.wait_for_timeout(delay)
+        frames.append(_shot(page))
+
+
+def _click_tab(page: Page, label: str) -> bool:
+    """Click a nav tab by its Japanese label. Returns True on success."""
+    try:
+        btn = page.locator("nav button").filter(has_text=label)
+        if btn.count() > 0:
+            btn.first.click()
+            page.wait_for_timeout(1200)
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def _login(page: Page, app_url: str, email: str, password: str) -> bool:
+    """Navigate to app and login. Returns True if login succeeded."""
+    page.goto(app_url, wait_until="networkidle", timeout=30000)
+    page.wait_for_timeout(1500)
+
+    email_input = page.query_selector("input[type='email']")
+    pass_input  = page.query_selector("input[type='password']")
+    if not email_input or not pass_input:
+        logger.warning("ログインフォームが見つかりません")
+        return False
+
+    email_input.fill(email)
+    pass_input.fill(password)
+    submit = page.query_selector("button[type='submit']")
+    if submit:
+        submit.click()
+
+    # Wait for main content to appear (nav tab = logged in)
+    try:
+        page.wait_for_selector("nav button", timeout=12000)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(2000)
+        logger.info("ログイン成功")
+        return True
+    except Exception as e:
+        logger.warning("ログイン待機タイムアウト: %s", e)
+        return False
+
+
+# ---------------------------------------------------------------------------
+# Scenarios
+# ---------------------------------------------------------------------------
+
+def _scenario_overview(page: Page) -> list[Image.Image]:
+    """Scroll through the summary dashboard."""
+    frames: list[Image.Image] = []
+
+    page.evaluate("window.scrollTo(0, 0)")
+    page.wait_for_timeout(800)
+    frames.append(_shot(page))
+
+    _scroll_and_shoot(page, frames, steps=5, pixels=200, delay=700)
+
+    # Scroll back to top
+    page.evaluate("window.scrollTo(0, 0)")
+    page.wait_for_timeout(600)
+    frames.append(_shot(page))
+
+    return frames
+
+
+def _scenario_account_expand(page: Page) -> list[Image.Image]:
+    """Click account cards to expand them and show the equity chart."""
+    frames: list[Image.Image] = []
+
+    # サマリータブに移動
+    _click_tab(page, "サマリー")
+    page.evaluate("window.scrollTo(0, 0)")
+    page.wait_for_timeout(800)
+    frames.append(_shot(page))
+
+    # Find account cards (cursor-pointer divs = clickable card headers)
+    cards = page.locator(".cursor-pointer").all()
+    clicked = 0
+    for card in cards[:3]:
+        try:
+            card.scroll_into_view_if_needed()
+            card.click()
+            page.wait_for_timeout(900)
+            frames.append(_shot(page))
+            clicked += 1
+            if clicked >= 2:
+                break
+        except Exception:
+            continue
+
+    # Scroll down to see expanded content / charts
+    _scroll_and_shoot(page, frames, steps=3, pixels=200, delay=700)
+
+    return frames
+
+
+def _scenario_trade_table(page: Page) -> list[Image.Image]:
+    """Show the trade table tab and interact with filter dropdowns."""
+    frames: list[Image.Image] = []
+
+    # 全取引タブをクリック
+    page.evaluate("window.scrollTo(0, 0)")
+    page.wait_for_timeout(500)
+    frames.append(_shot(page))
+
+    if _click_tab(page, "全取引"):
+        page.wait_for_timeout(800)
+        frames.append(_shot(page))
+
+        # Interact with the first filter dropdown
+        selects = page.locator("select").all()
+        if selects:
+            selects[0].scroll_into_view_if_needed()
+            frames.append(_shot(page))
+            page.wait_for_timeout(500)
+
+            # Open dropdown
+            selects[0].select_option(index=1)
+            page.wait_for_timeout(800)
+            frames.append(_shot(page))
+
+            # Reset dropdown
+            page.wait_for_timeout(500)
+            selects[0].select_option(index=0)
+            page.wait_for_timeout(600)
+            frames.append(_shot(page))
+
+        # Scroll to show trade rows
+        _scroll_and_shoot(page, frames, steps=2, pixels=200, delay=700)
+
+    return frames
+
+
+def _scenario_tabs_tour(page: Page) -> list[Image.Image]:
+    """Navigate through all main tabs quickly."""
+    frames: list[Image.Image] = []
+
+    tab_labels = ["サマリー", "口座別成績", "全取引", "カレンダー"]
+    for label in tab_labels:
+        if _click_tab(page, label):
+            page.evaluate("window.scrollTo(0, 0)")
+            page.wait_for_timeout(600)
+            frames.append(_shot(page))
+            page.wait_for_timeout(800)
+            frames.append(_shot(page))
+
+    return frames
+
+
+SCENARIOS = [
+    _scenario_overview,
+    _scenario_account_expand,
+    _scenario_trade_table,
+    _scenario_tabs_tour,
+]
+
+SCENARIO_CAPTIONS = {
+    _scenario_overview:       "複数口座の成績を一画面で管理📊",
+    _scenario_account_expand: "口座ごとのエクイティカーブを確認📈",
+    _scenario_trade_table:    "取引履歴をフィルターで絞り込み🔍",
+    _scenario_tabs_tour:      "サマリー・取引・カレンダーを一括管理📅",
+}
+
+
+# ---------------------------------------------------------------------------
+# GIF generation
+# ---------------------------------------------------------------------------
 
 def _make_gif(frames: list[Image.Image], out_path: str) -> None:
     if not frames:
         raise ValueError("No frames captured")
 
     resized = [_resize(f, GIF_WIDTH) for f in frames]
+    palette = [f.convert("P", palette=Image.ADAPTIVE, colors=200) for f in resized]
 
-    # Convert to P mode (palette) for smaller file size
-    palette_frames = [f.convert("P", palette=Image.ADAPTIVE, colors=256) for f in resized]
-
-    palette_frames[0].save(
+    palette[0].save(
         out_path,
         save_all=True,
-        append_images=palette_frames[1:],
+        append_images=palette[1:],
         optimize=True,
         duration=FRAME_DELAY_MS,
         loop=0,
@@ -162,17 +241,17 @@ def _make_gif(frames: list[Image.Image], out_path: str) -> None:
     size_mb = Path(out_path).stat().st_size / (1024 ** 2)
     logger.info("GIF生成完了: %.1f MB (%d frames)", size_mb, len(frames))
     if size_mb > GIF_MAX_MB:
-        logger.warning("GIFが %.1f MB を超えています。フレーム数を減らしてください。", GIF_MAX_MB)
+        logger.warning("GIFが %.1f MB 超です。フレーム数を減らしてください。", GIF_MAX_MB)
 
 
 def _build_tweet_text(scenario_fn) -> str:
     caption = SCENARIO_CAPTIONS.get(scenario_fn, "MT4 Report Viewer デモ")
     return (
         f"MT4 Report Viewer — {caption}\n"
-        f"\n"
-        f"MT4/MT5のトレード成績をWebで管理できる無料ツールです。\n"
-        f"\n"
-        f"#MT4 #MT5 #FX #個人開発 #トレード管理"
+        "\n"
+        "MT4/MT5のトレード成績をWebで管理できる無料ツールです。\n"
+        "\n"
+        "#MT4 #MT5 #FX #個人開発 #トレード管理"
     )
 
 
@@ -194,9 +273,11 @@ def post_gif() -> bool:
     if not all([api_key, api_key_secret, access_token, access_token_secret]):
         logger.error(".env にX APIキーが設定されていません")
         return False
-
     if not app_url:
         logger.error(".env に APP_URL が設定されていません")
+        return False
+    if not demo_email or not demo_password:
+        logger.error(".env に DEMO_EMAIL / DEMO_PASSWORD が設定されていません")
         return False
 
     scenario_fn = random.choice(SCENARIOS)
@@ -208,44 +289,35 @@ def post_gif() -> bool:
     try:
         with sync_playwright() as pw:
             browser = pw.chromium.launch(headless=True)
-            context = browser.new_context(
+            context: BrowserContext = browser.new_context(
                 viewport={"width": 1280, "height": 800},
                 locale="ja-JP",
+                timezone_id="Asia/Tokyo",
             )
             page = context.new_page()
 
-            # Login if credentials are provided
-            if demo_email and demo_password:
-                page.goto(app_url, wait_until="networkidle")
-                page.wait_for_timeout(1500)
+            if not _login(page, app_url, demo_email, demo_password):
+                logger.error("ログインに失敗しました")
+                context.close()
+                browser.close()
+                return False
 
-                email_input = page.query_selector("input[type='email']")
-                pass_input  = page.query_selector("input[type='password']")
-                if email_input and pass_input:
-                    email_input.fill(demo_email)
-                    pass_input.fill(demo_password)
-                    submit = page.query_selector("button[type='submit']")
-                    if submit:
-                        submit.click()
-                        page.wait_for_timeout(3000)
-
-            frames = scenario_fn(page, app_url)
+            frames = scenario_fn(page)
             context.close()
             browser.close()
 
-        if not frames:
-            logger.warning("フレームが取得できませんでした")
+        if len(frames) < 2:
+            logger.warning("フレームが少なすぎます (%d frames)", len(frames))
             return False
 
         _make_gif(frames, gif_path)
 
-        # Upload via X API v1.1 (required for media)
+        # Upload via X API v1.1
         auth = tweepy.OAuth1UserHandler(
             api_key, api_key_secret, access_token, access_token_secret
         )
         api_v1 = tweepy.API(auth)
         media = api_v1.media_upload(filename=gif_path)
-        media_id = media.media_id
 
         client = tweepy.Client(
             consumer_key=api_key,
@@ -254,10 +326,9 @@ def post_gif() -> bool:
             access_token_secret=access_token_secret,
         )
         text = _build_tweet_text(scenario_fn)
-        response = client.create_tweet(text=text, media_ids=[media_id])
-        tweet_id = response.data["id"]
-
-        logger.info("GIF付き投稿成功: tweet_id=%s scenario=%s", tweet_id, scenario_fn.__name__)
+        response = client.create_tweet(text=text, media_ids=[media.media_id])
+        logger.info("GIF付き投稿成功: tweet_id=%s scenario=%s",
+                    response.data["id"], scenario_fn.__name__)
         return True
 
     except Exception as e:

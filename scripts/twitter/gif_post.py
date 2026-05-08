@@ -70,19 +70,22 @@ def _click_tab(page: Page, label: str) -> bool:
 
 def _login(page: Page, app_url: str, email: str, password: str) -> bool:
     """Navigate to app and login. Returns True if login succeeded."""
-    page.goto(app_url, wait_until="networkidle", timeout=30000)
-    page.wait_for_timeout(1500)
+    page.goto(app_url, wait_until="domcontentloaded", timeout=30000)
 
-    email_input = page.query_selector("input[type='email']")
-    pass_input  = page.query_selector("input[type='password']")
-    if not email_input or not pass_input:
-        logger.warning("ログインフォームが見つかりません")
+    # Wait for React to render the login form (up to 20s)
+    try:
+        page.wait_for_selector("input[type='email']", timeout=20000)
+    except Exception:
+        logger.warning("ログインフォームが見つかりません (20s timeout)")
         return False
+
+    email_input = page.locator("input[type='email']").first
+    pass_input  = page.locator("input[type='password']").first
 
     email_input.fill(email)
     pass_input.fill(password)
-    submit = page.query_selector("button[type='submit']")
-    if submit:
+    submit = page.locator("button[type='submit']").first
+    if submit.count() > 0:
         submit.click()
 
     # Wait for main content to appear (nav tab = logged in)

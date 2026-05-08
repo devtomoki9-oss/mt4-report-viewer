@@ -96,6 +96,8 @@ function fmtCountdown(s) {
   return `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`
 }
 
+const IS_DEMO = new URLSearchParams(window.location.search).has('demo')
+
 export default function App() {
   const { t, i18n } = useTranslation()
   const [accounts,   setAccounts]   = useState([])
@@ -147,7 +149,7 @@ export default function App() {
 
   const [showUserMenu,      setShowUserMenu]      = useState(false)
   const userMenuRef = useRef(null)
-  const [plan, setPlan] = useState('free')
+  const [plan, setPlan] = useState(IS_DEMO ? 'pro' : 'free')
 
   const hasData = accounts.length > 0
   const [manualCleared, setManualCleared] = useState(false)
@@ -614,7 +616,26 @@ export default function App() {
 
   const isFiltered = !!(dateRange.from || dateRange.to)
 
-  if (authLoading) {
+  // Demo mode: auto-load demo JSON files and skip auth
+  useEffect(() => {
+    if (!IS_DEMO) return
+    const demoFiles = ['ScalpBot_Pro.json', 'TrendEA_GBPUSD.json', 'ManualTrader_JPY.json']
+    Promise.all(
+      demoFiles.map(name =>
+        fetch(`/demo/${name}`)
+          .then(r => r.blob())
+          .then(blob => new File([blob], name, { type: 'application/json' }))
+      )
+    ).then(files => parseFiles(files)).then(results => {
+      if (results.length > 0) {
+        setAccounts(results)
+        setLastUpdated(new Date())
+      }
+    }).catch(console.error)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  if (!IS_DEMO && authLoading) {
     return (
       <div className="min-h-screen bg-bg flex items-center justify-center">
         <div className="text-slate-500 text-sm">{t('common.loading')}</div>
@@ -622,11 +643,11 @@ export default function App() {
     )
   }
 
-  if (showPasswordReset) {
+  if (!IS_DEMO && showPasswordReset) {
     return <PasswordResetScreen onDone={() => setShowPasswordReset(false)} />
   }
 
-  if (!user) {
+  if (!IS_DEMO && !user) {
     return showLp
       ? <LandingPage
           onStart={() => { setLpMode('signup'); setShowLp(false) }}
@@ -662,7 +683,12 @@ export default function App() {
                 </nav>
               )}
               <LanguageSwitcher compact />
-              {user && (
+              {IS_DEMO && (
+                <span className="text-[10px] bg-blue-500/15 text-blue-400 border border-blue-500/25 px-2 py-1 rounded font-semibold">
+                  Demo
+                </span>
+              )}
+              {!IS_DEMO && user && (
                 <>
                   <button
                     onClick={requestRefresh}

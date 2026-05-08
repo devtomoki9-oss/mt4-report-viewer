@@ -7,8 +7,10 @@ export default function UploadZone({ onFiles }) {
   const [dragging, setDragging] = useState(false)
 
   const handleFiles = (files) => {
-    const htmlFiles = [...files].filter(f => f.name.endsWith('.htm') || f.name.endsWith('.html'))
-    if (htmlFiles.length > 0) onFiles(htmlFiles)
+    const valid = [...files].filter(f =>
+      f.name.endsWith('.htm') || f.name.endsWith('.html') || f.name.endsWith('.json')
+    )
+    if (valid.length > 0) onFiles(valid)
   }
 
   const onDrop = (e) => {
@@ -32,7 +34,7 @@ export default function UploadZone({ onFiles }) {
       <input
         ref={inputRef}
         type="file"
-        accept=".htm,.html"
+        accept=".htm,.html,.json"
         multiple
         className="hidden"
         onChange={e => handleFiles(e.target.files)}

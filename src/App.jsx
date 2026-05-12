@@ -340,8 +340,8 @@ export default function App() {
     const poll = async () => {
       tries++
       const p = await fetchPlan().catch(() => 'free')
-      if (p === 'pro') {
-        setPlan('pro')
+      if (p === 'pro' || p === 'standard') {
+        setPlan(p)
         return
       }
       if (tries < 10) setTimeout(poll, 1000)
@@ -448,12 +448,12 @@ export default function App() {
   }, [user, t])
 
   // ── Lemon Squeezy アップグレード ─────────────────────
-  const handleUpgrade = useCallback(async () => {
+  const handleUpgrade = useCallback(async (planType = 'pro') => {
     try {
       const res = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user?.id, email: user?.email, returnUrl: window.location.href }),
+        body: JSON.stringify({ userId: user?.id, email: user?.email, returnUrl: window.location.href, planType }),
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`)
@@ -464,6 +464,8 @@ export default function App() {
       alert(t('app.errors.upgradeFailed', { message: e.message }))
     }
   }, [user, t])
+
+  const handleUpgradeToStandard = useCallback(() => handleUpgrade('standard'), [handleUpgrade])
 
   // ── プッシュ通知の許可リクエスト & 購読 ────────────────
   const handleRequestNotification = useCallback(async () => {
@@ -707,7 +709,9 @@ export default function App() {
                       <span className="text-xs text-slate-400 max-w-[100px] truncate hidden lg:inline">{user.email}</span>
                       {plan === 'pro'
                         ? <span className="text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1.5 py-0.5 rounded font-semibold">{t('app.header.userMenu.planPro')}</span>
-                        : <span className="text-[10px] bg-slate-700/50 text-slate-500 border border-slate-700 px-1.5 py-0.5 rounded font-semibold">{t('app.header.userMenu.planFree')}</span>
+                        : plan === 'standard'
+                          ? <span className="text-[10px] bg-orange-500/20 text-orange-400 border border-orange-500/30 px-1.5 py-0.5 rounded font-semibold">{t('app.header.userMenu.planStandard')}</span>
+                          : <span className="text-[10px] bg-slate-700/50 text-slate-500 border border-slate-700 px-1.5 py-0.5 rounded font-semibold">{t('app.header.userMenu.planFree')}</span>
                       }
                       <span aria-hidden="true" className="text-slate-600 text-[10px]">▾</span>
                     </button>
@@ -717,7 +721,9 @@ export default function App() {
                           <div className="text-xs text-slate-400 truncate">{user.email}</div>
                           {plan === 'pro'
                             ? <div className="text-[10px] text-blue-400 mt-0.5">{t('app.header.userMenu.planProLabel')}</div>
-                            : <div className="text-[10px] text-slate-600 mt-0.5">{t('app.header.userMenu.planFreeLabel')}</div>
+                            : plan === 'standard'
+                              ? <div className="text-[10px] text-orange-400 mt-0.5">{t('app.header.userMenu.planStandardLabel')}</div>
+                              : <div className="text-[10px] text-slate-600 mt-0.5">{t('app.header.userMenu.planFreeLabel')}</div>
                           }
                         </div>
                         {plan === 'pro' ? (
@@ -726,12 +732,32 @@ export default function App() {
                             className="w-full text-left px-4 py-2.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-surface2 transition-colors">
                             {t('app.header.userMenu.manageSubscription')}
                           </button>
+                        ) : plan === 'standard' ? (
+                          <>
+                            <button
+                              onClick={() => { handleUpgrade(); setShowUserMenu(false) }}
+                              className="w-full text-left px-4 py-2.5 text-xs text-blue-400 hover:text-blue-300 hover:bg-surface2 transition-colors">
+                              {t('app.header.userMenu.upgradeToPro')}
+                            </button>
+                            <button
+                              onClick={() => { handleManagePlan(); setShowUserMenu(false) }}
+                              className="w-full text-left px-4 py-2.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-surface2 transition-colors">
+                              {t('app.header.userMenu.manageSubscription')}
+                            </button>
+                          </>
                         ) : (
-                          <button
-                            onClick={() => { handleUpgrade(); setShowUserMenu(false) }}
-                            className="w-full text-left px-4 py-2.5 text-xs text-blue-400 hover:text-blue-300 hover:bg-surface2 transition-colors">
-                            {t('app.header.userMenu.upgrade')}
-                          </button>
+                          <>
+                            <button
+                              onClick={() => { handleUpgradeToStandard(); setShowUserMenu(false) }}
+                              className="w-full text-left px-4 py-2.5 text-xs text-orange-400 hover:text-orange-300 hover:bg-surface2 transition-colors">
+                              {t('app.header.userMenu.upgradeToStandard')}
+                            </button>
+                            <button
+                              onClick={() => { handleUpgrade(); setShowUserMenu(false) }}
+                              className="w-full text-left px-4 py-2.5 text-xs text-blue-400 hover:text-blue-300 hover:bg-surface2 transition-colors">
+                              {t('app.header.userMenu.upgrade')}
+                            </button>
+                          </>
                         )}
                         <button
                           onClick={async () => { setShowUserMenu(false); await signOut(); setAccounts([]); setUser(null) }}
@@ -992,8 +1018,17 @@ export default function App() {
                           })}
                         </div>
                       </div>
+                      {plan === 'free' && sortedFilteredAccStats.length > 3 && (
+                        <div className="flex items-center gap-3 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2.5 text-xs mb-2">
+                          <span>🔒</span>
+                          <span className="text-amber-400 flex-1">{t('app.accountLimit.message', { max: 3 })}</span>
+                          <button onClick={handleUpgradeToStandard} className="text-orange-400 hover:text-orange-300 border border-orange-500/30 px-2 py-1 rounded transition-colors flex-shrink-0">
+                            {t('app.accountLimit.upgradeCta')}
+                          </button>
+                        </div>
+                      )}
                       <div className="space-y-2">
-                        {sortedFilteredAccStats.map((acc) => (
+                        {(plan === 'free' ? sortedFilteredAccStats.slice(0, 3) : sortedFilteredAccStats).map((acc) => (
                           <AccountCard
                             key={acc.account.name}
                             account={acc}

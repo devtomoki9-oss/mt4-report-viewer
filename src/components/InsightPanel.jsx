@@ -198,8 +198,9 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
     }))
   }, [perAccountData, aliases])
 
-  const visibleInsights    = plan === 'pro' ? insights    : insights.slice(0, 1)
-  const lockedInsightCount = plan === 'free' ? Math.max(0, insights.length - 1) : 0
+  const isAiLocked     = plan === 'free' || plan === 'standard'
+  const visibleInsights    = plan === 'pro' ? insights    : insights.slice(0, plan === 'standard' ? 0 : 1)
+  const lockedInsightCount = isAiLocked ? insights.length : 0
 
   if (!trades.length) return null
 
@@ -240,6 +241,11 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
                 {t('insight.ai.freeBadge')}
               </span>
             )}
+            {plan === 'standard' && (
+              <span className="text-[10px] bg-orange-500/20 text-orange-400 border border-orange-500/30 px-1.5 py-0.5 rounded font-medium">
+                {t('insight.ai.standardBadge')}
+              </span>
+            )}
             {plan === 'pro' && (
               <span className="text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1.5 py-0.5 rounded font-medium">
                 {t('insight.ai.proBadge')}
@@ -261,7 +267,7 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
                 count={lockedInsightCount}
                 onUpgrade={onUpgrade}
                 t={t}>
-                {insights.slice(1).map((ins, i) => <InsightRow key={i} insight={ins} t={t} />)}
+                {insights.slice(plan === 'standard' ? 0 : 1).map((ins, i) => <InsightRow key={i} insight={ins} t={t} />)}
               </LockedSection>
             )}
           </div>
@@ -275,14 +281,14 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
             <span>💡</span>
             <span className="text-sm font-semibold text-slate-200">{t('insight.suggestions.title')}</span>
           </div>
-          {plan === 'free' && (
+          {isAiLocked && (
             <span className="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded font-medium">
               {t('insight.suggestions.proBadge')}
             </span>
           )}
         </div>
 
-        {plan === 'free' ? (
+        {isAiLocked ? (
           <div className="relative">
             <div className="space-y-2 blur-[3px] pointer-events-none select-none opacity-40">
               {(t('insight.demo.suggestions', { returnObjects: true }) || []).map((item, i) => <SuggestionRow key={i} item={item} index={i} t={t} />)}
@@ -312,14 +318,14 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
               <span>📋</span>
               <span className="text-sm font-semibold text-slate-200">{t('insight.suggestions.perAccountTitle')}</span>
             </div>
-            {plan === 'free' && (
+            {isAiLocked && (
               <span className="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded font-medium">
                 {t('insight.suggestions.proBadge')}
               </span>
             )}
           </div>
 
-          {plan === 'free' ? (
+          {isAiLocked ? (
             <div className="relative">
               <div className="space-y-3 blur-[3px] pointer-events-none select-none opacity-40">
                 {(t('insight.demo.perAccount', { returnObjects: true }) || []).map(({ name, items }) => (
@@ -376,14 +382,14 @@ export default function InsightPanel({ trades = [], stats, plan = 'free', onUpgr
             <span>🏆</span>
             <span className="text-sm font-semibold text-slate-200">{t('insight.winPatterns.title')}</span>
           </div>
-          {plan === 'free' && (
+          {isAiLocked && (
             <span className="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded font-medium">
               {t('insight.suggestions.proBadge')}
             </span>
           )}
         </div>
 
-        {plan === 'free' ? (
+        {isAiLocked ? (
           <div className="relative">
             <div className="blur-[3px] pointer-events-none select-none opacity-40">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">

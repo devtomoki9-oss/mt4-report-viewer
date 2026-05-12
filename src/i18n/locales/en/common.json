@@ -59,9 +59,13 @@
       "userMenu": {
         "planPro": "Pro",
         "planFree": "Free",
+        "planStandard": "Standard",
         "planProLabel": "Pro plan",
         "planFreeLabel": "Free plan",
+        "planStandardLabel": "Standard plan",
         "upgrade": "Upgrade to Pro",
+        "upgradeToPro": "Upgrade to Pro",
+        "upgradeToStandard": "Upgrade to Standard",
         "manageSubscription": "Manage subscription",
         "logout": "Sign out",
         "deleteAccount": "Delete account"
@@ -71,6 +75,10 @@
     "toolbar": {
       "addFiles": "+ Add files",
       "clear": "Clear"
+    },
+    "accountLimit": {
+      "message": "Free plan supports up to {{max}} accounts.",
+      "upgradeCta": "Upgrade to Standard"
     },
     "syncWarn": {
       "title": "No reports found in Supabase",
@@ -494,6 +502,7 @@
       "title": "AI Diagnosis",
       "freeBadge": "Free: 1 item",
       "proBadge": "Pro",
+      "standardBadge": "Pro only",
       "insufficient": "Need at least 5 trades to run a diagnosis.",
       "lockedRemainder_one": "Upgrade to Pro to see {{count}} more",
       "lockedRemainder_other": "Upgrade to Pro to see {{count}} more"

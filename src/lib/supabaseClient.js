@@ -72,13 +72,14 @@ export async function deleteAccount() {
 export async function fetchPlan() {
   const { data, error } = await supabase
     .from('subscriptions')
-    .select('status, current_period_end')
+    .select('plan, status, current_period_end')
     .single()
   if (error || !data) return 'free'
   const active =
     (data.status === 'active' || data.status === 'on_trial') &&
     (!data.current_period_end || new Date(data.current_period_end) > new Date())
-  return active ? 'pro' : 'free'
+  if (!active) return 'free'
+  return data.plan === 'standard' ? 'standard' : 'pro'
 }
 
 export async function fetchAliases() {

@@ -6,10 +6,11 @@
  * 2. Settings → API → APIキーを発行
  *
  * 【Vercel 環境変数】
- *   LEMONSQUEEZY_API_KEY      : LS APIキー
- *   LEMONSQUEEZY_STORE_ID     : LS ストアID（数値）
- *   LEMONSQUEEZY_VARIANT_ID   : 月額プランのバリアントID（数値）
- *   VITE_APP_URL              : デプロイ先URL (https://your-app.vercel.app)
+ *   LEMONSQUEEZY_API_KEY               : LS APIキー
+ *   LEMONSQUEEZY_STORE_ID              : LS ストアID（数値）
+ *   LEMONSQUEEZY_VARIANT_ID            : Pro プランのバリアントID（数値）
+ *   LEMONSQUEEZY_STANDARD_VARIANT_ID   : Standard プランのバリアントID（数値）
+ *   VITE_APP_URL                       : デプロイ先URL (https://your-app.vercel.app)
  */
 
 export default async function handler(req, res) {
@@ -17,18 +18,20 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { userId, email, returnUrl } = req.body
+  const { userId, email, returnUrl, planType } = req.body
   if (!userId || !email) {
     return res.status(400).json({ error: 'userId and email are required' })
   }
 
-  const apiKey    = process.env.LEMONSQUEEZY_API_KEY
-  const storeId   = process.env.LEMONSQUEEZY_STORE_ID
-  const variantId = process.env.LEMONSQUEEZY_VARIANT_ID
+  const apiKey  = process.env.LEMONSQUEEZY_API_KEY
+  const storeId = process.env.LEMONSQUEEZY_STORE_ID
+  const variantId = planType === 'standard'
+    ? process.env.LEMONSQUEEZY_STANDARD_VARIANT_ID
+    : process.env.LEMONSQUEEZY_VARIANT_ID
 
   if (!apiKey)    return res.status(500).json({ error: 'LEMONSQUEEZY_API_KEY is not set' })
   if (!storeId)   return res.status(500).json({ error: 'LEMONSQUEEZY_STORE_ID is not set' })
-  if (!variantId) return res.status(500).json({ error: 'LEMONSQUEEZY_VARIANT_ID is not set' })
+  if (!variantId) return res.status(500).json({ error: planType === 'standard' ? 'LEMONSQUEEZY_STANDARD_VARIANT_ID is not set' : 'LEMONSQUEEZY_VARIANT_ID is not set' })
 
   const baseUrl = returnUrl ?? process.env.VITE_APP_URL ?? ''
 

@@ -53,9 +53,13 @@
       "userMenu": {
         "planPro": "Pro",
         "planFree": "Free",
+        "planStandard": "Standard",
         "planProLabel": "Pro プラン",
         "planFreeLabel": "Free プラン",
+        "planStandardLabel": "Standard プラン",
         "upgrade": "Pro へアップグレード",
+        "upgradeToPro": "Pro へアップグレード",
+        "upgradeToStandard": "Standard へアップグレード",
         "manageSubscription": "サブスクリプション管理",
         "logout": "ログアウト",
         "deleteAccount": "アカウント削除"
@@ -65,6 +69,10 @@
     "toolbar": {
       "addFiles": "+ ファイルを追加",
       "clear": "クリア"
+    },
+    "accountLimit": {
+      "message": "Free プランは最大 {{max}} 口座まで表示できます。",
+      "upgradeCta": "Standard へアップグレード"
     },
     "syncWarn": {
       "title": "Supabase にレポートデータが見つかりません",
@@ -482,6 +490,7 @@
       "title": "AI診断",
       "freeBadge": "Free: 1件",
       "proBadge": "Pro",
+      "standardBadge": "Pro 限定",
       "insufficient": "診断には取引データが 5 件以上必要です。",
       "lockedRemainder": "Pro にアップグレードして残り {{count}} 件を表示"
     },

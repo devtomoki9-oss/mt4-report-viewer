@@ -89,12 +89,15 @@ export default async function handler(req, res) {
     case 'subscription_created':
     case 'subscription_updated': {
       const periodEnd = attrs.renews_at ?? attrs.ends_at ?? attrs.trial_ends_at ?? null
+      const variantId = String(payload.data?.relationships?.variant?.data?.id ?? '')
+      const standardVariantId = process.env.LEMONSQUEEZY_STANDARD_VARIANT_ID
+      const plan = standardVariantId && variantId === standardVariantId ? 'standard' : 'pro'
       const { error } = await supabaseAdmin
         .from('subscriptions')
         .upsert(
           {
             user_id:               userId,
-            plan:                  'pro',
+            plan,
             status:                attrs.status,
             lemon_subscription_id: String(payload.data.id),
             current_period_end:    periodEnd,

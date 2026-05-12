@@ -798,4 +798,118 @@ i18next の LanguageDetector を使えばブラウザの言語設定を自動検
 翻訳ファイルを分離しておくことで、後から言語を追加しやすい構造になります。
 """,
     },
+    {
+        "title": "Reactで購読管理画面への遷移前にガイダンスモーダルを表示する実装パターン",
+        "tags": [
+            {"name": "React"},
+            {"name": "モーダル"},
+            {"name": "UX"},
+            {"name": "個人開発"},
+        ],
+        "body": """\
+## はじめに
+
+FXトレード管理WebアプリMT4 Report Viewerの開発において、ユーザーが購読プランを管理する際の体験を改善するため、ガイダンスモーダルの実装を行いました。本記事では、Reactでモーダルコンポーネントを使用した遷移前確認画面の実装パターンを紹介します。
+
+## 課題背景
+
+従来は、ユーザーメニューの「購読を管理」ボタンをクリックすると、直接Lemon Squeezyの顧客ポータルへリダイレクトしていました。しかし、外部ポータルへの遷移前に、以下の情報をユーザーに案内する必要がありました。
+
+- ポータルにアクセスする際の認証方法（購入時のメールアドレスの確認）
+- ポータルで可能な操作内容（請求履歴閲覧、支払い方法更新など）
+
+## 実装内容
+
+### 1. 状態管理の追加
+
+App.jsx内でモーダルの表示/非表示を管理するステートを追加します。
+
+```javascript
+const [showManageModal, setShowManageModal] = useState(false)
+```
+
+### 2. ボタンのクリックハンドラ変更
+
+従来の直接リダイレクト処理から、モーダル表示への変更を行いました。
+
+```javascript
+// 変更前
+onClick={() => { handleManagePlan(); setShowUserMenu(false) }}
+
+// 変更後
+onClick={() => { setShowManageModal(true); setShowUserMenu(false) }}
+```
+
+この変更により、複数のメニュー箇所で一貫した挙動が実現できます。
+
+### 3. モーダルコンポーネントの実装
+
+```jsx
+{showManageModal && (
+  <div className="fixed inset-0 bg-bg/90 backdrop-blur flex items-center justify-center z-50 p-4"
+    onClick={() => setShowManageModal(false)}>
+    <div className="bg-surface border border-border rounded-2xl w-full max-w-sm p-6 space-y-4"
+      onClick={e => e.stopPropagation()}>
+      <div className="space-y-1">
+        <h2 className="text-sm font-semibold text-slate-200">
+          {t('app.manageModal.title')}
+        </h2>
+        <p className="text-xs text-slate-500 leading-relaxed">
+          {t('app.manageModal.body')}
+        </p>
+      </div>
+      <div className="bg-bg border border-border rounded-lg px-3 py-2.5 text-xs text-slate-400">
+        {user?.email}
+      </div>
+      <p className="text-xs text-slate-600">
+        {t('app.manageModal.hint')}
+      </p>
+      <div className="flex gap-2 pt-1">
+        <button
+          onClick={() => setShowManageModal(false)}
+          className="flex-1 px-4 py-2 text-xs text-slate-400 hover:text-slate-200 border border-border rounded-lg transition-colors">
+          {t('common.cancel', { defaultValue: 'キャンセル' })}
+        </button>
+        <button
+          onClick={() => { setShowManageModal(false); handleManagePlan() }}
+          className="flex-1 px-4 py-2 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-colors">
+          {t('app.manageModal.cta')}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+```
+
+### 4. 国際化対応
+
+英語と日本語の両言語に対応するため、i18nファイルにテキストを追加しました。
+
+**en/common.json:**
+```json
+"manageModal": {
+  "title": "Manage Subscription",
+  "body": "You'll be redirected to the Lemon Squeezy customer portal. Please sign in with the email address used to purchase your subscription.",
+  "hint": "You can view billing history, update payment method, change plan, or cancel.",
+  "cta": "Go to Portal"
+}
+```
+
+**ja/common.json:**
+同様に日本語テキストを追加することで、ユーザーの言語設定に対応します。
+
+## 実装のポイント
+
+1. **モーダルの背景クリック処理**: `onClick={e => e.stopPropagation()}`により、モーダル内のクリックが背景クリックとして扱われるのを防ぎます。
+
+2. **確認メール表示**: `{user?.email}`でログインユーザーのメールアドレスを表示し、ポータルアクセス時の認証メールアドレスを視覚的に確認できます。
+
+3. **操作の遅延実行**: キャンセルボタンクリック時はモーダルのみ閉じ、ポータルボタンクリック時は先にモーダルを閉じてから`handleManagePlan()`を実行することで、UI/UXの一貫性を保ちます。
+
+## まとめ
+
+Reactでのモーダル実装を通じて、外部サービスへの遷移前にユーザーガイダンスを挿入することができました。このパターンは、重要な操作確認が必要な他のシーンでも応用可能な実装パターンです。国際化対応により、多言語ユーザーに対しても適切なガイダンスを提供できるようになりました。
+""",
+    },
+
 ]

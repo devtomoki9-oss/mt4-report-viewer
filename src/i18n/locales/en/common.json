@@ -67,6 +67,12 @@
         "upgradeToPro": "Upgrade to Pro",
         "upgradeToStandard": "Upgrade to Standard",
         "manageSubscription": "Manage subscription",
+        "planCards": {
+          "selectPlan": "Choose a plan",
+          "unlimited": "Unlimited accounts",
+          "standardDesc": "Unlimited accounts · No AI analysis",
+          "proDesc": "Unlimited accounts · Full AI analysis"
+        },
         "logout": "Sign out",
         "deleteAccount": "Delete account"
       },

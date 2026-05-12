@@ -61,6 +61,12 @@
         "upgradeToPro": "Pro へアップグレード",
         "upgradeToStandard": "Standard へアップグレード",
         "manageSubscription": "サブスクリプション管理",
+        "planCards": {
+          "selectPlan": "プランを選択",
+          "unlimited": "口座無制限",
+          "standardDesc": "口座無制限・AI分析なし",
+          "proDesc": "口座無制限・AI分析フル利用"
+        },
         "logout": "ログアウト",
         "deleteAccount": "アカウント削除"
       },

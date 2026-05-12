@@ -89,7 +89,10 @@ export default async function handler(req, res) {
     case 'subscription_created':
     case 'subscription_updated': {
       const periodEnd = attrs.renews_at ?? attrs.ends_at ?? attrs.trial_ends_at ?? null
-      const variantId = String(payload.data?.relationships?.variant?.data?.id ?? '')
+      // variant_id は attributes に直接入っている場合と relationships 経由の場合がある
+      const variantId = String(
+        attrs.variant_id ?? payload.data?.relationships?.variant?.data?.id ?? ''
+      )
       const standardVariantId = process.env.LEMONSQUEEZY_STANDARD_VARIANT_ID
       const plan = standardVariantId && variantId === standardVariantId ? 'standard' : 'pro'
       const { error } = await supabaseAdmin

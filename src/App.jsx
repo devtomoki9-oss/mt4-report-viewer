@@ -489,6 +489,18 @@ export default function App() {
     }
   }, [])
 
+  // ── タブ復帰時にプランを再取得（カスタマーポータル経由の変更を反映） ──
+  useEffect(() => {
+    if (!user) return
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        fetchPlan().then(setPlan).catch(console.error)
+      }
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [user])
+
   // ── Supabase Realtime 購読（reports テーブル変更を即時検知） ──
   useEffect(() => {
     if (!user) return

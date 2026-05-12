@@ -139,6 +139,7 @@ export default function App() {
   const [vbsPass,           setVbsPass]           = useState('')
   const [showFeedback,      setShowFeedback]      = useState(false)
   const [showManual,        setShowManual]        = useState(false)
+  const [showManageModal,   setShowManageModal]   = useState(false)
   const [showHelp,          setShowHelp]          = useState(false)
   const [tradingStates,         setTradingStates]         = useState(null)
   const [showTerms,             setShowTerms]             = useState(false)
@@ -740,7 +741,7 @@ export default function App() {
                         </div>
                         {plan === 'pro' ? (
                           <button
-                            onClick={() => { handleManagePlan(); setShowUserMenu(false) }}
+                            onClick={() => { setShowManageModal(true); setShowUserMenu(false) }}
                             className="w-full text-left px-4 py-2.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-surface2 transition-colors">
                             {t('app.header.userMenu.manageSubscription')}
                           </button>
@@ -758,7 +759,7 @@ export default function App() {
                               </button>
                             </div>
                             <button
-                              onClick={() => { handleManagePlan(); setShowUserMenu(false) }}
+                              onClick={() => { setShowManageModal(true); setShowUserMenu(false) }}
                               className="w-full text-left px-4 py-2 text-xs text-slate-500 hover:text-slate-300 hover:bg-surface2 transition-colors">
                               {t('app.header.userMenu.manageSubscription')}
                             </button>
@@ -1109,6 +1110,35 @@ export default function App() {
       {showTerms    && <TermsModal      onClose={() => setShowTerms(false)} />}
       {showPrivacy  && <PrivacyPolicy   onClose={() => setShowPrivacy(false)} />}
       {showFeedback && <FeedbackModal   onClose={() => setShowFeedback(false)} />}
+
+      {showManageModal && (
+        <div className="fixed inset-0 bg-bg/90 backdrop-blur flex items-center justify-center z-50 p-4"
+          onClick={() => setShowManageModal(false)}>
+          <div className="bg-surface border border-border rounded-2xl w-full max-w-sm p-6 space-y-4"
+            onClick={e => e.stopPropagation()}>
+            <div className="space-y-1">
+              <h2 className="text-sm font-semibold text-slate-200">{t('app.manageModal.title')}</h2>
+              <p className="text-xs text-slate-500 leading-relaxed">{t('app.manageModal.body')}</p>
+            </div>
+            <div className="bg-bg border border-border rounded-lg px-3 py-2.5 text-xs text-slate-400">
+              {user?.email}
+            </div>
+            <p className="text-xs text-slate-600">{t('app.manageModal.hint')}</p>
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => setShowManageModal(false)}
+                className="flex-1 px-4 py-2 text-xs text-slate-400 hover:text-slate-200 border border-border rounded-lg transition-colors">
+                {t('common.cancel', { defaultValue: 'キャンセル' })}
+              </button>
+              <button
+                onClick={() => { setShowManageModal(false); handleManagePlan() }}
+                className="flex-1 px-4 py-2 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-colors">
+                {t('app.manageModal.cta')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showVbsModal && (
         <div className="fixed inset-0 bg-bg/90 backdrop-blur flex items-center justify-center z-50 p-4"

@@ -151,6 +151,12 @@
       "hint": "Enable notifications to receive loss alerts",
       "registerHint": "Register this device to receive loss alerts"
     },
+    "manageModal": {
+      "title": "Manage Subscription",
+      "body": "You'll be redirected to the Lemon Squeezy customer portal. Please sign in with the email address used to purchase your subscription.",
+      "hint": "You can view billing history, update payment method, change plan, or cancel.",
+      "cta": "Go to Portal"
+    },
     "vbsModal": {
       "title": "Generate run-sync.vbs",
       "body": "Enter your password to download a VBS file with your connection details embedded.\nPlace it in the same folder as sync-to-supabase.ps1.",
